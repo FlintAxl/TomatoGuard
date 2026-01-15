@@ -5,6 +5,8 @@ function App() {
   const [type, setType] = useState("leaf");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showHeatmap, setShowHeatmap] = useState(true);
+  const [showScanned, setShowScanned] = useState(true);
 
   const handleSubmit = async () => {
     if (files.length === 0) {
@@ -37,7 +39,7 @@ function App() {
   };
 
   return (
-    <div style={{ padding: "20px", maxWidth: "700px" }}>
+    <div style={{ padding: "20px", maxWidth: "1000px", margin: "0 auto" }}>
       <h2>🍅 TomatoGuard</h2>
 
       <label>
@@ -63,14 +65,76 @@ function App() {
         {loading ? "Scanning..." : "Scan Images"}
       </button>
 
+      <br /><br />
+
+      {/* Toggle Buttons */}
+      <div style={{ marginBottom: "20px" }}>
+        <label style={{ marginRight: "20px" }}>
+          <input
+            type="checkbox"
+            checked={showHeatmap}
+            onChange={() => setShowHeatmap(!showHeatmap)}
+          />{" "}
+          Show Grad-CAM
+        </label>
+
+        <label>
+          <input
+            type="checkbox"
+            checked={showScanned}
+            onChange={() => setShowScanned(!showScanned)}
+          />{" "}
+          Show Scanned Regions
+        </label>
+      </div>
+
       <hr />
 
       {results.map((res, index) => (
-        <div key={index} style={{ marginBottom: "15px" }}>
+        <div key={index} style={{ marginBottom: "40px" }}>
           <strong>{res.filename}</strong><br />
           Disease: {res.disease}<br />
           Confidence: {(res.confidence * 100).toFixed(2)}%<br />
-          Recommendation: {res.recommendation}
+          Recommendation: {res.recommendation}<br /><br />
+
+          <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+            {/* Original */}
+            <div style={{ textAlign: "center" }}>
+              <p>Original</p>
+              <img
+                src={`http://127.0.0.1:8000/uploads/${res.original_image}`}
+                alt="original"
+                width="300"
+                style={{ border: "2px solid #ccc", borderRadius: "5px" }}
+              />
+            </div>
+
+            {/* Grad-CAM */}
+            {showHeatmap && (
+              <div style={{ textAlign: "center" }}>
+                <p>Grad-CAM Heatmap</p>
+                <img
+                  src={`http://127.0.0.1:8000/uploads/${res.heatmap_image}`}
+                  alt="heatmap"
+                  width="300"
+                  style={{ border: "2px solid #f00", borderRadius: "5px" }}
+                />
+              </div>
+            )}
+
+            {/* Precise Scan */}
+            {showScanned && (
+              <div style={{ textAlign: "center" }}>
+                <p>Scanned Region</p>
+                <img
+                  src={`http://127.0.0.1:8000/uploads/${res.scanned_image}`}
+                  alt="scanned"
+                  width="300"
+                  style={{ border: "2px solid #00f", borderRadius: "5px" }}
+                />
+              </div>
+            )}
+          </div>
         </div>
       ))}
     </div>
