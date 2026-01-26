@@ -1,0 +1,37 @@
+pythosn m venv
+
+# Activate (Windows):
+venv\Scripts\activate
+# Activate (Mac/Linux):
+source venv/bin/activate
+FRONTEND - npm run dev
+BCKEND - uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# 1. Prepare data
+python ml/preprocessing/resize_images.py
+python ml/preprocessing/split_dataset.py
+python ml/preprocessing/create_part_dataset.py
+
+# 2. Train models
+python ml/training/train_part_classifier.py    # FIRST - needs all 3 parts
+python ml/training/train_leaf.py - DONE NA
+python ml/training/train_fruit.py
+python ml/training/train_stem.py
+
+# Individual evaluations
+python ml/evaluation/evaluate_part_classifier.py
+python ml/evaluation/evaluate_leaf.py
+python ml/evaluation/evaluate_fruit.py
+python ml/evaluation/evaluate_stem.py
+
+
+How to run 
+FRONTEND
+npm run dev
+BACKEND
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+1. Sanitize dataset lalo na yung mga inacurate
+2. Apply heatmap  (Grad-CAM style, simplified)
+3. Exact diseased spots (bounding box) precise bounding box overlay of diseased region
+highlight_disease_region draws exact diseased spots with rectangles and label.
