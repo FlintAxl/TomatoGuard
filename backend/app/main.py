@@ -1,10 +1,13 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import uvicorn
 from typing import List
 import os
+import asyncio
 from dotenv import load_dotenv
+from datetime import datetime
+import uuid
 
 from .ml_service import ml_service
 from .cloudinary_service import cloudinary_service
@@ -18,17 +21,74 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Request queue for ML predictions (max 3 concurrent)
+ml_queue = asyncio.Queue()
+ml_semaphore = asyncio.Semaphore(3)  # Allow max 3 concurrent ML predictions
+queue_stats = {
+    "total_processed": 0,
+    "currently_processing": 0,
+    "queued": 0,
+    "requests": {}
+}
+
+# CORS configuration - Support Ngrok URLs dynamically
+def get_cors_origins():
+    """Get CORS origins from environment, including Ngrok support"""
+    default_origins = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://localhost:19006",
+        "http://127.0.0.1:19006",
+        "http://localhost:8081",
+        "http://127.0.0.1:8081",
+        "exp://192.168.100.97:8081",
+    ]
+    
+    # Add Ngrok URL if provided
+    ngrok_url = os.getenv("NGROK_URL", "")
+    if ngrok_url:
+        # Add both http and https versions
+        default_origins.append(ngrok_url)
+        if ngrok_url.startswith("https://"):
+            default_origins.append(ngrok_url.replace("https://", "http://"))
+    
+    # Add custom origins from env
+    env_origins = os.getenv("ALLOWED_ORIGINS", "")
+    if env_origins:
+        default_origins.extend(env_origins.split(","))
+    
+    # Remove duplicates and empty strings
+    origins = list(set([o.strip() for o in default_origins if o.strip()]))
+    
+    return origins
+
+# Get CORS origins
+cors_origins = get_cors_origins()
+ngrok_mode = os.getenv("NGROK_MODE", "false").lower() == "true" or os.getenv("NGROK_URL", "")
+
 # CORS configuration
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=os.getenv(
-        "ALLOWED_ORIGINS",
-        "http://localhost:5173,http://localhost:3000,http://localhost:19006,http://127.0.0.1:19006,http://localhost:8081,http://127.0.0.1:8081,exp://192.168.100.97:8081",
-    ).split(","),
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# When using Ngrok, we need to allow all origins since URL changes frequently
+# Note: allow_origins=["*"] doesn't work with allow_credentials=True
+# So we use a regex pattern or allow all when Ngrok is active
+if ngrok_mode:
+    # For Ngrok: Use regex to allow all origins
+    # This is safe for testing/demos, but use specific origins in production
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=r".*",  # Allow all origins when using Ngrok
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    # For local development: Use specific origins
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 @app.get("/")
 async def root():
@@ -72,55 +132,91 @@ async def analyze_image_from_url(data: dict):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+async def process_ml_prediction(request_id: str, contents: bytes):
+    """Process ML prediction with queuing"""
+    async with ml_semaphore:
+        queue_stats["currently_processing"] += 1
+        queue_stats["requests"][request_id] = {
+            "status": "processing",
+            "started_at": datetime.now().isoformat()
+        }
+        
+        try:
+            # Upload to Cloudinary
+            upload_result = cloudinary_service.upload_image(contents)
+            
+            # Analyze image (this is the CPU-intensive operation)
+            result = ml_service.analyze_image(contents)
+            
+            queue_stats["requests"][request_id] = {
+                "status": "completed",
+                "started_at": queue_stats["requests"][request_id]["started_at"],
+                "completed_at": datetime.now().isoformat()
+            }
+            queue_stats["total_processed"] += 1
+            
+            return {
+                "status": "success",
+                "analysis": result,
+                "upload_info": upload_result,
+                "request_id": request_id
+            }
+        except Exception as e:
+            queue_stats["requests"][request_id] = {
+                "status": "error",
+                "error": str(e),
+                "started_at": queue_stats["requests"][request_id]["started_at"],
+                "completed_at": datetime.now().isoformat()
+            }
+            raise
+        finally:
+            queue_stats["currently_processing"] -= 1
+            # Clean up old requests (keep last 100)
+            if len(queue_stats["requests"]) > 100:
+                oldest = min(queue_stats["requests"].keys(), 
+                           key=lambda k: queue_stats["requests"][k].get("started_at", ""))
+                del queue_stats["requests"][oldest]
+
 @app.post("/api/analyze/upload")
 async def analyze_uploaded_image(file: UploadFile = File(...)):
-    """Upload and analyze image directly"""
+    """Upload and analyze image directly with queuing"""
+    request_id = str(uuid.uuid4())
+    
     try:
         # Read file
         contents = await file.read()
         
-        # Upload to Cloudinary (if using)
-        upload_result = cloudinary_service.upload_image(contents)
-        
-        # Analyze image
-        result = ml_service.analyze_image(contents)
-        
-        # Recommendations are now included in result['recommendations']
-        # from the new recommendations.py module
-        
-        return {
-            "status": "success",
-            "analysis": result,  # Already includes recommendations
-            "upload_info": upload_result
-        }
+        # Process with queue
+        result = await process_ml_prediction(request_id, contents)
+        return result
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/analyze/batch")
 async def analyze_multiple_images(files: List[UploadFile] = File(...)):
-    """Analyze multiple images at once"""
+    """Analyze multiple images at once with queuing"""
     results = []
     
     for file in files:
+        request_id = str(uuid.uuid4())
         try:
             contents = await file.read()
             
-            # Upload to Cloudinary
-            upload_result = cloudinary_service.upload_image(contents)
-            
-            # Analyze image
-            result = ml_service.analyze_image(contents)
+            # Process with queue
+            result = await process_ml_prediction(request_id, contents)
             
             results.append({
                 "filename": file.filename,
-                "upload_info": upload_result,
-                "analysis": result
+                "upload_info": result.get("upload_info"),
+                "analysis": result.get("analysis"),
+                "request_id": request_id
             })
         except Exception as e:
             results.append({
                 "filename": file.filename,
-                "error": str(e)
+                "error": str(e),
+                "request_id": request_id
             })
     
     return {"results": results}
@@ -131,7 +227,23 @@ async def health_check():
     return {
         "status": "healthy",
         "models_loaded": len(ml_service.models) > 0,
-        "models": list(ml_service.models.keys())
+        "models": list(ml_service.models.keys()),
+        "timestamp": datetime.now().isoformat()
+    }
+
+@app.get("/api/queue/status")
+async def queue_status():
+    """Get ML prediction queue status"""
+    queue_stats["queued"] = ml_queue.qsize()
+    return {
+        "queue_status": {
+            "currently_processing": queue_stats["currently_processing"],
+            "queued": queue_stats["queued"],
+            "max_concurrent": 3,
+            "total_processed": queue_stats["total_processed"]
+        },
+        "recent_requests": dict(list(queue_stats["requests"].items())[-10:]),  # Last 10 requests
+        "timestamp": datetime.now().isoformat()
     }
 
 if __name__ == "__main__":
