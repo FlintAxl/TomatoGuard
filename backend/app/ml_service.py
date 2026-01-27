@@ -7,6 +7,7 @@ import time
 import random
 import cv2
 import base64
+import sys
 from io import BytesIO  
 from typing import Dict, Any, List
 from datetime import datetime
@@ -611,31 +612,57 @@ class MLService:
                 "original_image": original_base64
             }
         
-        # Step 4: Get recommendations (pass spot detection info for more specific recommendations)
+                              # Step 4: Get recommendations
         try:
-            from .recommendations import get_recommendations as get_recs
-            
-            # Pass spot detection severity if available
-            severity_info = None
-            if spot_detection and 'severity' in spot_detection:
-                severity_info = spot_detection['severity']
-                
-            recommendations = get_recs(
+            import recommendations
+            recommendations = recommendations.get_recommendations(
                 part, 
                 disease_name, 
-                disease_result['confidence'],
-                severity_info=severity_info
+                disease_result['confidence']
             )
         except ImportError:
-            recommendations = {"error": "Recommendation module not available"}
+            try:
+                from .recommendations import get_recommendations as get_recs
+                recommendations = get_recs(
+                    part, 
+                    disease_name, 
+                    disease_result['confidence']
+                )
+            except ImportError:
+                recommendations = {
+                    "error": "Recommendation module not available",
+                    "disease": disease_name,
+                    "plant_part": part,
+                    "description": f"Could not load specific recommendations for {disease_name} on {part}.",
+                    "immediate_actions": [
+                        "Remove affected plant parts immediately",
+                        "Apply general fungicide treatment",
+                        "Improve air circulation around plants"
+                    ],
+                    "preventive_measures": [
+                        "Practice crop rotation",
+                        "Use disease-resistant varieties",
+                        "Maintain proper plant spacing"
+                    ]
+                }
         except Exception as e:
-            recommendations = {"error": f"Failed to get recommendations: {str(e)}"}
+            recommendations = {
+                "error": f"Failed to get recommendations: {str(e)}",
+                "disease": disease_name,
+                "plant_part": part,
+                "fallback_advice": [
+                    "Remove infected plant parts",
+                    "Apply appropriate treatment",
+                    "Monitor plant closely",
+                    "Consult agricultural expert if symptoms worsen"
+                ]
+            }
         
         # Step 5: Prepare final result
         result = {
             'part_detection': part_result,
             'disease_detection': disease_result,
-            'spot_detection': spot_detection,  # Add spot detection results
+            'spot_detection': spot_detection,
             'recommendations': recommendations,
             'image_info': image_info,
             'model_info': {
@@ -652,7 +679,7 @@ class MLService:
             'preprocessing_time': image_info.get('preprocessing_time', 'N/A'),
             'model_inference_time': image_info.get('inference_time', 'N/A'),
             'spot_detection_time': image_info.get('spot_detection_time', 'N/A'),
-            'total_processing_time': 'N/A'  # Can be calculated if timing is added
+            'total_processing_time': 'N/A'
         }
         
         return result

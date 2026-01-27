@@ -106,20 +106,12 @@ async def analyze_image_from_url(data: dict):
         if response.status_code != 200:
             raise HTTPException(status_code=400, detail="Failed to download image")
         
-        # Analyze image
+        # Analyze image (this already includes recommendations from ml_service.py)
         result = ml_service.analyze_image(response.content)
-        
-        # Add recommendations
-        recommendations = get_recommendations(
-            result['part_detection']['part'],
-            result['disease_detection']['disease'],
-            result['disease_detection']['confidence']
-        )
         
         return {
             "status": "success",
-            "analysis": result,
-            "recommendations": recommendations,
+            "analysis": result,  # result already contains recommendations
             "image_url": data['url']
         }
         
