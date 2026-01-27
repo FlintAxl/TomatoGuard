@@ -498,3 +498,4 @@ export const cameraCaptureStyles = StyleSheet.create({
     color: '#64748b',
   },
 });
+
