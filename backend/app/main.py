@@ -35,13 +35,15 @@ queue_stats = {
 def get_cors_origins():
     """Get CORS origins from environment, including Ngrok support"""
     default_origins = [
-        "http://localhost:5173",
+        "http://localhost:5173", # localhost port 5173
         "http://localhost:3000",
-        "http://localhost:19006",
-        "http://127.0.0.1:19006",
-        "http://localhost:8081",
-        "http://127.0.0.1:8081",
-        "exp://192.168.100.97:8081",
+        "http://localhost:19006", 
+        "http://127.0.0.1:19006", # localhost ip address port 19006
+        "http://localhost:8081", # localhost port 8081
+        "http://127.0.0.1:8081", # localhost ip address
+        "exp://192.168.100.97:8081", # my local machine ip address sa bahay
+        "https://*.ngrok-free.dev",  # Your ngrok domain
+        "https://dori-unmutational-johnathon.ngrok-free.dev",  # Your specific URL
     ]
     
     # Add Ngrok URL if provided
@@ -64,31 +66,23 @@ def get_cors_origins():
 
 # Get CORS origins
 cors_origins = get_cors_origins()
-ngrok_mode = os.getenv("NGROK_MODE", "false").lower() == "true" or os.getenv("NGROK_URL", "")
+ngrok_url = os.getenv("NGROK_URL", "")
+ngrok_mode = os.getenv("NGROK_MODE", "false").lower() == "true" or ngrok_url
 
 # CORS configuration
-# When using Ngrok, we need to allow all origins since URL changes frequently
+# For development: Allow all origins to support ngrok and local development
 # Note: allow_origins=["*"] doesn't work with allow_credentials=True
-# So we use a regex pattern or allow all when Ngrok is active
-if ngrok_mode:
-    # For Ngrok: Use regex to allow all origins
-    # This is safe for testing/demos, but use specific origins in production
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origin_regex=r".*",  # Allow all origins when using Ngrok
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-else:
-    # For local development: Use specific origins
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=cors_origins,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+# So we use a regex pattern that matches all origins
+# In production, you should restrict this to specific domains
+# This configuration allows all endpoints including /api/analyze/batch
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r".*",  # Allow all origins (for development/ngrok and localhost)
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # Explicitly allow all methods
+    allow_headers=["*"],  # Allow all headers including Content-Type for file uploads
+    expose_headers=["*"],  # Expose all headers in response
+)
 
 @app.get("/")
 async def root():
@@ -195,7 +189,8 @@ async def analyze_uploaded_image(file: UploadFile = File(...)):
 
 @app.post("/api/analyze/batch")
 async def analyze_multiple_images(files: List[UploadFile] = File(...)):
-    """Analyze multiple images at once with queuing"""
+    """Analyze multiple images at once with queuing
+    Supports CORS for ngrok and localhost origins"""
     results = []
     
     for file in files:
