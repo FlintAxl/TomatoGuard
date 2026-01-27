@@ -1,6 +1,6 @@
 import { StyleSheet, Dimensions } from 'react-native';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 const SIDEBAR_WIDTH = 280;
 
 export const appStyles = StyleSheet.create({
@@ -184,85 +184,100 @@ export const appStyles = StyleSheet.create({
   },
 });
 
-export const cardStyles = StyleSheet.create({
-  card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 24,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#0f172a',
-    marginBottom: 8,
-  },
-  cardDescription: {
-    fontSize: 14,
-    color: '#64748b',
-    lineHeight: 20,
-    marginBottom: 20,
-  },
-});
+  export const cardStyles = StyleSheet.create({
+    card: {
+      backgroundColor: '#ffffff',
+      borderRadius: 12,
+      padding: 24,
+      marginBottom: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    cardTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: '#0f172a',
+      marginBottom: 8,
+    },
+    cardDescription: {
+      fontSize: 14,
+      color: '#64748b',
+      lineHeight: 20,
+      marginBottom: 20,
+    },
+  });
 
 export const buttonStyles = StyleSheet.create({
-  primaryButton: {
+ primaryButton: {
     backgroundColor: '#10b981',
-    paddingVertical: 14,
     paddingHorizontal: 24,
+    paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  secondaryButton: {
-    backgroundColor: '#6366f1',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 12,
+  
+  primaryButtonDisabled: {
+    backgroundColor: '#94a3b8',
+    opacity: 0.7,
   },
+  
   outlineButton: {
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-    paddingVertical: 14,
+    backgroundColor: 'transparent',
     paddingHorizontal: 24,
+    paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#10b981',
   },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 15,
+  
+  outlineButtonText: {
+    color: '#10b981',
+    fontSize: 16,
     fontWeight: '600',
   },
-  outlineButtonText: {
-    color: '#475569',
-    fontSize: 15,
+  
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
     fontWeight: '600',
   },
   buttonDisabled: {
     backgroundColor: '#cbd5e1',
     opacity: 0.6,
   },
+  
 });
 
 export const resultsStyles = StyleSheet.create({
+  // Main container
   container: {
     flex: 1,
+    backgroundColor: '#f8fafc',
   },
+  
+  // Status Alert
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderRadius: 8,
-    marginBottom: 20,
+    borderRadius: 12,
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 8,
   },
   statusIcon: {
-    fontSize: 28,
+    fontSize: 24,
     marginRight: 12,
   },
   statusContent: {
@@ -270,64 +285,226 @@ export const resultsStyles = StyleSheet.create({
   },
   statusTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#0f172a',
+    fontWeight: 'bold',
+    color: '#1f2937',
     marginBottom: 4,
   },
   statusText: {
     fontSize: 14,
-    color: '#64748b',
+    color: '#4b5563',
   },
+  
+  // Info Row
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomColor: '#e5e7eb',
   },
   infoLabel: {
     fontSize: 14,
-    color: '#64748b',
-    fontWeight: '500',
+    color: '#6b7280',
   },
   infoValue: {
     fontSize: 14,
-    color: '#0f172a',
     fontWeight: '600',
+    color: '#111827',
   },
+  
+  // Progress Bar
   progressBar: {
     height: 8,
-    backgroundColor: '#e2e8f0',
+    backgroundColor: '#e5e7eb',
     borderRadius: 4,
+    marginTop: 16,
     overflow: 'hidden',
-    marginTop: 12,
   },
   progressFill: {
     height: '100%',
     borderRadius: 4,
   },
+  
+  // Bullet List
   bulletList: {
-    marginLeft: 8,
-    marginBottom: 16,
+    marginTop: 8,
   },
   bulletItem: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
     marginBottom: 8,
   },
   bulletDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#10b981',
-    marginTop: 7,
+    backgroundColor: '#3b82f6',
+    marginTop: 8,
     marginRight: 12,
   },
   bulletText: {
     flex: 1,
     fontSize: 14,
-    color: '#475569',
+    color: '#4b5563',
     lineHeight: 20,
   },
+  
+  // BOUNDING BOX SECTION
+  sectionDescription: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  
+  // Image Comparison
+  imageComparisonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  imageCard: {
+    flex: 1,
+    marginHorizontal: 4,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    alignItems: 'center',
+  },
+  imageLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  previewImage: {
+    width: '100%',
+    height: 150,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  imageSubLabel: {
+    fontSize: 12,
+    color: '#6b7280',
+    textAlign: 'center',
+  },
+  
+  // Spot Statistics
+  spotStatsContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#6b7280',
+    textAlign: 'center',
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: '#d1d5db',
+    marginHorizontal: 8,
+  },
+  
+  // Bounding Box Details
+  boundingBoxList: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    padding: 16,
+  },
+  boundingBoxTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 12,
+  },
+  boundingBoxItem: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  boundingBoxNumber: {
+    width: 60,
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#3b82f6',
+  },
+  boundingBoxDetails: {
+    flex: 1,
+  },
+  boundingBoxText: {
+    fontSize: 12,
+    color: '#4b5563',
+    marginBottom: 2,
+  },
+  moreSpotsText: {
+    fontSize: 12,
+    color: '#6b7280',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  
+  // MODAL STYLES
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImage: {
+    width: width,
+    height: height * 0.8,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  closeButtonText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  imageCaption: {
+    color: '#fff',
+    fontSize: 16,
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  
+  // ADDITIONAL STYLES FOR OTHER COMPONENTS
+  // (If you have other shared styles, add them here)
 });
 
 export const imageUploadStyles = StyleSheet.create({
@@ -432,17 +609,152 @@ export const cameraCaptureStyles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  camera: {
+  // Full screen camera preview
+  cameraPreview: {
     width: '100%',
     height: 400,
     borderRadius: 12,
     overflow: 'hidden',
     marginBottom: 20,
   },
+  // Camera preview with overlay
+  cameraContainer: {
+    width: '100%',
+    height: 400,
+    borderRadius: 12,
+    overflow: 'hidden',
+    position: 'relative',
+    marginBottom: 20,
+  },
+  // Focus frame overlay
+  focusFrame: {
+    position: 'absolute',
+    top: '30%',
+    left: '20%',
+    width: '60%',
+    height: '40%',
+    borderWidth: 2,
+    borderColor: '#10b981',
+    borderRadius: 8,
+    borderStyle: 'dashed',
+    backgroundColor: 'transparent',
+  },
+  // Grid overlay for better framing
+  gridOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    padding: 10,
+  },
+  gridRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  gridDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  // Camera controls container
+  cameraControls: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  // Main capture button
+  captureButton: {
+    backgroundColor: '#10b981',
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    borderWidth: 4,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
+  },
+  captureButtonActive: {
+    backgroundColor: '#0ea5e9',
+    transform: [{ scale: 0.95 }],
+  },
+  captureButtonDisabled: {
+    backgroundColor: '#94a3b8',
+  },
+  captureIcon: {
+    fontSize: 32,
+    color: 'white',
+  },
+  // Secondary buttons
+  secondaryButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  secondaryIcon: {
+    fontSize: 24,
+    color: 'white',
+  },
+  // Camera status indicator
+  statusIndicator: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statusText: {
+    color: 'white',
+    fontSize: 12,
+    marginLeft: 5,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#10b981',
+  },
+  // Instructions overlay
+  instructionsOverlay: {
+    position: 'absolute',
+    bottom: 20,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  instructionsText: {
+    color: 'white',
+    fontSize: 14,
+    textAlign: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  // Camera placeholder (when not active)
   cameraPlaceholder: {
     width: '100%',
     height: 400,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#1e293b',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -451,51 +763,118 @@ export const cameraCaptureStyles = StyleSheet.create({
   placeholderIcon: {
     fontSize: 64,
     marginBottom: 16,
+    color: '#64748b',
   },
   placeholderText: {
     fontSize: 15,
-    color: '#64748b',
+    color: '#94a3b8',
     textAlign: 'center',
   },
-  controls: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
-  captureButton: {
-    backgroundColor: '#10b981',
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  captureButtonDisabled: {
-    backgroundColor: '#cbd5e1',
-    opacity: 0.6,
-  },
-  captureIcon: {
-    fontSize: 28,
-  },
+  // Image preview
   previewContainer: {
-    marginBottom: 20,
-  },
-  previewPlaceholder: {
     width: '100%',
-    height: 300,
-    backgroundColor: '#f1f5f9',
+    height: 400,
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    overflow: 'hidden',
+    marginBottom: 20,
+    position: 'relative',
+  },
+  previewImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 12,
+  },
+  previewOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    padding: 15,
   },
   previewText: {
-    fontSize: 15,
-    color: '#64748b',
+    color: 'white',
+    fontSize: 14,
+    textAlign: 'center',
   },
+  // Camera zoom controls
+  zoomSliderContainer: {
+    position: 'absolute',
+    right: 10,
+    top: '50%',
+    transform: [{ translateY: -50 }],
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 20,
+    paddingVertical: 20,
+  },
+  zoomSlider: {
+    width: 30,
+    height: 200,
+  },
+  zoomLabel: {
+    position: 'absolute',
+    top: -20,
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    color: 'white',
+    fontSize: 10,
+  },
+  // Flash controls
+  flashButton: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  flashIcon: {
+    fontSize: 20,
+    color: 'white',
+  },
+  // Loading overlay
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 12,
+  },
+  loadingText: {
+    color: 'white',
+    marginTop: 10,
+    fontSize: 14,
+  },
+  // Add to cameraCaptureStyles:
+zoomButtonsContainer: {
+  position: 'absolute',
+  right: 10,
+  top: '50%',
+  transform: [{ translateY: -40 }],
+  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  borderRadius: 20,
+  padding: 10,
+  gap: 10,
+},
+zoomButton: {
+  width: 40,
+  height: 40,
+  borderRadius: 20,
+  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+zoomIcon: {
+  fontSize: 24,
+  color: 'white',
+  fontWeight: 'bold',
+},
 });
-
