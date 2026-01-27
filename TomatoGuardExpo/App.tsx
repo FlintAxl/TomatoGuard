@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, ActivityIndicator, Platform, Animated, Dimensions } from 'react-native';
 import axios from 'axios';
 import CameraCapture from './components/CameraCapture';
 import ImageUpload from './components/ImageUpload';
@@ -17,6 +17,9 @@ const App = () => {
   const [activeTab, setActiveTab] = useState<string>('camera');
   const [results, setResults] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  // Drawer starts open on web, closed on mobile
+  const [drawerOpen, setDrawerOpen] = useState<boolean>(Platform.OS === 'web');
+  const drawerAnimation = useRef(new Animated.Value(Platform.OS === 'web' ? 1 : 0)).current;
 
   const navItems: NavItem[] = [
     { id: 'camera', label: 'Camera Capture', icon: '📷' },
@@ -55,8 +58,27 @@ const App = () => {
         console.log('Mobile file object created:', { uri, name, type });
       }
 
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
-      const finalApiUrl = Platform.OS === 'web' ? 'http://localhost:8000' : apiUrl;
+      // Determine the correct API URL
+      let finalApiUrl: string;
+      
+      if (Platform.OS === 'web') {
+        // On web, check if we're running on ngrok
+        const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+        const isNgrok = currentOrigin.includes('.ngrok-free.dev') || 
+                        currentOrigin.includes('.exp.direct') || 
+                        currentOrigin.includes('.ngrok.io');
+        
+        if (isNgrok) {
+          // Use ngrok backend URL from environment variable
+          finalApiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+        } else {
+          // Local development - use localhost
+          finalApiUrl = 'http://localhost:8000';
+        }
+      } else {
+        // Mobile - use environment variable
+        finalApiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+      }
 
       console.log('Uploading capture to:', finalApiUrl);
 
@@ -100,6 +122,33 @@ const App = () => {
   const handleUploadComplete = (data: any) => {
     setResults(data);
     setActiveTab('results');
+  };
+
+  const toggleDrawer = () => {
+    const toValue = drawerOpen ? 0 : 1;
+    setDrawerOpen(!drawerOpen);
+    
+    Animated.timing(drawerAnimation, {
+      toValue,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeDrawer = () => {
+    if (drawerOpen) {
+      setDrawerOpen(false);
+      Animated.timing(drawerAnimation, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  };
+
+  const handleNavItemPress = (itemId: string) => {
+    setActiveTab(itemId);
+    closeDrawer();
   };
 
   const getPageSubtitle = () => {
@@ -190,43 +239,112 @@ const App = () => {
   };
 
   const styles = appStyles;
+  const { width } = Dimensions.get('window');
+  const SIDEBAR_WIDTH = 280;
+  const COLLAPSED_WIDTH = 0;
+
+  // Drawer slide animation for mobile (slides in from left)
+  const drawerTranslateX = drawerAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-SIDEBAR_WIDTH, 0],
+  });
+
+  // Drawer width animation for web (collapses width)
+  const drawerWidth = drawerAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [COLLAPSED_WIDTH, SIDEBAR_WIDTH],
+  });
+
+  // Overlay opacity animation
+  const overlayOpacity = drawerAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 0.5],
+  });
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
       
-      {/* Sidebar */}
-      <View style={styles.sidebar}>
+      {/* Drawer Overlay - Only on mobile */}
+      {Platform.OS !== 'web' && drawerOpen && (
+        <TouchableOpacity
+          style={styles.drawerOverlay}
+          activeOpacity={1}
+          onPress={closeDrawer}
+        >
+          <Animated.View
+            style={[
+              styles.drawerOverlayBg,
+              { opacity: overlayOpacity }
+            ]}
+          />
+        </TouchableOpacity>
+      )}
+
+      {/* Drawer Sidebar */}
+      <Animated.View
+        style={[
+          styles.sidebar,
+          {
+            width: Platform.OS === 'web' ? drawerWidth : SIDEBAR_WIDTH,
+            transform: Platform.OS === 'web' ? [] : [{ translateX: drawerTranslateX }],
+            position: Platform.OS === 'web' ? 'relative' : 'absolute',
+            height: '100%',
+            zIndex: 1000,
+            overflow: 'hidden',
+          }
+        ]}
+      >
         <View style={styles.sidebarHeader}>
-          <Text style={styles.logo}>TomatoGuard</Text>
-          <Text style={styles.logoSubtitle}>PLANT DISEASE DETECTION SYSTEM</Text>
+            <View style={styles.sidebarHeaderTop}>
+              <Animated.View style={{ opacity: drawerAnimation }}>
+                <Text style={styles.logo}>TomatoGuard</Text>
+              </Animated.View>
+              {Platform.OS !== 'web' && drawerOpen && (
+                <TouchableOpacity onPress={closeDrawer} style={styles.closeButton}>
+                  <Text style={styles.closeButtonText}>✕</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          <Animated.View style={{ opacity: drawerAnimation }}>
+            <Text style={styles.logoSubtitle}>PLANT DISEASE DETECTION SYSTEM</Text>
+          </Animated.View>
         </View>
         
-        <View style={styles.navMenu}>
-          {navItems.map(item => (
-            <TouchableOpacity
-              key={item.id}
-              style={[styles.navItem, activeTab === item.id && styles.navItemActive]}
-              onPress={() => setActiveTab(item.id)}
-            >
-              <Text style={styles.navIcon}>{item.icon}</Text>
-              <Text style={[styles.navText, activeTab === item.id && styles.navTextActive]}>
-                {item.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
+        <Animated.View style={[styles.navMenu, { opacity: drawerAnimation }]}>
+          <ScrollView>
+            {navItems.map(item => (
+              <TouchableOpacity
+                key={item.id}
+                style={[styles.navItem, activeTab === item.id && styles.navItemActive]}
+                onPress={() => handleNavItemPress(item.id)}
+              >
+                <Text style={styles.navIcon}>{item.icon}</Text>
+                <Text style={[styles.navText, activeTab === item.id && styles.navTextActive]}>
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </Animated.View>
+      </Animated.View>
 
       {/* Main Content */}
       <View style={styles.mainContent}>
         <View style={styles.topBar}>
-          <Text style={styles.pageTitle}>
-            {navItems.find(item => item.id === activeTab)?.label}
-          </Text>
-          <Text style={styles.pageSubtitle}>
-            {getPageSubtitle()}
-          </Text>
+          <View style={styles.topBarHeader}>
+            <TouchableOpacity onPress={toggleDrawer} style={styles.menuButton}>
+              <Text style={styles.menuIcon}>☰</Text>
+            </TouchableOpacity>
+            <View style={styles.topBarTitleContainer}>
+              <Text style={styles.pageTitle}>
+                {navItems.find(item => item.id === activeTab)?.label}
+              </Text>
+              <Text style={styles.pageSubtitle}>
+                {getPageSubtitle()}
+              </Text>
+            </View>
+          </View>
         </View>
 
         <ScrollView style={styles.contentArea}>

@@ -10,15 +10,38 @@ export const appStyles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   sidebar: {
-    width: SIDEBAR_WIDTH,
     backgroundColor: '#1e293b',
     borderRightWidth: 1,
     borderRightColor: '#334155',
+    shadowColor: '#000',
+    shadowOffset: { width: 2, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 10,
   },
   sidebarHeader: {
     padding: 24,
     borderBottomWidth: 1,
     borderBottomColor: '#334155',
+  },
+  sidebarHeaderTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#334155',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '600',
   },
   logo: {
     fontSize: 28,
@@ -69,6 +92,27 @@ export const appStyles = StyleSheet.create({
     padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
+  },
+  topBarHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  menuButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: '#f1f5f9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  menuIcon: {
+    fontSize: 20,
+    color: '#0f172a',
+    fontWeight: '600',
+  },
+  topBarTitleContainer: {
+    flex: 1,
   },
   pageTitle: {
     fontSize: 24,
@@ -125,6 +169,18 @@ export const appStyles = StyleSheet.create({
     color: '#475569',
     marginBottom: 6,
     lineHeight: 20,
+  },
+  drawerOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 999,
+  },
+  drawerOverlayBg: {
+    flex: 1,
+    backgroundColor: '#000000',
   },
 });
 

@@ -64,14 +64,23 @@ const ImageUpload = ({ onUploadComplete }: ImageUploadProps) => {
     try {
       const formData = new FormData();
       
-      files.forEach((file, index) => {
-        if (Platform.OS === 'web') {
-          fetch(file.uri)
-            .then(response => response.blob())
-            .then(blob => {
+      if (Platform.OS === 'web') {
+        // On web, we need to fetch each image as a blob and await all of them
+        await Promise.all(
+          files.map(async (file) => {
+            try {
+              const response = await fetch(file.uri);
+              const blob = await response.blob();
               formData.append('files', blob, file.name);
-            });
-        } else {
+            } catch (error) {
+              console.error(`Error fetching file ${file.name}:`, error);
+              throw new Error(`Failed to load image: ${file.name}`);
+            }
+          })
+        );
+      } else {
+        // On mobile, append file URIs directly
+        files.forEach((file, index) => {
           const localUri = file.uri;
           const filename = localUri.split('/').pop();
           const match = /\.(\w+)$/.exec(filename || '');
@@ -82,25 +91,44 @@ const ImageUpload = ({ onUploadComplete }: ImageUploadProps) => {
             name: filename || `image_${index}.jpg`,
             type,
           } as any);
-        }
-      });
-
-      if (Platform.OS === 'web') {
-        await new Promise(resolve => setTimeout(resolve, 500));
+        });
       }
 
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
-      const finalApiUrl = Platform.OS === 'web' ? 'http://localhost:8000' : apiUrl;
+      // Determine the correct API URL
+      let finalApiUrl: string;
+      
+      if (Platform.OS === 'web') {
+        // On web, check if we're running on ngrok
+        const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+        const isNgrok = currentOrigin.includes('.ngrok-free.dev') || 
+                        currentOrigin.includes('.exp.direct') || 
+                        currentOrigin.includes('.ngrok.io');
+        
+        if (isNgrok) {
+          // Use ngrok backend URL from environment variable
+          finalApiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+        } else {
+          // Local development - use localhost
+          finalApiUrl = 'http://localhost:8000';
+        }
+      } else {
+        // Mobile - use environment variable
+        finalApiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+      }
         
       console.log('Uploading to:', finalApiUrl);
+      console.log('Number of files:', files.length);
       
-      const axiosConfig =
-        Platform.OS === 'web'
-          ? undefined
-          : {
-              headers: { 'Content-Type': 'multipart/form-data' },
-              timeout: 30000,
-            };
+      // Configure axios - on web, don't set Content-Type (browser will set it with boundary)
+      // On mobile, explicitly set Content-Type
+      const axiosConfig: any = {
+        timeout: 60000, // Increase timeout for large files
+      };
+      
+      if (Platform.OS !== 'web') {
+        // Only set Content-Type on mobile
+        axiosConfig.headers = { 'Content-Type': 'multipart/form-data' };
+      }
 
       const response = await axios.post(`${finalApiUrl}/api/analyze/batch`, formData, axiosConfig);
 
@@ -117,8 +145,26 @@ const ImageUpload = ({ onUploadComplete }: ImageUploadProps) => {
     } catch (err: any) {
       console.error('Upload error:', err);
       console.error('Response data:', err.response?.data);
-      setError(err.message || 'An error occurred during upload');
-      Alert.alert('Upload Failed', err.message || 'An error occurred during upload');
+      console.error('Response status:', err.response?.status);
+      
+      // Extract error message from response
+      let errorMessage = err.message || 'An error occurred during upload';
+      
+      if (err.response?.data) {
+        // Try to get detailed error message from backend
+        if (err.response.data.detail) {
+          errorMessage = Array.isArray(err.response.data.detail) 
+            ? err.response.data.detail.map((d: any) => d.msg || d).join(', ')
+            : err.response.data.detail;
+        } else if (err.response.data.message) {
+          errorMessage = err.response.data.message;
+        } else if (typeof err.response.data === 'string') {
+          errorMessage = err.response.data;
+        }
+      }
+      
+      setError(errorMessage);
+      Alert.alert('Upload Failed', errorMessage);
     } finally {
       setUploading(false);
     }
