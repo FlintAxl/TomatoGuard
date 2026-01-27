@@ -5,8 +5,168 @@ import io
 import os
 import time
 import random
+import cv2
+import base64
+from io import BytesIO  
 from typing import Dict, Any, List
 from datetime import datetime
+
+class DiseaseSpotDetector:
+    """Detects diseased spots and generates bounding boxes"""
+    
+    def __init__(self):
+        # Threshold values for disease spot detection
+        self.disease_thresholds = {
+            'Early Blight': {'lower': [20, 40, 40], 'upper': [30, 255, 255]},
+            'Late Blight': {'lower': [0, 40, 40], 'upper': [10, 255, 255]},
+            'Bacterial Spot': {'lower': [15, 40, 40], 'upper': [25, 255, 255]},
+            'Septoria Leaf Spot': {'lower': [25, 40, 40], 'upper': [35, 255, 255]},
+            'Anthracnose': {'lower': [10, 40, 40], 'upper': [20, 255, 255]},
+            'Botrytis Gray Mold': {'lower': [0, 0, 50], 'upper': [180, 50, 150]},
+            'Yellow Leaf Curl': {'lower': [30, 40, 40], 'upper': [90, 255, 255]},
+            'Buckeye Rot': {'lower': [0, 40, 40], 'upper': [15, 255, 255]},
+            'Sunscald': {'lower': [0, 0, 150], 'upper': [180, 50, 255]},
+            'Blossom End Rot': {'lower': [0, 40, 40], 'upper': [10, 255, 255]},
+            'Blight': {'lower': [0, 40, 40], 'upper': [20, 255, 255]},
+            'Wilt': {'lower': [20, 40, 40], 'upper': [40, 255, 255]},
+        }
+    
+    def detect_disease_spots(self, image_bytes, disease_name):
+        """
+        Detect diseased spots and return bounding boxes
+        
+        Args:
+            image_bytes: Original image bytes
+            disease_name: Name of detected disease
+        
+        Returns:
+            dict: Contains bounding boxes and annotated image
+        """
+        try:
+            # Convert bytes to numpy array
+            nparr = np.frombuffer(image_bytes, np.uint8)
+            image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            
+            if image is None:
+                return {"error": "Failed to decode image"}
+            
+            # Store original for later
+            original_image = image.copy()
+            
+            # Get color thresholds for this disease
+            disease_threshold = self.disease_thresholds.get(
+                disease_name, 
+                {'lower': [0, 40, 40], 'upper': [180, 255, 255]}  # Default if disease not in list
+            )
+            
+            # Convert to HSV for better color segmentation
+            hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+            
+            # Create mask based on disease color
+            lower = np.array(disease_threshold['lower'])
+            upper = np.array(disease_threshold['upper'])
+            mask = cv2.inRange(hsv, lower, upper)
+            
+            # Apply morphological operations to clean up mask
+            kernel = np.ones((5,5), np.uint8)
+            mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+            
+            # Find contours
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            
+            bounding_boxes = []
+            min_area = 100  # Minimum area to consider as a spot
+            
+            for contour in contours:
+                area = cv2.contourArea(contour)
+                if area > min_area:
+                    x, y, w, h = cv2.boundingRect(contour)
+                    bounding_boxes.append({
+                        'x': int(x),
+                        'y': int(y),
+                        'width': int(w),
+                        'height': int(h),
+                        'area': float(area),
+                        'confidence': min(1.0, area / 1000)  # Simple confidence based on size
+                    })
+            
+            # Sort by area (largest first)
+            bounding_boxes.sort(key=lambda b: b['area'], reverse=True)
+            
+            # Limit to top 10 boxes
+            bounding_boxes = bounding_boxes[:10]
+            
+            # Create annotated image
+            annotated_image = self.draw_bounding_boxes(original_image, bounding_boxes, disease_name)
+            
+            # Convert annotated image to base64
+            annotated_base64 = self.image_to_base64(annotated_image)
+            
+            # Convert original image to base64 for comparison
+            original_base64 = self.image_to_base64(original_image)
+            
+            return {
+                'bounding_boxes': bounding_boxes,
+                'annotated_image': annotated_base64,
+                'original_image': original_base64,
+                'total_spots': len(bounding_boxes),
+                'total_area': sum(b['area'] for b in bounding_boxes),
+                'disease_name': disease_name
+            }
+            
+        except Exception as e:
+            return {"error": f"Disease spot detection failed: {str(e)}"}
+    
+    def draw_bounding_boxes(self, image, boxes, disease_name):
+        """Draw bounding boxes on image"""
+        annotated = image.copy()
+        
+        # Color mapping for different diseases
+        disease_colors = {
+            'Early Blight': (0, 255, 0),     # Green
+            'Late Blight': (0, 0, 255),      # Red
+            'Bacterial Spot': (255, 0, 0),   # Blue
+            'Septoria Leaf Spot': (255, 255, 0),  # Cyan
+            'default': (0, 165, 255)         # Orange
+        }
+        
+        color = disease_colors.get(disease_name, disease_colors['default'])
+        
+        for i, box in enumerate(boxes):
+            x, y, w, h = box['x'], box['y'], box['width'], box['height']
+            
+            # Draw rectangle
+            cv2.rectangle(annotated, (x, y), (x + w, y + h), color, 2)
+            
+            # Draw label
+            label = f"Spot {i+1}"
+            cv2.putText(annotated, label, (x, y - 10), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+            
+            # Draw confidence
+            conf_text = f"{box['confidence']:.1%}"
+            cv2.putText(annotated, conf_text, (x, y + h + 15), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
+        
+        # Add disease name at top
+        cv2.putText(annotated, f"Disease: {disease_name}", (10, 30), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+        
+        return annotated
+    
+    def image_to_base64(self, image_array):
+        """Convert numpy array to base64 string"""
+        # Convert BGR to RGB for PIL
+        rgb_image = cv2.cvtColor(image_array, cv2.COLOR_BGR2RGB)
+        pil_image = Image.fromarray(rgb_image)
+        
+        buffered = BytesIO()
+        pil_image.save(buffered, format="JPEG", quality=85)
+        
+        # Encode to base64
+        img_str = base64.b64encode(buffered.getvalue()).decode()
+        return f"data:image/jpeg;base64,{img_str}"
 
 class TomatoImagePreprocessor:
     """Preprocess user-uploaded images to match training data characteristics"""
@@ -90,7 +250,7 @@ class MLService:
         self.models = {}
         self.loaded_models_info = []  # Track loaded models
         self.preprocessor = TomatoImagePreprocessor()  # NEW: Add preprocessor
-        
+        self.spot_detector = DiseaseSpotDetector()
         # Updated class names to match your evaluation results
         self.class_names = {
             'part': ['fruit', 'leaf', 'stem'],
@@ -363,7 +523,7 @@ class MLService:
             }
     
     def analyze_image(self, image_bytes, use_enhanced_preprocessing=True) -> Dict[str, Any]:
-        """Complete analysis pipeline - ENHANCED with better preprocessing"""
+        """Complete analysis pipeline with bounding boxes - ENHANCED with better preprocessing"""
         # Get loaded models info for debug
         loaded_models = [info['name'] for info in self.loaded_models_info]
         
@@ -382,29 +542,121 @@ class MLService:
         
         # Step 2: Predict disease for that part (use TTA for better accuracy)
         disease_result = self.predict_disease(img_array, part, use_tta=True)
+        disease_name = disease_result['disease']
         
-        # Step 3: Get recommendations
+        # Step 3: Detect disease spots with bounding boxes (only if disease is detected)
+        spot_detection = None
+        if disease_name and disease_name != 'Healthy' and disease_name != 'Healthy ':
+            try:
+                spot_detection = self.spot_detector.detect_disease_spots(image_bytes, disease_name)
+                
+                # Add additional info to spot detection
+                if spot_detection and 'error' not in spot_detection:
+                    spot_detection['analysis_info'] = {
+                        'disease_name': disease_name,
+                        'disease_confidence': disease_result.get('confidence', 0),
+                        'plant_part': part,
+                        'timestamp': datetime.now().isoformat()
+                    }
+                    
+                    # Calculate infection severity based on spot detection
+                    if spot_detection.get('total_area') and spot_detection.get('original_image'):
+                        try:
+                            # Estimate severity level
+                            severity_score = min(1.0, spot_detection['total_area'] / 50000)  # Normalize
+                            
+                            if severity_score < 0.1:
+                                severity = "Low"
+                            elif severity_score < 0.3:
+                                severity = "Moderate"
+                            elif severity_score < 0.6:
+                                severity = "High"
+                            else:
+                                severity = "Critical"
+                                
+                            spot_detection['severity'] = {
+                                'level': severity,
+                                'score': round(severity_score, 2),
+                                'description': f"Infection covers approximately {int(severity_score * 100)}% of visible area"
+                            }
+                        except Exception as e:
+                            spot_detection['severity'] = {
+                                'level': "Unknown",
+                                'score': 0,
+                                'description': f"Severity calculation failed: {str(e)}"
+                            }
+            except Exception as e:
+                spot_detection = {
+                    "error": f"Disease spot detection failed: {str(e)}",
+                    "disease_name": disease_name
+                }
+        else:
+            # If healthy, provide a clean spot detection result
+            try:
+                nparr = np.frombuffer(image_bytes, np.uint8)
+                image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                if image is not None:
+                    original_base64 = self.spot_detector.image_to_base64(image)
+                else:
+                    original_base64 = None
+            except:
+                original_base64 = None
+                
+            spot_detection = {
+                "status": "healthy",
+                "message": "No disease spots detected - plant appears healthy",
+                "disease_name": disease_name,
+                "total_spots": 0,
+                "total_area": 0,
+                "original_image": original_base64
+            }
+        
+        # Step 4: Get recommendations (pass spot detection info for more specific recommendations)
         try:
             from .recommendations import get_recommendations as get_recs
-            recommendations = get_recs(part, disease_result['disease'], disease_result['confidence'])
+            
+            # Pass spot detection severity if available
+            severity_info = None
+            if spot_detection and 'severity' in spot_detection:
+                severity_info = spot_detection['severity']
+                
+            recommendations = get_recs(
+                part, 
+                disease_name, 
+                disease_result['confidence'],
+                severity_info=severity_info
+            )
         except ImportError:
             recommendations = {"error": "Recommendation module not available"}
         except Exception as e:
             recommendations = {"error": f"Failed to get recommendations: {str(e)}"}
         
-        return {
+        # Step 5: Prepare final result
+        result = {
             'part_detection': part_result,
             'disease_detection': disease_result,
+            'spot_detection': spot_detection,  # Add spot detection results
             'recommendations': recommendations,
             'image_info': image_info,
             'model_info': {
                 'loaded_models': loaded_models,
                 'total_models': len(self.loaded_models_info),
                 'analysis_timestamp': datetime.now().isoformat(),
-                'preprocessing_method': 'enhanced' if use_enhanced_preprocessing else 'original'
+                'preprocessing_method': 'enhanced' if use_enhanced_preprocessing else 'original',
+                'bounding_boxes_enabled': spot_detection is not None and 'error' not in spot_detection
             }
         }
-    
+        
+        # Add processing performance info
+        result['performance'] = {
+            'preprocessing_time': image_info.get('preprocessing_time', 'N/A'),
+            'model_inference_time': image_info.get('inference_time', 'N/A'),
+            'spot_detection_time': image_info.get('spot_detection_time', 'N/A'),
+            'total_processing_time': 'N/A'  # Can be calculated if timing is added
+        }
+        
+        return result
+        
     def test_inference(self):
         """Test inference with dummy data to verify models work"""
         print("🧪 Running inference test...")
