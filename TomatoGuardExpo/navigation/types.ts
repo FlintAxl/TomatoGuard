@@ -15,6 +15,7 @@ export type MainStackParamList = {
 export type RootStackParamList = {
   Main: NavigatorScreenParams<MainStackParamList>;
   Auth: NavigatorScreenParams<AuthStackParamList>;
+  Landing: undefined;
 };
 
 export type AuthStackNavigationProp = NativeStackNavigationProp<AuthStackParamList>;

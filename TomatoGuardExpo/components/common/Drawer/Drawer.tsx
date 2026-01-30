@@ -30,6 +30,7 @@ const Drawer: React.FC<DrawerProps> = ({ activeTab, onItemPress, animation, draw
     { id: 'about', label: 'About System', icon: 'info-circle' },
     { id: 'profile', label: 'My Profile', icon: 'user' },
     { id: 'logout', label: 'Logout', icon: 'sign-out-alt' },
+    { id: 'landingpage', label: 'Landing', icon: 'chart-bar' },
   ];  
 
   // Add admin option if user is admin
@@ -62,7 +63,7 @@ const Drawer: React.FC<DrawerProps> = ({ activeTab, onItemPress, animation, draw
           styles.navMenu,
           {
             width: animation.interpolate({
-              inputRange: [0, 1],  // Change back to [0, 1]
+              inputRange: [0, 1],
               outputRange: [70, 260],
             }),
           },

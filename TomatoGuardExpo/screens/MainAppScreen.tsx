@@ -77,6 +77,13 @@ const MainAppScreen = () => {
       mainNavigation.navigate('AdminDashboard');
       return;
     }
+    if (itemId === 'landingpage') {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Landing' }],
+    });
+    return;
+  }
     setActiveTab(itemId);
     closeDrawer();
   };

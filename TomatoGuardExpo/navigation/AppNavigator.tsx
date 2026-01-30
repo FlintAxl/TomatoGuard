@@ -5,7 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../contexts/AuthContext';
 import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
-
+import LandingScreen from '../screens/LandingScreen';
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
@@ -22,13 +22,14 @@ const AppNavigator = () => {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {authState.user && authState.accessToken ? (
-          <Stack.Screen name="Main" component={MainNavigator} />
-        ) : (
-          <Stack.Screen name="Auth" component={AuthNavigator} />
-        )}
-      </Stack.Navigator>
+<Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Landing">
+  <Stack.Screen name="Landing" component={LandingScreen} />
+  {authState.user && authState.accessToken ? (
+    <Stack.Screen name="Main" component={MainNavigator} />
+  ) : (
+    <Stack.Screen name="Auth" component={AuthNavigator} />
+  )}
+</Stack.Navigator>
     </NavigationContainer>
   );
 };
