@@ -1,9 +1,10 @@
+// src/components/ImageUpload.tsx
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { imageUploadStyles, cardStyles, buttonStyles } from '../styles';
+import { analyzeBatchImages } from '../services/api/analyzeService';
 
 interface ImageUploadProps {
   onUploadComplete: (data: any) => void;
@@ -64,104 +65,21 @@ const ImageUpload = ({ onUploadComplete }: ImageUploadProps) => {
     setError('');
     
     try {
-      const formData = new FormData();
+      // Use the new service function
+      const data = await analyzeBatchImages(
+        files.map(file => ({ uri: file.uri, name: file.name })),
+        authState.accessToken || undefined
+      );
       
-      if (Platform.OS === 'web') {
-        // On web, we need to fetch each image as a blob and await all of them
-        await Promise.all(
-          files.map(async (file) => {
-            try {
-              const response = await fetch(file.uri);
-              const blob = await response.blob();
-              formData.append('files', blob, file.name);
-            } catch (error) {
-              console.error(`Error fetching file ${file.name}:`, error);
-              throw new Error(`Failed to load image: ${file.name}`);
-            }
-          })
-        );
-      } else {
-        // On mobile, append file URIs directly
-        files.forEach((file, index) => {
-          const localUri = file.uri;
-          const filename = localUri.split('/').pop();
-          const match = /\.(\w+)$/.exec(filename || '');
-          const type = match ? `image/${match[1]}` : `image`;
-          
-          formData.append('files', {
-            uri: localUri,
-            name: filename || `image_${index}.jpg`,
-            type,
-          } as any);
-        });
-      }
-
-      // Determine the correct API URL
-      let finalApiUrl: string;
+      console.log("Upload response:", data);
       
-      if (Platform.OS === 'web') {
-        // On web, check if we're running on ngrok
-        const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
-        const isNgrok = currentOrigin.includes('.ngrok-free.dev') || 
-                        currentOrigin.includes('.exp.direct') || 
-                        currentOrigin.includes('.ngrok.io');
-        
-        if (isNgrok) {
-          // Use ngrok backend URL from environment variable
-          finalApiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
-        } else {
-          // Local development - use localhost
-          finalApiUrl = 'http://localhost:8000';
-        }
-      } else {
-        // Mobile - use environment variable
-        finalApiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
-      }
-        
-      console.log('Uploading to:', finalApiUrl);
-      console.log('Number of files:', files.length);
-      
-      // Configure axios with authentication header
-      const axiosConfig: any = {
-        timeout: 60000, // Increase timeout for large files
-      };
-      
-      // Add Authorization header if token exists
-      if (authState.accessToken) {
-        axiosConfig.headers = {
-          'Authorization': `Bearer ${authState.accessToken}`,
-          ...(Platform.OS !== 'web' && { 'Content-Type': 'multipart/form-data' })
-        };
-      } else {
-        // If no token, just set Content-Type for mobile
-        if (Platform.OS !== 'web') {
-          axiosConfig.headers = { 'Content-Type': 'multipart/form-data' };
-        }
-      }
-
-      const response = await axios.post(`${finalApiUrl}/api/analyze/batch`, formData, axiosConfig);
-
-      // Check for authentication error
-      if (response.status === 401) {
-        Alert.alert(
-          'Session Expired',
-          'Your session has expired. Please login again.',
-          [
-            { text: 'OK', onPress: () => logout() }
-          ]
-        );
-        return;
-      }
-
-      console.log("Upload response:", response.data);
-      
-      if (response.data.results && response.data.results[0]?.error) {
-        console.error('Backend error:', response.data.results[0].error);
-        Alert.alert('Analysis Error', response.data.results[0].error);
+      if (data.results && data.results[0]?.error) {
+        console.error('Backend error:', data.results[0].error);
+        Alert.alert('Analysis Error', data.results[0].error);
         return;
       }
       
-      onUploadComplete?.(response.data);
+      onUploadComplete?.(data);
       
     } catch (err: any) {
       console.error('Upload error:', err);

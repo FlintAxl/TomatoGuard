@@ -14,10 +14,10 @@ import Slider from '@react-native-community/slider';
 
 interface CameraCaptureProps {
   onCapture: (imageData: string) => void;
-  onClose: () => void;
+  
 }
 
-const CameraCapture = ({ onCapture, onClose }: CameraCaptureProps) => {
+const CameraCapture = ({ onCapture}: CameraCaptureProps) => {
   const [permission, requestPermission] = useCameraPermissions();
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
