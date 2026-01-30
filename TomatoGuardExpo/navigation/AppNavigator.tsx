@@ -22,12 +22,16 @@ const AppNavigator = () => {
 
   return (
     <NavigationContainer>
-<Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Landing">
-  <Stack.Screen name="Landing" component={LandingScreen} />
+<Stack.Navigator screenOptions={{ headerShown: false }}>
   {authState.user && authState.accessToken ? (
+    // AUTHENTICATED: Show Main screen directly
     <Stack.Screen name="Main" component={MainNavigator} />
   ) : (
-    <Stack.Screen name="Auth" component={AuthNavigator} />
+    // NOT AUTHENTICATED: Show Landing screen first
+    <>
+      <Stack.Screen name="Landing" component={LandingScreen} />
+      <Stack.Screen name="Auth" component={AuthNavigator} />
+    </>
   )}
 </Stack.Navigator>
     </NavigationContainer>
