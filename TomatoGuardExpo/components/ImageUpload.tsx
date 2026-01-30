@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
 import { imageUploadStyles, cardStyles, buttonStyles } from '../styles';
 
 interface ImageUploadProps {
@@ -15,6 +16,7 @@ interface FileItem {
 }
 
 const ImageUpload = ({ onUploadComplete }: ImageUploadProps) => {
+  const { authState, logout } = useAuth();
   const [files, setFiles] = useState<FileItem[]>([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
@@ -119,18 +121,37 @@ const ImageUpload = ({ onUploadComplete }: ImageUploadProps) => {
       console.log('Uploading to:', finalApiUrl);
       console.log('Number of files:', files.length);
       
-      // Configure axios - on web, don't set Content-Type (browser will set it with boundary)
-      // On mobile, explicitly set Content-Type
+      // Configure axios with authentication header
       const axiosConfig: any = {
         timeout: 60000, // Increase timeout for large files
       };
       
-      if (Platform.OS !== 'web') {
-        // Only set Content-Type on mobile
-        axiosConfig.headers = { 'Content-Type': 'multipart/form-data' };
+      // Add Authorization header if token exists
+      if (authState.accessToken) {
+        axiosConfig.headers = {
+          'Authorization': `Bearer ${authState.accessToken}`,
+          ...(Platform.OS !== 'web' && { 'Content-Type': 'multipart/form-data' })
+        };
+      } else {
+        // If no token, just set Content-Type for mobile
+        if (Platform.OS !== 'web') {
+          axiosConfig.headers = { 'Content-Type': 'multipart/form-data' };
+        }
       }
 
       const response = await axios.post(`${finalApiUrl}/api/analyze/batch`, formData, axiosConfig);
+
+      // Check for authentication error
+      if (response.status === 401) {
+        Alert.alert(
+          'Session Expired',
+          'Your session has expired. Please login again.',
+          [
+            { text: 'OK', onPress: () => logout() }
+          ]
+        );
+        return;
+      }
 
       console.log("Upload response:", response.data);
       
@@ -144,14 +165,23 @@ const ImageUpload = ({ onUploadComplete }: ImageUploadProps) => {
       
     } catch (err: any) {
       console.error('Upload error:', err);
-      console.error('Response data:', err.response?.data);
-      console.error('Response status:', err.response?.status);
+      
+      // Handle authentication errors
+      if (err.response?.status === 401) {
+        Alert.alert(
+          'Session Expired',
+          'Your session has expired. Please login again.',
+          [
+            { text: 'OK', onPress: () => logout() }
+          ]
+        );
+        return;
+      }
       
       // Extract error message from response
       let errorMessage = err.message || 'An error occurred during upload';
       
       if (err.response?.data) {
-        // Try to get detailed error message from backend
         if (err.response.data.detail) {
           errorMessage = Array.isArray(err.response.data.detail) 
             ? err.response.data.detail.map((d: any) => d.msg || d).join(', ')
@@ -170,6 +200,9 @@ const ImageUpload = ({ onUploadComplete }: ImageUploadProps) => {
     }
   };
 
+  // Check if user is authenticated before showing upload button
+  const isAuthenticated = authState.user && authState.accessToken;
+
   return (
     <View style={styles.container}>
       <View style={cardStyles.card}>
@@ -178,10 +211,36 @@ const ImageUpload = ({ onUploadComplete }: ImageUploadProps) => {
           Upload multiple images for comprehensive batch analysis. Supported formats: JPG, PNG (maximum 10MB per file).
         </Text>
         
-        <TouchableOpacity style={styles.dropzone} onPress={pickImages}>
+        {!isAuthenticated && (
+          <View style={{ 
+            backgroundColor: '#fef3c7', 
+            padding: 16, 
+            borderRadius: 8, 
+            marginBottom: 16,
+            borderLeftWidth: 4,
+            borderLeftColor: '#f59e0b'
+          }}>
+            <Text style={{ color: '#92400e', fontSize: 14 }}>
+              ⚠️ Please login to upload and analyze images.
+            </Text>
+          </View>
+        )}
+        
+        <TouchableOpacity 
+          style={[
+            styles.dropzone, 
+            !isAuthenticated && { opacity: 0.6 }
+          ]} 
+          onPress={pickImages}
+          disabled={!isAuthenticated}
+        >
           <Text style={styles.uploadIcon}>📤</Text>
-          <Text style={styles.dropzoneText}>Select Images</Text>
-          <Text style={styles.dropzoneHint}>Tap to browse your image library</Text>
+          <Text style={styles.dropzoneText}>
+            {isAuthenticated ? 'Select Images' : 'Login Required'}
+          </Text>
+          <Text style={styles.dropzoneHint}>
+            {isAuthenticated ? 'Tap to browse your image library' : 'Please login first'}
+          </Text>
         </TouchableOpacity>
 
         {error ? (
@@ -230,15 +289,17 @@ const ImageUpload = ({ onUploadComplete }: ImageUploadProps) => {
 
           <TouchableOpacity
             onPress={handleUpload}
-            disabled={uploading || files.length === 0}
+            disabled={uploading || files.length === 0 || !isAuthenticated}
             style={[
               buttonStyles.primaryButton,
               { marginTop: 16 },
-              (uploading || files.length === 0) && buttonStyles.buttonDisabled
+              (uploading || files.length === 0 || !isAuthenticated) && buttonStyles.buttonDisabled
             ]}
           >
             <Text style={buttonStyles.buttonText}>
-              {uploading ? 'Analyzing...' : `Analyze ${files.length} Image${files.length > 1 ? 's' : ''}`}
+              {!isAuthenticated ? 'Login Required' : 
+               uploading ? 'Analyzing...' : 
+               `Analyze ${files.length} Image${files.length > 1 ? 's' : ''}`}
             </Text>
           </TouchableOpacity>
         </View>

@@ -878,3 +878,234 @@ zoomIcon: {
   fontWeight: 'bold',
 },
 });
+// Add to style.ts after all existing styles
+export const authStyles = StyleSheet.create({
+  // Container styles
+  authContainer: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+    paddingHorizontal: 24,
+    paddingTop: 40,
+    paddingBottom: 24,
+  },
+  
+  // Header styles
+  authHeader: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  authLogo: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#10b981',
+    marginBottom: 8,
+  },
+  authSubtitle: {
+    fontSize: 16,
+    color: '#64748b',
+    textAlign: 'center',
+  },
+  
+  // Form styles
+  authForm: {
+    flex: 1,
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#475569',
+    marginBottom: 8,
+  },
+  textInput: {
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#0f172a',
+  },
+  textInputFocused: {
+    borderColor: '#10b981',
+  },
+  textInputError: {
+    borderColor: '#ef4444',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#ef4444',
+    marginTop: 4,
+  },
+  
+  // Button styles
+  authButton: {
+    backgroundColor: '#10b981',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+  },
+  authButtonDisabled: {
+    backgroundColor: '#94a3b8',
+    opacity: 0.6,
+  },
+  authButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  
+  // Link styles
+  authLinkContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 24,
+  },
+  authLinkText: {
+    fontSize: 14,
+    color: '#64748b',
+  },
+  authLink: {
+    fontSize: 14,
+    color: '#10b981',
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  
+  // Loading indicator
+  loadingIndicator: {
+    marginTop: 20,
+  },
+  
+  // Success/Error messages
+  messageContainer: {
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 20,
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  successMessage: {
+    backgroundColor: '#d1fae5',
+    borderLeftWidth: 4,
+    borderLeftColor: '#10b981',
+  },
+  errorMessage: {
+    backgroundColor: '#fee2e2',
+    borderLeftWidth: 4,
+    borderLeftColor: '#ef4444',
+  },
+  messageIcon: {
+    fontSize: 20,
+    marginRight: 12,
+  },
+  successIcon: {
+    color: '#10b981',
+  },
+  errorIcon: {
+    color: '#ef4444',
+  },
+  messageText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#374151',
+  },
+  
+  // Forgot password
+  forgotPassword: {
+    alignSelf: 'flex-end',
+    marginTop: 8,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    color: '#10b981',
+  },
+});
+
+export const protectedStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    paddingHorizontal: 24,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#0f172a',
+    marginBottom: 12,
+  },
+  message: {
+    fontSize: 16,
+    color: '#64748b',
+    textAlign: 'center',
+    marginBottom: 32,
+  },
+});
+
+// Add to your style.ts
+export const profileStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  avatarContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#10b981',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  avatarText: {
+    fontSize: 32,
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  userName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#0f172a',
+  },
+  userEmail: {
+    fontSize: 16,
+    color: '#64748b',
+    marginTop: 4,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: '#64748b',
+    fontWeight: '500',
+  },
+  infoValue: {
+    fontSize: 14,
+    color: '#0f172a',
+    fontWeight: '600',
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  
+});
