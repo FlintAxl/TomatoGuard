@@ -9,6 +9,7 @@ export type AuthStackParamList = {
 export type MainStackParamList = {
   MainApp: undefined;
   Profile: undefined;
+  AdminDashboard: undefined;
 };
 
 export type RootStackParamList = {

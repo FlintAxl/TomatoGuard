@@ -7,6 +7,7 @@ import {
   Animated,
 } from 'react-native';
 import { appStyles } from '../../../styles';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface DrawerProps {
   activeTab: string;
@@ -16,8 +17,9 @@ interface DrawerProps {
 
 const Drawer: React.FC<DrawerProps> = ({ activeTab, onItemPress, animation }) => {
   const styles = appStyles;
+  const { authState } = useAuth();
   
-  const navItems = [
+  const baseNavItems = [
     { id: 'camera', label: 'Camera Capture', icon: '📷' },
     { id: 'upload', label: 'Upload Images', icon: '📁' },
     { id: 'results', label: 'Analysis Results', icon: '📊' },
@@ -25,6 +27,14 @@ const Drawer: React.FC<DrawerProps> = ({ activeTab, onItemPress, animation }) =>
     { id: 'profile', label: 'My Profile', icon: '👤' },
     { id: 'logout', label: 'Logout', icon: '🚪' },
   ];
+
+  // Add admin option if user is admin
+  const navItems = authState.user?.role === 'admin' 
+    ? [
+        { id: 'admin', label: 'Admin Dashboard', icon: '⚙️' },
+        ...baseNavItems
+      ]
+    : baseNavItems;
 
   return (
     <>

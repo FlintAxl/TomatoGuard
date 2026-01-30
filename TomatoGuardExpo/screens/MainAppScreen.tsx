@@ -70,9 +70,12 @@ const MainAppScreen = () => {
       return;
     }
     if (itemId === 'profile') {
-    setActiveTab('profile'); // Just switch tab, don't navigate
-    closeDrawer();
-    return;
+      mainNavigation.navigate('Profile');
+      return;
+    }
+    if (itemId === 'admin') {
+      mainNavigation.navigate('AdminDashboard');
+      return;
     }
     setActiveTab(itemId);
     closeDrawer();
