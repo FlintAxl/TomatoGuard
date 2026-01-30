@@ -1,17 +1,35 @@
 import os
 from functools import lru_cache
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 class Settings:
     def __init__(self) -> None:
+        # Basic app metadata
         self.project_name = "TomatoGuard API"
         self.description = "Tomato Plant Disease Detection System"
         self.version = "1.0.0"
 
+        # CORS / Ngrok
         self.ngrok_url = os.getenv("NGROK_URL", "")
         self.ngrok_mode = (
             os.getenv("NGROK_MODE", "false").lower() == "true" or bool(self.ngrok_url)
         )
         self.allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "")
+
+        # MongoDB
+        self.db_uri = os.getenv("DB_URI", "")
+        self.mongo_db_uri = os.getenv("MONGO_DB_URI", "")
+        self.mongo_db_name = os.getenv("MONGO_DB_NAME", "")
+
+        # JWT
+        self.jwt_secret = os.getenv("JWT_SECRET", "")
+        self.jwt_algorithm = os.getenv("JWT_ALGORITHM", "HS256")
+        self.access_token_expire_minutes = int(
+            os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60")
+        )
 
     def get_cors_origins(self) -> list[str]:
         default_origins = [
@@ -35,6 +53,7 @@ class Settings:
             default_origins.extend(self.allowed_origins_env.split(","))
 
         return list({o.strip() for o in default_origins if o.strip()})
+
 
 @lru_cache
 def get_settings() -> Settings:

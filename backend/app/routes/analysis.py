@@ -1,18 +1,19 @@
 from typing import List
 from uuid import uuid4
 
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from datetime import datetime
 
 from app.schemas.analysis import ImageUrlRequest
 from app.services.ml_service import ml_service
 from app.utils.queue import process_ml_prediction, get_queue_status
+from app.dependencies.auth import get_current_active_user
 
 router = APIRouter()
 
 @router.post("/api/analyze/image")
-async def analyze_image_from_url(data: ImageUrlRequest):
+async def analyze_image_from_url(data: ImageUrlRequest, current_user: dict = Depends(get_current_active_user)):
     try:
         import requests
 
@@ -21,7 +22,7 @@ async def analyze_image_from_url(data: ImageUrlRequest):
             raise HTTPException(status_code=400, detail="Failed to download image")
 
         result = ml_service.analyze_image(response.content)
-
+        result["analyzed_by"] = current_user["id"]
         return {
             "status": "success",
             "analysis": result,
@@ -33,17 +34,18 @@ async def analyze_image_from_url(data: ImageUrlRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/api/analyze/upload")
-async def analyze_uploaded_image(file: UploadFile = File(...)):
+async def analyze_uploaded_image(file: UploadFile = File(...), current_user: dict = Depends(get_current_active_user)):
     request_id = str(uuid4())
     try:
         contents = await file.read()
         result = await process_ml_prediction(request_id, contents)
+        result["analyzed_by"] = current_user["id"]
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/api/analyze/batch")
-async def analyze_multiple_images(files: List[UploadFile] = File(...)):
+async def analyze_multiple_images(files: List[UploadFile] = File(...), current_user: dict = Depends(get_current_active_user)):
     results = []
     for file in files:
         request_id = str(uuid4())
@@ -55,6 +57,7 @@ async def analyze_multiple_images(files: List[UploadFile] = File(...)):
                 "upload_info": result.get("upload_info"),
                 "analysis": result.get("analysis"),
                 "request_id": request_id,
+                "analyzed_by": current_user["id"]
             })
         except Exception as e:
             results.append({

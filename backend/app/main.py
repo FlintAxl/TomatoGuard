@@ -8,9 +8,15 @@ from .config import get_settings
 from .routes.analysis import router as analysis_router
 from .routes.upload import router as upload_router
 from .routes.auth import router as auth_router
+from .services.database import connect_to_mongo, close_mongo_connection
 
 load_dotenv()
 settings = get_settings()
+
+print("=" * 60)
+print("🚀 Starting TomatoGuard Backend...")
+print(f"📊 Environment: {os.getenv('ENV', 'development')}")
+print("=" * 60)
 
 app = FastAPI(
     title=settings.project_name,
@@ -32,6 +38,22 @@ app.add_middleware(
 async def root():
     return {"message": "TomatoGuard API is running"}
 
+@app.on_event("startup")
+async def on_startup() -> None:
+    print("🔌 Connecting to MongoDB...")
+    try:
+        await connect_to_mongo()
+        print("✅ MongoDB connected successfully!")
+    except Exception as e:
+        print(f"❌ MongoDB connection failed: {e}")
+        raise
+
+@app.on_event("shutdown")
+async def on_shutdown() -> None:
+    print("🔌 Closing MongoDB connection...")
+    await close_mongo_connection()
+    print("✅ MongoDB connection closed.")
+
 # Include route modules
 app.include_router(analysis_router)
 app.include_router(upload_router)
@@ -39,6 +61,7 @@ app.include_router(auth_router)
 
 if __name__ == "__main__":
     import uvicorn
+    print("🌐 Starting server...")
     uvicorn.run(
         "app.main:app",  # run from project root: uvicorn app.main:app --reload
         host="0.0.0.0",
