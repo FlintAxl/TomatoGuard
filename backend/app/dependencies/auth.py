@@ -51,6 +51,7 @@ async def get_current_user(
             "id": str(user.id) if user.id else "",
             "email": user.email if user.email else "",
             "full_name": user.full_name if user.full_name else "",
+            "role": user.role if hasattr(user, 'role') else "user",
             "is_active": user.is_active if hasattr(user, 'is_active') else True,
             "created_at": user.created_at.isoformat() if user.created_at else datetime.utcnow().isoformat(),
         }
@@ -86,4 +87,15 @@ async def get_current_active_user(
             detail="Inactive user",
         )
     
+    return current_user
+
+async def get_current_admin_user(
+    current_user: Dict = Depends(get_current_active_user)
+) -> Dict:
+    """Dependency to get current admin user"""
+    if current_user.get("role") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
     return current_user

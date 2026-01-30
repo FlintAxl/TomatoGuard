@@ -121,18 +121,19 @@ class AuthService:
             raise credentials_exception
     
     @staticmethod
-    def create_tokens(user_id: str, email: str) -> Dict[str, str]:
+    def create_tokens(user_id: str, email: str, role: str = "user") -> Dict[str, str]:
         """
         Create both access and refresh tokens for a user
         
         Args:
             user_id: User's MongoDB ID
             email: User's email
+            role: User's role (default: "user")
             
         Returns:
             Dictionary with access_token and refresh_token
         """
-        token_data = {"user_id": user_id, "email": email}
+        token_data = {"user_id": user_id, "email": email, "role": role}
         
         access_token = AuthService.create_access_token(data=token_data)
         refresh_token = AuthService.create_refresh_token(data=token_data)

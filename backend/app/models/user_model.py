@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, Annotated, Any
-
+from enum import Enum
 from bson import ObjectId
 from pydantic import BaseModel, EmailStr, Field, ConfigDict, BeforeValidator, field_validator
 from pydantic_core import core_schema
@@ -17,6 +17,9 @@ def validate_object_id(v: Any) -> ObjectId:
 
 PyObjectId = Annotated[ObjectId, BeforeValidator(validate_object_id)]
 
+class UserRole(str, Enum):
+    USER = "user"
+    ADMIN = "admin"
 
 class UserInDB(BaseModel):
     id: PyObjectId = Field(default_factory=ObjectId, alias="_id")
@@ -24,6 +27,7 @@ class UserInDB(BaseModel):
     full_name: Optional[str] = None
     hashed_password: str
     is_active: bool = True
+    role: UserRole = UserRole.USER
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     # Pydantic V2 config

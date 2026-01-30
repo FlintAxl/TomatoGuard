@@ -1,11 +1,12 @@
 from typing import Optional
 from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field
-
+from app.models.user_model import UserRole
 
 class UserBase(BaseModel):
     email: EmailStr
     full_name: Optional[str] = None
+    role: UserRole = UserRole.USER
     is_active: bool = True
 
 

@@ -24,10 +24,18 @@ app = FastAPI(
     version=settings.version,
 )
 
-# CORS: keep behavior (open for dev/ngrok)
+# CORS: Explicitly allow ngrok and Expo origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r".*",  # as before
+    allow_origins=[
+        "*",  # Allow all origins for development
+        "http://localhost:3000",
+        "https://localhost:3000",
+        "exp://*",
+        "https://*.exp.direct",
+        "https://*.ngrok-free.dev",
+        "https://*.ngrok.io",
+    ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],

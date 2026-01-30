@@ -62,7 +62,7 @@ async def login(login_data: UserLogin):
         )
     
     # Create tokens
-    tokens = auth_service.create_tokens(str(user.id), user.email)
+    tokens = auth_service.create_tokens(str(user.id), user.email, user.role)
     
     # Add expiration time (in seconds)
     from app.config import get_settings
@@ -79,6 +79,7 @@ async def login(login_data: UserLogin):
             "id": str(user.id),
             "email": user.email,
             "full_name": user.full_name,
+            "role": user.role,
             "is_active": user.is_active,
             "created_at": user.created_at.isoformat() if user.created_at else None,
         }
@@ -145,7 +146,7 @@ async def refresh_token(refresh_data: TokenRefresh):
             )
         
         # Create new tokens
-        tokens = auth_service.create_tokens(user_id, email)
+        tokens = auth_service.create_tokens(user_id, email, user.role)
         
         # Blacklist the old refresh token (optional)
         refresh_token_blacklist.add(refresh_token)

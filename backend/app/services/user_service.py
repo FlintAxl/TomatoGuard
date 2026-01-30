@@ -1,9 +1,8 @@
 from typing import Optional, Dict, Any
 from bson import ObjectId
 from fastapi import HTTPException, status
-
 from app.schemas.user import UserCreate, UserRead
-from app.models.user_model import UserInDB
+from app.models.user_model import UserInDB, UserRole
 from app.services.database import get_user_collection
 from app.services.auth_service import auth_service
 
@@ -90,6 +89,7 @@ class UserService:
             id=str(user_doc["_id"]),
             email=user_doc["email"],
             full_name=user_doc.get("full_name"),
+            role=user_doc.get("role", UserRole.USER),
             is_active=user_doc.get("is_active", True)
         )
     
@@ -117,6 +117,7 @@ class UserService:
             id=str(user_doc["_id"]),
             email=user_doc["email"],
             full_name=user_doc.get("full_name"),
+            role=user_doc.get("role", UserRole.USER),
             is_active=user_doc.get("is_active", True)
         )
     
@@ -139,6 +140,7 @@ class UserService:
             id=str(user_doc["_id"]),
             email=user_doc["email"],
             full_name=user_doc.get("full_name"),
+            role=user_doc.get("role", UserRole.USER),
             is_active=user_doc.get("is_active", True)
         )
     
