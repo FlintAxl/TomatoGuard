@@ -31,19 +31,19 @@ const COLORS = {
 
 // Disease data
 const DISEASES = [
-  { id: 0, name: 'Early Blight', image: require('./assets/diseases/earlyblight.png') },
-  { id: 1, name: 'Anthracnose', image: require('./assets/diseases/anthracnose.png') },
-  { id: 2, name: 'Fusarium', image: require('./assets/diseases/fusarium.png') },
-  { id: 3, name: 'Powdery Mildew', image: require('./assets/diseases/powderymilddew.png') },
-  { id: 4, name: 'Septoria Leaf Spot', image: require('./assets/diseases/septorialeafspot.png') },
-  { id: 5, name: 'Botrytis Gray Mold', image: require('./assets/diseases/botrytisgraymold.png') },
-  { id: 6, name: 'Bacterial Speck', image: require('./assets/diseases/bacterialspeck.png') },
-  { id: 7, name: 'Blossom End Root', image: require('./assets/diseases/blossomendrot.png') },
-  { id: 8, name: 'Buckeye Rot', image: require('./assets/diseases/buckeyerot.png') },
-  { id: 9, name: 'Tomato Pith Necrosis', image: require('./assets/diseases/pithnecrosis.png') },
-  { id: 10, name: 'Damping Off', image: require('./assets/diseases/dampingoff.png') },
-  { id: 11, name: 'Sunscald', image: require('./assets/diseases/sunscald.png') },
-  { id: 12, name: 'Bacterial Spot', image: require('./assets/diseases/bacterialspot.png') },
+  { id: 0, name: 'Early Blight', image: require('./../assets/diseases/earlyblight.jpg') },
+  { id: 1, name: 'Anthracnose', image: require('./../assets/diseases/anthracnose.jpg') },
+  { id: 2, name: 'Fusarium', image: require('./../assets/diseases/fusarium.jpg') },
+  { id: 3, name: 'Powdery Mildew', image: require('./../assets/diseases/powderymilddew.jpg') },
+  { id: 4, name: 'Septoria Leaf Spot', image: require('./../assets/diseases/septorialeafspot.jpg') },
+  { id: 5, name: 'Botrytis Gray Mold', image: require('./../assets/diseases/botrytisgraymold.jpg') },
+  { id: 6, name: 'Bacterial Speck', image: require('./../assets/diseases/bacterialspeck.jpg') },
+  { id: 7, name: 'Blossom End Root', image: require('./../assets/diseases/blossomendrot.jpg') },
+  { id: 8, name: 'Buckeye Rot', image: require('./../assets/diseases/buckeyerot.jpg') },
+  { id: 9, name: 'Tomato Pith Necrosis', image: require('./../assets/diseases/pithnecrosis.jpg') },
+  { id: 10, name: 'Damping Off', image: require('./../assets/diseases/dampingoff.jpg') },
+  { id: 11, name: 'Sunscald', image: require('./../assets/diseases/sunscald.jpg') },
+  { id: 12, name: 'Bacterial Spot', image: require('./../assets/diseases/bacterialspot.jpg') },
 ];
 
 // Tech stack data

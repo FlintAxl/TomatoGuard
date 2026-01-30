@@ -15,6 +15,8 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { RootStackNavigationProp } from '../navigation/types';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -59,7 +61,8 @@ const TECH_STACK = [
 const ITEM_WIDTH = 240;
 const ITEM_SPACING = 20;
 
-const FrontPageScreen = ({ navigation }: any) => {
+const LandingScreen = () => {
+  const navigation = useNavigation<RootStackNavigationProp>();
   const [activeSlide, setActiveSlide] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
@@ -71,11 +74,10 @@ const FrontPageScreen = ({ navigation }: any) => {
     Linking.openURL('tel:+63123456789');
   };
 
-  const handleCheckNow = () => {
-    // Navigate to disease detection screen
-    // navigation.navigate('DiseaseDetection');
-    console.log('Navigate to detection');
-  };
+ const handleCheckNow = () => {
+  // Navigate to Auth screen (Login)
+  navigation.navigate('Auth', { screen: 'Login' });
+};
 
   const handleLearnMore = () => {
     // Navigate to about screen
@@ -148,7 +150,7 @@ const FrontPageScreen = ({ navigation }: any) => {
               Detect Diseases of your Tomatoes, in Real Time.
             </Text>
             <TouchableOpacity style={styles.learnMoreBtn} onPress={handleCheckNow}>
-              <Text style={styles.learnMoreBtnText}>Check Now</Text>
+              <Text style={styles.learnMoreBtnText}>Get Started</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.testimonialRight}>
@@ -518,4 +520,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default FrontPageScreen;
+export default LandingScreen;
