@@ -6,13 +6,13 @@ export const useDrawer = () => {
   const drawerAnimation = useRef(new Animated.Value(Platform.OS === 'web' ? 1 : 0)).current;
 
   const toggleDrawer = () => {
-    const toValue = drawerOpen ? 0 : 1;
+    const toValue = drawerOpen ? 0.25 : 1;
     setDrawerOpen(!drawerOpen);
     
     Animated.timing(drawerAnimation, {
       toValue,
       duration: 300,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
   };
 
@@ -22,7 +22,7 @@ export const useDrawer = () => {
       Animated.timing(drawerAnimation, {
         toValue: 0,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }).start();
     }
   };

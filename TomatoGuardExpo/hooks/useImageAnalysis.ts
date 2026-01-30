@@ -3,7 +3,7 @@ import { Alert, Platform } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { analyzeImage } from '../services/api/analyzeService';
 
-export const useImageAnalysis = () => {
+export const useImageAnalysis = (onTabChange?: (tab: string) => void) => {
   const [results, setResults] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const { logout, authState } = useAuth();
@@ -13,6 +13,8 @@ export const useImageAnalysis = () => {
     try {
       const data = await analyzeImage(imageData, authState.accessToken || undefined);
       setResults(data);
+      // Auto-switch to results tab after camera analysis
+      onTabChange?.('results');
       return data;
     } catch (error: any) {
       if (error?.response?.status === 401) {
@@ -29,6 +31,8 @@ export const useImageAnalysis = () => {
 
   const handleUploadComplete = (data: any) => {
     setResults(data);
+    // Auto-switch to results tab after upload analysis
+    onTabChange?.('results');
   };
 
   return {

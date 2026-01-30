@@ -30,6 +30,11 @@ export const appStyles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 4,
   },
+  logoImage: {
+    width: 30,
+    height: 30,
+    resizeMode: 'contain',
+  },
   closeButton: {
     width: 32,
     height: 32,
@@ -1107,5 +1112,4 @@ export const profileStyles = StyleSheet.create({
     borderRadius: 4,
     marginRight: 8,
   },
-  
 });

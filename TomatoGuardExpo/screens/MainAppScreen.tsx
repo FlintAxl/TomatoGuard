@@ -32,8 +32,8 @@ const MainAppScreen = () => {
   const mainNavigation = useNavigation<MainStackNavigationProp>();
   const { logout, authState } = useAuth();
   const { drawerOpen, drawerAnimation, toggleDrawer, closeDrawer } = useDrawer();
-  const { handleCameraCapture, handleUploadComplete, results, loading } = useImageAnalysis();
   const [activeTab, setActiveTab] = useState('camera');
+  const { handleCameraCapture, handleUploadComplete, results, loading } = useImageAnalysis(setActiveTab);
 
   const handleLogout = async () => {
     if (Platform.OS === 'web') {
@@ -156,6 +156,7 @@ const MainAppScreen = () => {
             activeTab={activeTab}
             onItemPress={handleNavItemPress}
             animation={drawerAnimation}
+            drawerOpen={drawerOpen}
           />
         }
       >
