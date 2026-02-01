@@ -12,7 +12,7 @@ export type MainStackParamList = {
   AdminDashboard: undefined;
   Forum: undefined;
   CreatePost: undefined;
-  PostDetail: undefined;
+  PostDetail: { postId: string };
   EditPost: { postId: string }
 };
 export type ForumStackParamList = {

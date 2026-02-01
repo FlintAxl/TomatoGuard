@@ -281,7 +281,9 @@ const styles = StyleSheet.create({
     borderBottomColor: '#334155',
   },
   backButton: {
-    padding: 8,
+    padding: 12,
+    backgroundColor: '#334155',
+    borderRadius: 8,
   },
   headerTitle: {
     fontSize: 18,

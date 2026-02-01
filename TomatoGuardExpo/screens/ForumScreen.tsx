@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
-  Modal,
   Image,
   FlatList,
   SafeAreaView,
@@ -16,20 +15,16 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { MainStackNavigationProp } from '../navigation/types';
 import { useAuth } from '../contexts/AuthContext';
-import { forumService, Post as ForumPost, Comment as ForumComment } from '../services/api/forumService';
+import { forumService, Post as ForumPost } from '../services/api/forumService';
 import { FontAwesome5 } from '@expo/vector-icons';
 import {
   faThumbsUp,
-  faThumbsDown,
   faComment,
   faUser,
-  faBookmark,
-  faHistory,
-  faTimes,
-  faImage,
   faEdit,
   faSearch,
   faFilter,
+  faImage,
 } from '@fortawesome/free-solid-svg-icons';
 
 interface Blog {
@@ -42,14 +37,9 @@ const ForumScreen: React.FC = () => {
   const navigation = useNavigation<MainStackNavigationProp>();
   const { authState } = useAuth();
   
-  // State for real posts from backend
+  // State for posts and UI
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showCommentsModal, setShowCommentsModal] = useState(false);
-  const [selectedPost, setSelectedPost] = useState<ForumPost | null>(null);
-  const [newPost, setNewPost] = useState({ title: '', description: '' });
-  const [newComment, setNewComment] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
 
@@ -122,59 +112,6 @@ const ForumScreen: React.FC = () => {
     { id: 'questions', label: 'Questions' },
   ];
 
-  const handleCreatePost = async () => {
-    if (!newPost.title.trim() || !newPost.description.trim()) {
-      Alert.alert('Error', 'Please fill in both title and content');
-      return;
-    }
-
-    if (!authState.accessToken) {
-      Alert.alert('Error', 'You must be logged in to create a post');
-      return;
-    }
-
-    try {
-      const createdPost = await forumService.createPost({
-        title: newPost.title,
-        description: newPost.description,
-        category: 'general',
-      }, authState.accessToken);
-      
-      // Add new post to the beginning of the list
-      setPosts([createdPost, ...posts]);
-      setNewPost({ title: '', description: '' });
-      setShowCreateModal(false);
-      Alert.alert('Success', 'Post created successfully!');
-    } catch (error) {
-      console.error('Error creating post:', error);
-      Alert.alert('Error', 'Failed to create post');
-    }
-  };
-
-  const handleAddComment = async () => {
-    if (!newComment.trim() || !selectedPost || !authState.accessToken) return;
-
-    try {
-      const updatedPost = await forumService.addComment(
-        selectedPost.id,
-        newComment,
-        authState.accessToken
-      );
-      
-      // Update the post in the posts list
-      const updatedPosts = posts.map(post => 
-        post.id === selectedPost.id ? updatedPost : post
-      );
-      setPosts(updatedPosts);
-      setSelectedPost(updatedPost);
-      setNewComment('');
-      Alert.alert('Success', 'Comment added successfully!');
-    } catch (error) {
-      console.error('Error adding comment:', error);
-      Alert.alert('Error', 'Failed to add comment');
-    }
-  };
-
   const handleVote = async (postId: string, type: 'like') => {
     if (!authState.accessToken) {
       Alert.alert('Error', 'You must be logged in to vote');
@@ -201,10 +138,7 @@ const ForumScreen: React.FC = () => {
   const renderPost = ({ item }: { item: ForumPost }) => (
     <TouchableOpacity
       style={styles.postCard}
-      onPress={() => {
-        setSelectedPost(item);
-        setShowCommentsModal(true);
-      }}
+      onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
     >
       <View style={styles.postHeader}>
         <View style={styles.postAuthorInfo}>
@@ -236,10 +170,7 @@ const ForumScreen: React.FC = () => {
 
         <TouchableOpacity
           style={[styles.actionBtn, styles.commentBtn]}
-          onPress={() => {
-            setSelectedPost(item);
-            setShowCommentsModal(true);
-          }}
+          onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
         >
           <FontAwesome5 icon={faComment} size={16} color="#ffffff" />
           <Text style={styles.actionText}>{item.comments_count} Comments</Text>
@@ -352,146 +283,6 @@ const ForumScreen: React.FC = () => {
           ))}
         </View>
       </ScrollView>
-
-      {/* Create Post Modal */}
-      <Modal
-        visible={showCreateModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowCreateModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Create Post</Text>
-              <TouchableOpacity
-                style={styles.closeBtn}
-                onPress={() => setShowCreateModal(false)}
-              >
-                <FontAwesome5 icon={faTimes} size={24} color="#ffffff" />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.modalBody}>
-              <TextInput
-                style={styles.titleInput}
-                placeholder="Post Title"
-                placeholderTextColor="#94a3b8"
-                value={newPost.title}
-                onChangeText={text => setNewPost({...newPost, title: text})}
-              />
-              
-              <TextInput
-                style={styles.contentInput}
-                placeholder="What's on your mind? Share your tomato farming experiences..."
-                placeholderTextColor="#94a3b8"
-                value={newPost.description}
-                onChangeText={text => setNewPost({...newPost, description: text})}
-                multiline
-                numberOfLines={8}
-                textAlignVertical="top"
-              />
-              
-              <TouchableOpacity style={styles.addImageBtn}>
-                <FontAwesome5 icon={faImage} size={20} color="#10b981" />
-                <Text style={styles.addImageText}>Add Image</Text>
-              </TouchableOpacity>
-            </ScrollView>
-
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={styles.cancelBtn}
-                onPress={() => setShowCreateModal(false)}
-              >
-                <Text style={styles.cancelBtnText}>Cancel</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={styles.postBtn}
-                onPress={handleCreatePost}
-              >
-                <Text style={styles.postBtnText}>Post</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Comments Modal */}
-      <Modal
-        visible={showCommentsModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowCommentsModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, styles.commentsModal]}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Comments</Text>
-              <TouchableOpacity
-                style={styles.closeBtn}
-                onPress={() => setShowCommentsModal(false)}
-              >
-                <FontAwesome5 icon={faTimes} size={24} color="#ffffff" />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.modalBody}>
-              {selectedPost && (
-                <View style={styles.selectedPostPreview}>
-                  <Text style={styles.postPreviewTitle}>{selectedPost.title}</Text>
-                  <Text style={styles.postPreviewContent} numberOfLines={2}>
-                    {selectedPost.description}
-                  </Text>
-                </View>
-              )}
-              
-              <View style={styles.commentsList}>
-                {selectedPost?.comments.length === 0 ? (
-                  <View style={styles.noComments}>
-                    <FontAwesome5 icon={faComment} size={40} color="#64748b" />
-                    <Text style={styles.noCommentsText}>No comments yet</Text>
-                    <Text style={styles.noCommentsSubtext}>Be the first to comment!</Text>
-                  </View>
-                ) : (
-                  selectedPost?.comments.map((comment, index) => (
-                    <View key={comment.id || index} style={styles.commentItem}>
-                      <View style={styles.commentAvatar}>
-                        <FontAwesome5 icon={faUser} size={16} color="#ffffff" />
-                      </View>
-                      <View style={styles.commentContent}>
-                        <View style={styles.commentHeader}>
-                          <Text style={styles.commentAuthor}>{comment.user_name || 'Anonymous'}</Text>
-                          <Text style={styles.commentTime}>{new Date(comment.created_at).toLocaleDateString()}</Text>
-                        </View>
-                        <Text style={styles.commentText}>{comment.comment}</Text>
-                      </View>
-                    </View>
-                  ))
-                )}
-              </View>
-            </ScrollView>
-
-            <View style={styles.addCommentContainer}>
-              <TextInput
-                style={styles.commentInput}
-                placeholder="Write a comment..."
-                placeholderTextColor="#94a3b8"
-                value={newComment}
-                onChangeText={setNewComment}
-                onSubmitEditing={handleAddComment}
-              />
-              <TouchableOpacity
-                style={styles.sendCommentBtn}
-                onPress={handleAddComment}
-                disabled={!newComment.trim()}
-              >
-                <Text style={styles.sendCommentText}>Send</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 };
@@ -600,6 +391,30 @@ const styles = StyleSheet.create({
     fontFamily: 'serif',
     fontStyle: 'italic',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    color: '#94a3b8',
+    fontSize: 16,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyText: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    color: '#94a3b8',
+    fontSize: 14,
+  },
   postCard: {
     backgroundColor: '#1e293b',
     borderRadius: 16,
@@ -674,9 +489,6 @@ const styles = StyleSheet.create({
   upvoteBtn: {
     backgroundColor: '#065f46',
   },
-  downvoteBtn: {
-    backgroundColor: '#7f1d1d',
-  },
   commentBtn: {
     backgroundColor: '#1e40af',
   },
@@ -705,251 +517,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#334155',
+    padding: 16,
     borderRadius: 12,
-    padding: 12,
     marginBottom: 12,
   },
   blogIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: '#1e293b',
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#10b98120',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 16,
   },
   blogContent: {
     flex: 1,
   },
   blogTitle: {
     color: '#ffffff',
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
   },
   blogAuthor: {
     color: '#94a3b8',
-    fontSize: 12,
-  },
-  loadingContainer: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  loadingText: {
-    color: '#64748b',
-    fontSize: 16,
-  },
-  emptyContainer: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  emptyText: {
-    color: '#64748b',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  emptySubtext: {
-    color: '#94a3b8',
     fontSize: 14,
-    marginTop: 4,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#1e293b',
-    borderRadius: 20,
-    width: '90%',
-    maxHeight: '80%',
-    overflow: 'hidden',
-  },
-  commentsModal: {
-    maxHeight: '85%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#334155',
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    fontFamily: 'serif',
-    fontStyle: 'italic',
-  },
-  closeBtn: {
-    padding: 4,
-  },
-  modalBody: {
-    padding: 20,
-  },
-  titleInput: {
-    backgroundColor: '#334155',
-    borderRadius: 12,
-    padding: 16,
-    color: '#ffffff',
-    fontSize: 16,
-    marginBottom: 12,
-  },
-  contentInput: {
-    backgroundColor: '#334155',
-    borderRadius: 12,
-    padding: 16,
-    color: '#ffffff',
-    fontSize: 14,
-    minHeight: 150,
-    textAlignVertical: 'top',
-  },
-  addImageBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#334155',
-    borderRadius: 12,
-    padding: 16,
-    gap: 12,
-    marginTop: 12,
-  },
-  addImageText: {
-    color: '#10b981',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  modalFooter: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#334155',
-    gap: 12,
-  },
-  cancelBtn: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-    backgroundColor: '#475569',
-  },
-  cancelBtnText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  postBtn: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-    backgroundColor: '#10b981',
-  },
-  postBtnText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  selectedPostPreview: {
-    backgroundColor: '#334155',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-  },
-  postPreviewTitle: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  postPreviewContent: {
-    color: '#cbd5e1',
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  commentsList: {
-    maxHeight: 400,
-  },
-  noComments: {
-    alignItems: 'center',
-    padding: 40,
-  },
-  noCommentsText: {
-    color: '#64748b',
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: 12,
-  },
-  noCommentsSubtext: {
-    color: '#94a3b8',
-    fontSize: 14,
-    marginTop: 4,
-  },
-  commentItem: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#334155',
-  },
-  commentAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#475569',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  commentContent: {
-    flex: 1,
-  },
-  commentHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  commentAuthor: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  commentTime: {
-    color: '#94a3b8',
-    fontSize: 11,
-  },
-  commentText: {
-    color: '#cbd5e1',
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  addCommentContainer: {
-    flexDirection: 'row',
-    padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#334155',
-    gap: 12,
-  },
-  commentInput: {
-    flex: 1,
-    backgroundColor: '#334155',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    color: '#ffffff',
-    fontSize: 14,
-  },
-  sendCommentBtn: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 20,
-    backgroundColor: '#10b981',
-  },
-  sendCommentText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600',
   },
 });
 
