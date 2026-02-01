@@ -81,7 +81,7 @@ const MainAppScreen = () => {
     });
     return;
   }
-  if (itemId === 'forum') {
+  if (itemId === 'forums') {
   setActiveTab('forum');
   closeDrawer();
   return;
@@ -100,6 +100,7 @@ if (itemId === 'profile') {
       case 'camera': return 'Capture plant images for real-time analysis';
       case 'upload': return 'Upload multiple images for batch processing';
       case 'results': return 'View detailed analysis and recommendations';
+      case 'forum': return 'Community discussion and support';
       case 'profile': return 'View and manage your account information';
       case 'about': return 'System information and technical specifications';
       default: return '';
@@ -158,6 +159,7 @@ if (itemId === 'profile') {
       case 'camera': return 'Camera Capture';
       case 'upload': return 'Upload Images';
       case 'results': return 'Analysis Results';
+      case 'forum': return 'Forums';
       case 'about': return 'About System';
       default: return 'TomatoGuard';
     }
