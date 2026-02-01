@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { MainStackNavigationProp } from '../navigation/types';
 import { useAuth } from '../contexts/AuthContext';
 import { forumService, Post as ForumPost, Comment as ForumComment } from '../services/api/forumService';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -38,7 +39,7 @@ interface Blog {
 }
 
 const ForumScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<MainStackNavigationProp>();
   const { authState } = useAuth();
   
   // State for real posts from backend
@@ -54,10 +55,19 @@ const ForumScreen: React.FC = () => {
 
   // Fetch posts from backend
   const fetchPosts = async () => {
-    if (!authState.accessToken) return;
+    console.log('🔍 Auth State Check:');
+    console.log('Has user:', !!authState.user);
+    console.log('Has accessToken:', !!authState.accessToken);
+    console.log('AccessToken length:', authState.accessToken?.length || 0);
+    
+    if (!authState.accessToken) {
+      console.log('❌ No access token - cannot fetch posts');
+      return;
+    }
     
     try {
       setLoading(true);
+      console.log('📡 Fetching posts with token...');
       const fetchedPosts = await forumService.getPosts(authState.accessToken, {
         category: filterCategory !== 'all' ? filterCategory : undefined,
         search: searchQuery || undefined
@@ -248,7 +258,7 @@ const ForumScreen: React.FC = () => {
         </View>
         <TouchableOpacity
           style={styles.createPostBtn}
-          onPress={() => setShowCreateModal(true)}
+          onPress={() => navigation.navigate('CreatePost')}
         >
           <FontAwesome5 icon={faEdit} size={16} color="#ffffff" />
           <Text style={styles.createPostText}>New Post</Text>

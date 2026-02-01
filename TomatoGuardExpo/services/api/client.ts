@@ -27,6 +27,8 @@ export const getApiClient = (token?: string): AxiosInstance => {
   }
 
   console.log('🌐 API Client using baseURL:', baseURL);
+  console.log('🔑 Token provided:', !!token);
+  console.log('🔑 Token length:', token?.length || 0);
 
   const config: AxiosRequestConfig = {
     baseURL,
@@ -42,6 +44,9 @@ export const getApiClient = (token?: string): AxiosInstance => {
       ...config.headers,
       'Authorization': `Bearer ${token}`,
     };
+    console.log('🔐 Authorization header set');
+  } else {
+    console.log('⚠️ No token provided - request will be unauthenticated');
   }
 
   return axios.create(config);

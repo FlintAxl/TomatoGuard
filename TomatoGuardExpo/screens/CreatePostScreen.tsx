@@ -44,18 +44,48 @@ const CreatePostScreen: React.FC = () => {
   ];
 
   const pickImage = async () => {
+    console.log('🖼️ Image picker button pressed');
+    
     try {
+      // Request permission first
+      console.log('📋 Requesting media library permissions...');
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      console.log('📋 Permission status:', status);
+      
+      if (status !== 'granted') {
+        console.log('❌ Permission denied');
+        Alert.alert(
+          'Permission Required',
+          'Sorry, we need camera roll permissions to make this work!',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      console.log('✅ Permission granted, launching image picker...');
+      
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         quality: 0.8,
+        base64: false,
       });
 
-      if (!result.canceled && result.assets[0]) {
-        setSelectedImage(result.assets[0].uri);
+      console.log('📸 Image picker result:', result);
+
+      if (!result.canceled && result.assets && result.assets[0]) {
+        const imageUri = result.assets[0].uri;
+        console.log('✅ Selected image URI:', imageUri);
+        setSelectedImage(imageUri);
+        Alert.alert('Success', 'Image selected successfully!');
+      } else {
+        console.log('❌ Image selection cancelled or failed');
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to pick image');
+      console.error('❌ Error picking image:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      Alert.alert('Error', `Failed to pick image: ${errorMessage}`);
     }
   };
 

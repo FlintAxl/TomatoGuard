@@ -13,7 +13,8 @@
       "backgroundColor": "#ffffff"
     },
         "plugins": [
-      "expo-font"
+      "expo-font",
+      "expo-image-picker"
     ],
     "ios": {
       "supportsTablet": true
