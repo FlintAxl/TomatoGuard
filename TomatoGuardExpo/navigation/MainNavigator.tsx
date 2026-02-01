@@ -5,9 +5,8 @@ import ProfileScreen from '../screens/ProfileScreen';
 import AdminDashboardScreen from '../screens/AdminDashboardScreen';
 import LandingPageScreen from '../screens/LandingScreen'
 import { MainStackParamList } from './types';
-import ForumScreen from '../screens/ForumScreen';
-import CreatePostScreen from '../screens/CreatePostScreen';
-import PostDetailScreen from '../screens/PostDetailScreen';
+// ForumScreen, CreatePostScreen, and PostDetailScreen are now rendered within MainAppScreen
+// to keep the drawer accessible across all forum-related screens
 const Stack = createNativeStackNavigator<MainStackParamList>();
 
 const MainNavigator = () => {
@@ -16,9 +15,7 @@ const MainNavigator = () => {
       <Stack.Screen name="MainApp" component={MainAppScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
-      <Stack.Screen name="Forum" component={ForumScreen} />
-      <Stack.Screen name="CreatePost" component={CreatePostScreen} />
-      <Stack.Screen name="PostDetail" component={PostDetailScreen} />
+      {/* ForumScreen, CreatePostScreen, and PostDetailScreen are now handled within MainAppScreen */}
     </Stack.Navigator>
   );
 };

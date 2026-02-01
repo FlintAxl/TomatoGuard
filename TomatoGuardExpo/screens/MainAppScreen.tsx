@@ -20,6 +20,8 @@ import ResultsDisplay from '../components/ResultsDisplay';
 import ProtectedRoute from '../components/ProtectedRoute';
 import AboutScreen from './AboutScreen';
 import ProfileScreen from './ProfileScreen';
+import CreatePostScreen from './CreatePostScreen';
+import PostDetailScreen from './PostDetailScreen';
 import { useDrawer } from '../hooks/useDrawer';
 import { useImageAnalysis } from '../hooks/useImageAnalysis';
 import { appStyles } from '../styles';
@@ -34,7 +36,13 @@ const MainAppScreen = () => {
   const { logout, authState } = useAuth();
   const { drawerOpen, drawerAnimation, toggleDrawer, closeDrawer } = useDrawer();
   const [activeTab, setActiveTab] = useState('camera');
+  const [currentPostId, setCurrentPostId] = useState<string | null>(null);
   const { handleCameraCapture, handleUploadComplete, results, loading } = useImageAnalysis(setActiveTab);
+
+  const navigateToPostDetail = (postId: string) => {
+    setCurrentPostId(postId);
+    setActiveTab('postdetail');
+  };
 
   const handleLogout = async () => {
     if (Platform.OS === 'web') {
@@ -101,6 +109,8 @@ if (itemId === 'profile') {
       case 'upload': return 'Upload multiple images for batch processing';
       case 'results': return 'View detailed analysis and recommendations';
       case 'forum': return 'Community discussion and support';
+      case 'createpost': return 'Create a new forum post';
+      case 'postdetail': return 'View post details and comments';
       case 'profile': return 'View and manage your account information';
       case 'about': return 'System information and technical specifications';
       default: return '';
@@ -139,7 +149,19 @@ if (itemId === 'profile') {
       case 'forum':
         return (
           <View style={styles.contentPadding}>
-            <ForumScreen />
+            <ForumScreen setActiveTab={setActiveTab} navigateToPostDetail={navigateToPostDetail} />
+          </View>
+        );
+      case 'createpost':
+        return (
+          <View style={styles.contentPadding}>
+            <CreatePostScreen setActiveTab={setActiveTab} />
+          </View>
+        );
+      case 'postdetail':
+        return (
+          <View style={styles.contentPadding}>
+            <PostDetailScreen setActiveTab={setActiveTab} postId={currentPostId} />
           </View>
         );
       case 'profile':
@@ -160,6 +182,8 @@ if (itemId === 'profile') {
       case 'upload': return 'Upload Images';
       case 'results': return 'Analysis Results';
       case 'forum': return 'Forums';
+      case 'createpost': return 'Create Post';
+      case 'postdetail': return 'Post Details';
       case 'about': return 'About System';
       default: return 'TomatoGuard';
     }

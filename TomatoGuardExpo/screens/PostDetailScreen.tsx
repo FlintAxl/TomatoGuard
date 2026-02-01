@@ -11,7 +11,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
-import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import { useForum } from '../hooks/useForum';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -28,41 +28,42 @@ import {
   faEllipsisH,
 } from '@fortawesome/free-solid-svg-icons';
 
-type PostDetailRouteParams = {
-  PostDetail: {
-    postId: string;
-  };
-};
+interface PostDetailScreenProps {
+  setActiveTab: (tab: string) => void;
+  postId: string | null;
+}
 
-const PostDetailScreen: React.FC = () => {
-  const route = useRoute<RouteProp<PostDetailRouteParams, 'PostDetail'>>();
+const PostDetailScreen: React.FC<PostDetailScreenProps> = ({ setActiveTab, postId }) => {
   const navigation = useNavigation();
   const { authState } = useAuth();
   const { currentPost, fetchPost, addComment, toggleLike, deletePost } = useForum();
   
-  const { postId } = route.params;
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
 
   useEffect(() => {
-    loadPost();
+    if (postId) {
+      loadPost();
+    }
   }, [postId]);
 
   const loadPost = async () => {
+    if (!postId) return;
+    
     setLoading(true);
     try {
       await fetchPost(postId);
     } catch (error) {
       Alert.alert('Error', 'Failed to load post');
-      navigation.goBack();
+      setActiveTab('forum');
     } finally {
       setLoading(false);
     }
   };
 
   const handleAddComment = async () => {
-    if (!newComment.trim()) return;
+    if (!newComment.trim() || !postId) return;
 
     try {
       await addComment(postId, newComment);
@@ -73,6 +74,8 @@ const PostDetailScreen: React.FC = () => {
   };
 
   const handleToggleLike = async () => {
+    if (!postId) return;
+    
     try {
       await toggleLike(postId);
     } catch (error) {
@@ -81,6 +84,8 @@ const PostDetailScreen: React.FC = () => {
   };
 
   const handleDeletePost = () => {
+    if (!postId) return;
+    
     Alert.alert(
       'Delete Post',
       'Are you sure you want to delete this post? This action cannot be undone.',
@@ -92,7 +97,7 @@ const PostDetailScreen: React.FC = () => {
           onPress: async () => {
             try {
               await deletePost(postId);
-              navigation.goBack();
+              setActiveTab('forum');
               Alert.alert('Success', 'Post deleted successfully');
             } catch (error) {
               Alert.alert('Error', 'Failed to delete post');
@@ -149,10 +154,7 @@ const PostDetailScreen: React.FC = () => {
     return (
       <SafeAreaView style={styles.errorContainer}>
         <Text style={styles.errorText}>Post not found</Text>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
+       <TouchableOpacity onPress={() => setActiveTab('forum')}>
           <Text style={styles.backButtonText}>Go Back</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -168,7 +170,7 @@ const PostDetailScreen: React.FC = () => {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.goBack()}
+          onPress={() => setActiveTab('forum')}
         >
           <FontAwesome5 icon={faArrowLeft} size={20} color="#ffffff" />
         </TouchableOpacity>

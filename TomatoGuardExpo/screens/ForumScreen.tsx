@@ -33,7 +33,12 @@ interface Blog {
   author: string;
 }
 
-const ForumScreen: React.FC = () => {
+interface ForumScreenProps {
+  setActiveTab: (tab: string) => void;
+  navigateToPostDetail: (postId: string) => void;
+}
+
+const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostDetail }) => {
   const navigation = useNavigation<MainStackNavigationProp>();
   const { authState } = useAuth();
   
@@ -138,7 +143,7 @@ const ForumScreen: React.FC = () => {
   const renderPost = ({ item }: { item: ForumPost }) => (
     <TouchableOpacity
       style={styles.postCard}
-      onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
+      onPress={() => navigateToPostDetail(item.id)}
     >
       <View style={styles.postHeader}>
         <View style={styles.postAuthorInfo}>
@@ -170,7 +175,7 @@ const ForumScreen: React.FC = () => {
 
         <TouchableOpacity
           style={[styles.actionBtn, styles.commentBtn]}
-          onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
+          onPress={() => navigateToPostDetail(item.id)}
         >
           <FontAwesome5 icon={faComment} size={16} color="#ffffff" />
           <Text style={styles.actionText}>{item.comments_count} Comments</Text>
@@ -189,7 +194,7 @@ const ForumScreen: React.FC = () => {
         </View>
         <TouchableOpacity
           style={styles.createPostBtn}
-          onPress={() => navigation.navigate('CreatePost')}
+          onPress={() => setActiveTab('createpost')}
         >
           <FontAwesome5 icon={faEdit} size={16} color="#ffffff" />
           <Text style={styles.createPostText}>New Post</Text>

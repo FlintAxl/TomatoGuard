@@ -24,7 +24,11 @@ import {
   faTimes,
 } from '@fortawesome/free-solid-svg-icons';
 
-const CreatePostScreen: React.FC = () => {
+interface CreatePostScreenProps {
+  setActiveTab: (tab: string) => void;
+}
+
+const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ setActiveTab }) => {
   const navigation = useNavigation();
   const { authState } = useAuth();
   const { createPost } = useForum();
@@ -118,7 +122,7 @@ const CreatePostScreen: React.FC = () => {
       Alert.alert(
         'Success',
         'Post created successfully!',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
+        [{ text: 'OK', onPress: () => setActiveTab('forum') }]
       );
     } catch (error) {
       Alert.alert('Error', 'Failed to create post. Please try again.');
@@ -133,7 +137,7 @@ const CreatePostScreen: React.FC = () => {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.goBack()}
+          onPress={() => setActiveTab('forum')}
         >
           <FontAwesome5 icon={faArrowLeft} size={20} color="#ffffff" />
         </TouchableOpacity>
