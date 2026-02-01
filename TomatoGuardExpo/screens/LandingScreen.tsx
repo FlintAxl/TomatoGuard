@@ -20,6 +20,9 @@ import { RootStackNavigationProp } from '../navigation/types';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
+const scale = (size: number) => (SCREEN_WIDTH / 375) * size;
+const isSmallDevice = SCREEN_WIDTH < 768;
+
 const COLORS = {
   color1: '#f8ff76',
   color2: '#e9523a',
@@ -57,8 +60,8 @@ const TECH_STACK = [
   { name: 'MongoDB', icon: 'server' },
 ];
 
-const ITEM_WIDTH = 240;
-const ITEM_SPACING = 20;
+const ITEM_WIDTH = isSmallDevice ? SCREEN_WIDTH * 0.75 : 240;
+const ITEM_SPACING = isSmallDevice ? 15 : 20;
 
 const LandingScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
@@ -249,10 +252,10 @@ const styles = StyleSheet.create({
   // Section One - Hero
   sectionOne: {
     width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT * 0.7,
+    height: isSmallDevice ? SCREEN_HEIGHT * 0.6 : SCREEN_HEIGHT * 0.7,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: isSmallDevice ? 16 : 20,
   },
   heroGradient: {
     position: 'absolute',
@@ -263,29 +266,31 @@ const styles = StyleSheet.create({
   },
   heroContent: {
     alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 30,
+    paddingHorizontal: isSmallDevice ? 16 : 20,
+    marginBottom: isSmallDevice ? 20 : 30,
   },
   heroTitle: {
     fontFamily: 'System',
-    fontSize: 56,
+    fontSize: isSmallDevice ? scale(28) : 56,
     fontWeight: '700',
     fontStyle: 'italic',
     textAlign: 'center',
     color: COLORS.textLight,
-    marginBottom: 16,
+    marginBottom: isSmallDevice ? 12 : 16,
   },
   heroSubtitle: {
     fontFamily: 'System',
-    fontSize: 16,
+    fontSize: isSmallDevice ? 14 : 16,
     textAlign: 'center',
     color: COLORS.textLight,
+    paddingHorizontal: isSmallDevice ? 8 : 0,
   },
   contacts: {
-    flexDirection: 'row',
+    flexDirection: isSmallDevice ? 'column' : 'row',
     gap: 12,
     flexWrap: 'wrap',
     justifyContent: 'center',
+    alignItems: 'center',
   },
   contactButton: {
     flexDirection: 'row',
@@ -299,26 +304,27 @@ const styles = StyleSheet.create({
   },
   contactText: {
     color: COLORS.textLight,
-    fontSize: 12,
+    fontSize: isSmallDevice ? 11 : 12,
     fontFamily: 'System',
   },
   // Section Two - Testimonial
   sectionTwo: {
-    paddingHorizontal: 20,
-    paddingVertical: 40,
-    paddingBottom: 80,
-    paddingTop: 100,
+    paddingHorizontal: isSmallDevice ? 16 : 20,
+    paddingVertical: isSmallDevice ? 30 : 40,
+    paddingBottom: isSmallDevice ? 40 : 80,
+    paddingTop: isSmallDevice ? 30 : 100,
     backgroundColor: COLORS.color4,
     alignItems: 'center',
   },
   testimonialCard: {
-    borderRadius: 24,
-    padding: 30,
-    flexDirection: 'row',
+    borderRadius: isSmallDevice ? 16 : 24,
+    padding: isSmallDevice ? 20 : 30,
+    flexDirection: isSmallDevice ? 'column' : 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    minHeight: 280,
-    width: 1000,
+    minHeight: isSmallDevice ? 'auto' : 280,
+    width: isSmallDevice ? '100%' : 1000,
+    maxWidth: '100%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
@@ -327,35 +333,38 @@ const styles = StyleSheet.create({
   },
   testimonialLeft: {
     flex: 1,
-    paddingRight: 20,
+    paddingRight: isSmallDevice ? 0 : 20,
+    width: '100%',
   },
   testimonialText: {
     fontFamily: 'System',
-    fontSize: 38,
+    fontSize: isSmallDevice ? scale(20) : 38,
     fontWeight: '600',
     fontStyle: 'italic',
     color: COLORS.textLight,
     marginBottom: 20,
+    textAlign: isSmallDevice ? 'center' : 'left',
   },
   testimonialRight: {
-    width: 500,
-    justifyContent: 'flex-end',
-    alignItems: 'flex-end',
+    width: isSmallDevice ? '100%' : 500,
+    height: isSmallDevice ? 200 : 'auto',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: isSmallDevice ? 20 : 0,
   },
   tomatoImage: {
-    position: 'absolute',
-    objectFit: 'contain',
-    bottom: -100,
-    right: 10,
-    width: 400,
-    height: 280,
+    position: isSmallDevice ? 'relative' : 'absolute',
+    bottom: isSmallDevice ? 0 : -100,
+    right: isSmallDevice ? 0 : 10,
+    width: isSmallDevice ? SCREEN_WIDTH * 0.6 : 400,
+    height: isSmallDevice ? 200 : 280,
   },
   learnMoreBtn: {
     backgroundColor: COLORS.color2,
     paddingVertical: 12,
     paddingHorizontal: 28,
     borderRadius: 999,
-    alignSelf: 'flex-start',
+    alignSelf: isSmallDevice ? 'center' : 'flex-start',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -369,27 +378,27 @@ const styles = StyleSheet.create({
   },
   // Section Three - About
   sectionThree: {
-    paddingHorizontal: 20,
-    paddingVertical: 60,
+    paddingHorizontal: isSmallDevice ? 16 : 20,
+    paddingVertical: isSmallDevice ? 40 : 60,
     backgroundColor: COLORS.color4,
-    display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    boxSizing: 'border-box'
   },
   sectionThreeWrapper: {
-    gap: 80,
-    display: 'flex',
-    flexDirection: 'row',
+    gap: isSmallDevice ? 30 : 80,
+    flexDirection: isSmallDevice ? 'column' : 'row',
+    width: '100%',
+    maxWidth: isSmallDevice ? '100%' : 1200,
   },
   visualArea: {
     position: 'relative',
-    alignItems: 'flex-end',
+    alignItems: isSmallDevice ? 'center' : 'flex-end',
+    width: isSmallDevice ? '100%' : 'auto',
   },
   imageCard: {
-    width: 600,
-    height: 380,
-    borderRadius: 24,
+    width: isSmallDevice ? '100%' : 600,
+    height: isSmallDevice ? 250 : 380,
+    borderRadius: isSmallDevice ? 16 : 24,
     overflow: 'hidden',
   },
   farmersImage: {
@@ -398,10 +407,10 @@ const styles = StyleSheet.create({
   },
   experienceCard: {
     position: 'absolute',
-    bottom: -20,
-    right: 20,
-    width: 120,
-    height: 120,
+    bottom: isSmallDevice ? -15 : -20,
+    right: isSmallDevice ? 10 : 20,
+    width: isSmallDevice ? 100 : 120,
+    height: isSmallDevice ? 100 : 120,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
@@ -412,76 +421,78 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   experienceNumber: {
-    fontSize: 40,
+    fontSize: isSmallDevice ? 32 : 40,
     fontWeight: '700',
     color: COLORS.textLight,
     fontFamily: 'System',
   },
   experienceText: {
-    fontSize: 11,
+    fontSize: isSmallDevice ? 10 : 11,
     color: COLORS.textLight,
     textAlign: 'center',
     fontFamily: 'System',
   },
   contentArea: {
-    paddingTop: 30,
-    width: 500
+    paddingTop: isSmallDevice ? 20 : 30,
+    width: isSmallDevice ? '100%' : 500,
   },
   contentTitle: {
     fontFamily: 'System',
-    fontSize: 32,
+    fontSize: isSmallDevice ? scale(24) : 32,
     fontWeight: '700',
     fontStyle: 'italic',
     color: COLORS.textLight,
     marginBottom: 20,
+    textAlign: isSmallDevice ? 'center' : 'left',
   },
   contentText: {
     fontFamily: 'System',
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: isSmallDevice ? 13 : 14,
+    lineHeight: isSmallDevice ? 20 : 22,
     color: COLORS.muted,
     marginBottom: 24,
     textAlign: 'justify',
   },
   // Section Four - Carousel
   sectionFour: {
-    paddingVertical: 60,
+    paddingVertical: isSmallDevice ? 40 : 60,
     backgroundColor: COLORS.color4,
     alignItems: 'center',
   },
   sectionTitle: {
     fontFamily: 'System',
-    fontSize: 32,
+    fontSize: isSmallDevice ? scale(24) : 32,
     fontWeight: '700',
     fontStyle: 'italic',
     color: COLORS.textLight,
     marginBottom: 12,
     textAlign: 'center',
+    paddingHorizontal: isSmallDevice ? 16 : 0,
   },
   sectionSubtitle: {
     fontFamily: 'System',
-    fontSize: 14,
+    fontSize: isSmallDevice ? 13 : 14,
     color: COLORS.textLight,
     textAlign: 'center',
-    marginBottom: 40,
-    paddingHorizontal: 40,
+    marginBottom: isSmallDevice ? 30 : 40,
+    paddingHorizontal: isSmallDevice ? 20 : 40,
   },
   diseasesList: {
     paddingHorizontal: (SCREEN_WIDTH - ITEM_WIDTH) / 2,
     gap: ITEM_SPACING,
-    paddingBottom: 60,
+    paddingBottom: isSmallDevice ? 40 : 60,
   },
   carouselItem: {
     width: ITEM_WIDTH,
-    height: 320,
-    borderRadius: 24,
+    height: isSmallDevice ? 280 : 320,
+    borderRadius: isSmallDevice ? 16 : 24,
     overflow: 'hidden',
     position: 'relative',
     opacity: 0.6,
     transform: [{ scale: 0.85 }],
   },
   carouselItemActive: {
-    borderWidth: 4,
+    borderWidth: isSmallDevice ? 3 : 4,
     borderColor: COLORS.color5,
     opacity: 1,
     transform: [{ scale: 1 }],
@@ -495,7 +506,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 200,
+    height: isSmallDevice ? 150 : 200,
   },
   carouselText: {
     position: 'absolute',
@@ -503,22 +514,22 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     textAlign: 'center',
-    fontSize: 15,
+    fontSize: isSmallDevice ? 14 : 15,
     fontWeight: '600',
     color: COLORS.textLight,
     fontFamily: 'System',
   },
   // Section Five - Tech Stack
   sectionFive: {
-    paddingVertical: 40,
-    paddingHorizontal: 20,
+    paddingVertical: isSmallDevice ? 30 : 40,
+    paddingHorizontal: isSmallDevice ? 16 : 20,
   },
   techRibbon: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 30,
+    gap: isSmallDevice ? 20 : 30,
   },
   techItem: {
     flexDirection: 'row',
@@ -527,7 +538,7 @@ const styles = StyleSheet.create({
   },
   techText: {
     fontFamily: 'System',
-    fontSize: 14,
+    fontSize: isSmallDevice ? 13 : 14,
     fontWeight: '600',
     color: COLORS.textLight,
   },
