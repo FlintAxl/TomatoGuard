@@ -9,7 +9,8 @@ import {
   ActivityIndicator,
   Platform,
   Dimensions,
-  Alert 
+  Alert,
+  StyleSheet 
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { MainStackNavigationProp, RootStackNavigationProp } from '../navigation/types';
@@ -28,6 +29,7 @@ import { appStyles } from '../styles';
 import Drawer from '../components/common/Drawer/Drawer';
 import MainLayout from '../components/common/Layout/MainLayout';
 import ForumScreen from './ForumScreen';
+import FloatingActionButton from '../components/common/Layout/FloatingButton';
 
 const MainAppScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
@@ -90,15 +92,15 @@ const MainAppScreen = () => {
     return;
   }
   if (itemId === 'forums') {
-  setActiveTab('forum');
-  closeDrawer();
-  return;
-}
-if (itemId === 'profile') {
-  setActiveTab('profile');
-  closeDrawer();
-  return;
-}
+    setActiveTab('forum');
+    closeDrawer();
+    return;
+  }
+  if (itemId === 'profile') {
+    setActiveTab('profile');
+    closeDrawer();
+    return;
+  }
     setActiveTab(itemId);
     closeDrawer();
   };
@@ -191,29 +193,43 @@ if (itemId === 'profile') {
 
   return (
     <ProtectedRoute>
-      <MainLayout
-        drawerOpen={drawerOpen}
-        drawerAnimation={drawerAnimation}
-        pageTitle={pageTitle}
-        pageSubtitle={getPageSubtitle()}
-        userEmail={authState.user?.email?.split('@')[0]}
-        onMenuPress={toggleDrawer}
-        onCloseDrawer={closeDrawer}
-        drawerComponent={
-          <Drawer
-            activeTab={activeTab}
-            onItemPress={handleNavItemPress}
-            animation={drawerAnimation}
-            drawerOpen={drawerOpen}
-          />
-        }
-      >
-        <ScrollView style={styles.contentArea}>
-          {renderContent()}
-        </ScrollView>
-      </MainLayout>
+      <View style={localStyles.container}>
+        {/* Main Content - Full Width */}
+        <MainLayout
+          drawerOpen={drawerOpen}
+          drawerAnimation={drawerAnimation}
+          pageTitle={pageTitle}
+          pageSubtitle={getPageSubtitle()}
+          userEmail={authState.user?.email?.split('@')[0]}
+          onMenuPress={toggleDrawer}
+          onCloseDrawer={closeDrawer}
+        >
+          <ScrollView style={styles.contentArea}>
+            {renderContent()}
+          </ScrollView>
+        </MainLayout>
+
+        {/* Drawer Overlay */}
+        <Drawer
+          activeTab={activeTab}
+          onItemPress={handleNavItemPress}
+          animation={drawerAnimation}
+          drawerOpen={drawerOpen}
+          onClose={closeDrawer}
+        />
+
+        {/* Floating Action Button - Always Visible */}
+        <FloatingActionButton onItemPress={handleNavItemPress} />
+      </View>
     </ProtectedRoute>
   );
 };
+
+const localStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    position: 'relative', // Important: allows drawer and FAB to overlay
+  },
+});
 
 export default MainAppScreen;
