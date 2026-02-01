@@ -859,176 +859,28 @@ export const cameraCaptureStyles = StyleSheet.create({
     fontSize: 14,
   },
   // Add to cameraCaptureStyles:
-zoomButtonsContainer: {
-  position: 'absolute',
-  right: 10,
-  top: '50%',
-  transform: [{ translateY: -40 }],
-  backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  borderRadius: 20,
-  padding: 10,
-  gap: 10,
-},
-zoomButton: {
-  width: 40,
-  height: 40,
-  borderRadius: 20,
-  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  justifyContent: 'center',
-  alignItems: 'center',
-},
-zoomIcon: {
-  fontSize: 24,
-  color: 'white',
-  fontWeight: 'bold',
-},
-});
-// Add to style.ts after all existing styles
-export const authStyles = StyleSheet.create({
-  // Container styles
-  authContainer: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-    paddingHorizontal: 24,
-    paddingTop: 40,
-    paddingBottom: 24,
+  zoomButtonsContainer: {
+    position: 'absolute',
+    right: 10,
+    top: '50%',
+    transform: [{ translateY: -40 }],
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 20,
+    padding: 10,
+    gap: 10,
   },
-  
-  // Header styles
-  authHeader: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  authLogo: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#10b981',
-    marginBottom: 8,
-  },
-  authSubtitle: {
-    fontSize: 16,
-    color: '#64748b',
-    textAlign: 'center',
-  },
-  
-  // Form styles
-  authForm: {
-    flex: 1,
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#475569',
-    marginBottom: 8,
-  },
-  textInput: {
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#0f172a',
-  },
-  textInputFocused: {
-    borderColor: '#10b981',
-  },
-  textInputError: {
-    borderColor: '#ef4444',
-  },
-  errorText: {
-    fontSize: 12,
-    color: '#ef4444',
-    marginTop: 4,
-  },
-  
-  // Button styles
-  authButton: {
-    backgroundColor: '#10b981',
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
+  zoomButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
-    marginTop: 20,
-  },
-  authButtonDisabled: {
-    backgroundColor: '#94a3b8',
-    opacity: 0.6,
-  },
-  authButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  
-  // Link styles
-  authLinkContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 24,
-  },
-  authLinkText: {
-    fontSize: 14,
-    color: '#64748b',
-  },
-  authLink: {
-    fontSize: 14,
-    color: '#10b981',
-    fontWeight: '600',
-    marginLeft: 4,
-  },
-  
-  // Loading indicator
-  loadingIndicator: {
-    marginTop: 20,
-  },
-  
-  // Success/Error messages
-  messageContainer: {
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 20,
     alignItems: 'center',
-    flexDirection: 'row',
   },
-  successMessage: {
-    backgroundColor: '#d1fae5',
-    borderLeftWidth: 4,
-    borderLeftColor: '#10b981',
-  },
-  errorMessage: {
-    backgroundColor: '#fee2e2',
-    borderLeftWidth: 4,
-    borderLeftColor: '#ef4444',
-  },
-  messageIcon: {
-    fontSize: 20,
-    marginRight: 12,
-  },
-  successIcon: {
-    color: '#10b981',
-  },
-  errorIcon: {
-    color: '#ef4444',
-  },
-  messageText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#374151',
-  },
-  
-  // Forgot password
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginTop: 8,
-  },
-  forgotPasswordText: {
-    fontSize: 14,
-    color: '#10b981',
+  zoomIcon: {
+    fontSize: 24,
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
 

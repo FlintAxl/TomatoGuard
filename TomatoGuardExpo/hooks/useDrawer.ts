@@ -6,7 +6,7 @@ export const useDrawer = () => {
   const drawerAnimation = useRef(new Animated.Value(Platform.OS === 'web' ? 1 : 0)).current;
 
   const toggleDrawer = () => {
-    const toValue = drawerOpen ? 0.25 : 1;
+    const toValue = drawerOpen ? 0 : 1;
     setDrawerOpen(!drawerOpen);
     
     Animated.timing(drawerAnimation, {

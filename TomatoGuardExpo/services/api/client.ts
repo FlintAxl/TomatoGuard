@@ -17,14 +17,23 @@ export const getApiClient = (token?: string): AxiosInstance => {
       console.warn('⚠️ API URL is still localhost while using ngrok tunnel!');
       console.log('Current baseURL:', baseURL);
       console.log('Current origin:', currentOrigin);
+      
+      // Auto-detect ngrok URL from current origin if possible
+      if (currentOrigin.includes('.ngrok-free.dev')) {
+        baseURL = currentOrigin;
+        console.log('🔄 Auto-corrected baseURL to:', baseURL);
+      }
     }
   }
+
+  console.log('🌐 API Client using baseURL:', baseURL);
 
   const config: AxiosRequestConfig = {
     baseURL,
     timeout: 60000,
     headers: {
       'Accept': 'application/json',
+      'ngrok-skip-browser-warning': 'true',  // Skip ngrok browser warning
     },
   };
 

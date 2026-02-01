@@ -25,6 +25,7 @@ import { useImageAnalysis } from '../hooks/useImageAnalysis';
 import { appStyles } from '../styles';
 import Drawer from '../components/common/Drawer/Drawer';
 import MainLayout from '../components/common/Layout/MainLayout';
+import ForumScreen from './ForumScreen';
 
 const MainAppScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
@@ -69,10 +70,6 @@ const MainAppScreen = () => {
       handleLogout();
       return;
     }
-    if (itemId === 'profile') {
-      mainNavigation.navigate('Profile');
-      return;
-    }
     if (itemId === 'admin') {
       mainNavigation.navigate('AdminDashboard');
       return;
@@ -84,6 +81,16 @@ const MainAppScreen = () => {
     });
     return;
   }
+  if (itemId === 'forum') {
+  setActiveTab('forum');
+  closeDrawer();
+  return;
+}
+if (itemId === 'profile') {
+  setActiveTab('profile');
+  closeDrawer();
+  return;
+}
     setActiveTab(itemId);
     closeDrawer();
   };
@@ -128,10 +135,18 @@ const MainAppScreen = () => {
             <ResultsDisplay results={results} />
           </View>
         );
+      case 'forum':
+        return (
+          <View style={styles.contentPadding}>
+            <ForumScreen />
+          </View>
+        );
       case 'profile':
-          return <ProfileScreen />;
-      case 'about':
-        return <AboutScreen />;
+        return (
+          <View style={styles.contentPadding}>
+            <ProfileScreen />
+          </View>
+        );
       default:
         return null;
     }

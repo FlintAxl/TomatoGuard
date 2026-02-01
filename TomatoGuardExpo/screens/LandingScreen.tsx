@@ -20,7 +20,6 @@ import { RootStackNavigationProp } from '../navigation/types';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// Color scheme from your CSS
 const COLORS = {
   color1: '#f8ff76',
   color2: '#e9523a',
@@ -269,7 +268,7 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     fontFamily: 'System',
-    fontSize: 36,
+    fontSize: 56,
     fontWeight: '700',
     fontStyle: 'italic',
     textAlign: 'center',
@@ -307,7 +306,10 @@ const styles = StyleSheet.create({
   sectionTwo: {
     paddingHorizontal: 20,
     paddingVertical: 40,
+    paddingBottom: 80,
+    paddingTop: 100,
     backgroundColor: COLORS.color4,
+    alignItems: 'center',
   },
   testimonialCard: {
     borderRadius: 24,
@@ -316,6 +318,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     minHeight: 280,
+    width: 1000,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
@@ -328,21 +331,24 @@ const styles = StyleSheet.create({
   },
   testimonialText: {
     fontFamily: 'System',
-    fontSize: 28,
+    fontSize: 38,
     fontWeight: '600',
     fontStyle: 'italic',
     color: COLORS.textLight,
     marginBottom: 20,
   },
   testimonialRight: {
-    width: 150,
-    height: 200,
+    width: 500,
     justifyContent: 'flex-end',
-    alignItems: 'center',
+    alignItems: 'flex-end',
   },
   tomatoImage: {
-    width: 180,
-    height: 220,
+    position: 'absolute',
+    objectFit: 'contain',
+    bottom: -100,
+    right: 10,
+    width: 400,
+    height: 280,
   },
   learnMoreBtn: {
     backgroundColor: COLORS.color2,
@@ -366,17 +372,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 60,
     backgroundColor: COLORS.color4,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    boxSizing: 'border-box'
   },
   sectionThreeWrapper: {
-    gap: 40,
+    gap: 80,
+    display: 'flex',
+    flexDirection: 'row',
   },
   visualArea: {
     position: 'relative',
-    alignItems: 'center',
+    alignItems: 'flex-end',
   },
   imageCard: {
-    width: SCREEN_WIDTH - 80,
-    height: 280,
+    width: 600,
+    height: 380,
     borderRadius: 24,
     overflow: 'hidden',
   },
@@ -413,6 +425,7 @@ const styles = StyleSheet.create({
   },
   contentArea: {
     paddingTop: 30,
+    width: 500
   },
   contentTitle: {
     fontFamily: 'System',

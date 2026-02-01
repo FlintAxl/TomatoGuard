@@ -10,11 +10,21 @@ export type MainStackParamList = {
   MainApp: undefined;
   Profile: undefined;
   AdminDashboard: undefined;
+  Forum: undefined;
+  CreatePost: undefined;
+  PostDetail: undefined;
+  EditPost: { postId: string }
 };
-
+export type ForumStackParamList = {
+  Forum: undefined;
+  CreatePost: undefined;
+  PostDetail: { postId: string };
+  EditPost: { postId: string };
+};
 export type RootStackParamList = {
   Main: NavigatorScreenParams<MainStackParamList>;
   Auth: NavigatorScreenParams<AuthStackParamList>;
+  Forum: NavigatorScreenParams<ForumStackParamList>;
   Landing: undefined;
 };
 
