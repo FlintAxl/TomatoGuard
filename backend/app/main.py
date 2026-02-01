@@ -8,6 +8,7 @@ from .config import get_settings
 from .routes.analysis import router as analysis_router
 from .routes.upload import router as upload_router
 from .routes.auth import router as auth_router
+from app.routes.forum import router as forum_router
 from .services.database import connect_to_mongo, close_mongo_connection
 
 load_dotenv()
@@ -34,7 +35,10 @@ app.add_middleware(
         "exp://*",
         "https://*.exp.direct",
         "https://*.ngrok-free.dev",
+        "https://mvlsm2g-*.exp.direct",
         "https://*.ngrok.io",
+        "https://mvlsm2g-anonymous-8081.exp.direct",  # Your specific Expo origin
+        "https://dori-unmutational-johnathon.ngrok-free.dev",  # Your ngrok origin
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -66,7 +70,7 @@ async def on_shutdown() -> None:
 app.include_router(analysis_router)
 app.include_router(upload_router)
 app.include_router(auth_router)
-
+app.include_router(forum_router)
 if __name__ == "__main__":
     import uvicorn
     print("🌐 Starting server...")
