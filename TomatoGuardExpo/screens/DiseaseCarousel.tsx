@@ -31,19 +31,19 @@ const COLORS = {
 
 // Disease data
 const DISEASES = [
-  { id: 0, name: 'Early Blight', image: require('./../assets/diseases/earlyblight.jpg') },
-  { id: 1, name: 'Anthracnose', image: require('./../assets/diseases/anthracnose.jpg') },
-  { id: 2, name: 'Fusarium', image: require('./../assets/diseases/fusarium.jpg') },
-  { id: 3, name: 'Powdery Mildew', image: require('./../assets/diseases/powderymilddew.jpg') },
-  { id: 4, name: 'Septoria Leaf Spot', image: require('./../assets/diseases/septorialeafspot.jpg') },
-  { id: 5, name: 'Botrytis Gray Mold', image: require('./../assets/diseases/botrytisgraymold.jpg') },
-  { id: 6, name: 'Bacterial Speck', image: require('./../assets/diseases/bacterialspeck.jpg') },
-  { id: 7, name: 'Blossom End Root', image: require('./../assets/diseases/blossomendrot.jpg') },
-  { id: 8, name: 'Buckeye Rot', image: require('./../assets/diseases/buckeyerot.jpg') },
-  { id: 9, name: 'Tomato Pith Necrosis', image: require('./../assets/diseases/pithnecrosis.jpg') },
-  { id: 10, name: 'Damping Off', image: require('./../assets/diseases/dampingoff.jpg') },
-  { id: 11, name: 'Sunscald', image: require('./../assets/diseases/sunscald.jpg') },
-  { id: 12, name: 'Bacterial Spot', image: require('./../assets/diseases/bacterialspot.jpg') },
+  { id: 0, name: 'Early Blight', image: require('./../assets/diseases/anthracnose.png') },
+  { id: 1, name: 'Anthracnose', image: require('./../assets/diseases/anthracnose.png') },
+  { id: 2, name: 'Fusarium', image: require('./../assets/diseases/fusarium.png') },
+  { id: 3, name: 'Powdery Mildew', image: require('./../assets/diseases/fusarium.png') },
+  { id: 4, name: 'Septoria Leaf Spot', image: require('./../assets/diseases/septorialeafspot.png') },
+  { id: 5, name: 'Botrytis Gray Mold', image: require('./../assets/diseases/anthracnose.png') },
+  { id: 6, name: 'Bacterial Speck', image: require('./../assets/diseases/anthracnose.png') },
+  { id: 7, name: 'Blossom End Root', image: require('./../assets/diseases/blossomendrot.png') },
+  { id: 8, name: 'Buckeye Rot', image: require('./../assets/diseases/buckeyerot.png') },
+  { id: 9, name: 'Tomato Pith Necrosis', image: require('./../assets/diseases/buckeyerot.png') },
+  { id: 10, name: 'Damping Off', image: require('./../assets/diseases/dampingoff.png') },
+  { id: 11, name: 'Sunscald', image: require('./../assets/diseases/sunscald.png') },
+  { id: 12, name: 'Bacterial Spot', image: require('./../assets/diseases/buckeyerot.png') },
 ];
 
 // Tech stack data
@@ -59,7 +59,7 @@ const TECH_STACK = [
 const ITEM_WIDTH = 240;
 const ITEM_SPACING = 20;
 
-const FrontPageScreen = ({ navigation }: any) => {
+const DiseaseCarousel = ({ navigation }: any) => {
   const [activeSlide, setActiveSlide] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
@@ -92,7 +92,10 @@ const FrontPageScreen = ({ navigation }: any) => {
   const renderDiseaseItem = ({ item, index }: { item: any; index: number }) => {
     const isActive = index === activeSlide;
     return (
-      <View style={[styles.carouselItem, isActive && styles.carouselItemActive]}>
+      <View style={[
+        styles.carouselItem, 
+        isActive ? styles.carouselItemActive : null
+      ].filter(Boolean)}>
         <Image source={item.image} style={styles.carouselImage} />
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.9)']}
@@ -107,7 +110,7 @@ const FrontPageScreen = ({ navigation }: any) => {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Section One - Hero */}
       <ImageBackground
-        source={require('./assets/section1-bg.png')}
+        source={require('./../assets/section1-bg.png')}
         style={styles.sectionOne}
         resizeMode="cover"
       >
@@ -153,7 +156,7 @@ const FrontPageScreen = ({ navigation }: any) => {
           </View>
           <View style={styles.testimonialRight}>
             <Image
-              source={require('./assets/tomato.png')}
+              source={require('./../assets/tomato.png')}
               style={styles.tomatoImage}
               resizeMode="contain"
             />
@@ -167,7 +170,7 @@ const FrontPageScreen = ({ navigation }: any) => {
           <View style={styles.visualArea}>
             <View style={styles.imageCard}>
               <Image
-                source={require('./assets/tomatofarmers.png')}
+                source={require('./../assets/tomatofarmers.png')}
                 style={styles.farmersImage}
                 resizeMode="cover"
               />
@@ -221,7 +224,7 @@ const FrontPageScreen = ({ navigation }: any) => {
           contentContainerStyle={styles.diseasesList}
           onScroll={handleScroll}
           scrollEventThrottle={16}
-          pagingEnabled={false}
+          // pagingEnabled={false}
         />
       </View>
 
@@ -518,4 +521,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default FrontPageScreen;
+export default DiseaseCarousel;

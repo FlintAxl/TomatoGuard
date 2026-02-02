@@ -46,6 +46,8 @@ const AdminDashboardScreen = () => {
           activeTab="admin"
           onItemPress={handleNavItemPress}
           animation={drawerAnimation}
+          drawerOpen={drawerOpen}
+          onClose={closeDrawer}
         />
       }
     >

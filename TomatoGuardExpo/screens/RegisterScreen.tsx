@@ -50,12 +50,12 @@ const RegisterScreen = ({ navigation }: any) => {
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 1000,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(slideAnim, {
         toValue: 0,
         duration: 800,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
   }, []);
@@ -98,17 +98,17 @@ const RegisterScreen = ({ navigation }: any) => {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={{ flex: 1 }}
     >
       <ScrollView 
         contentContainerStyle={{ flexGrow: 1 }}
-        keyboardShouldPersistTaps="handled"
+        keyboardShouldPersistTaps="always"
         showsVerticalScrollIndicator={false}
       >
         {/* Section One - Hero Background */}
         <ImageBackground
-          source={require('./../assets/bg1.jpg')}
+          source={require('./../assets/section1-bg.png')}
           style={styles.sectionOne}
           resizeMode="cover"
         >
@@ -210,7 +210,7 @@ const RegisterScreen = ({ navigation }: any) => {
                     onChangeText={setPassword}
                     onFocus={() => setFocusedInput('password')}
                     onBlur={() => setFocusedInput(null)}
-                    secureTextEntry
+                    secureTextEntry={true}
                     editable={!loading}
                   />
                 </View>
@@ -228,7 +228,7 @@ const RegisterScreen = ({ navigation }: any) => {
                     onChangeText={setConfirmPassword}
                     onFocus={() => setFocusedInput('confirmPassword')}
                     onBlur={() => setFocusedInput(null)}
-                    secureTextEntry
+                    secureTextEntry={true}
                     editable={!loading}
                   />
                 </View>
