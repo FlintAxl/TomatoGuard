@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
 from typing import List, Optional
 from datetime import datetime
 from bson import ObjectId
@@ -61,15 +61,52 @@ async def get_post(
     enriched = await forum_service.enrich_post(post, current_user["id"])
     return enriched
 
+# In routes/forum.py, update the create_post endpoint:
 @router.post("/posts", status_code=status.HTTP_201_CREATED)
 async def create_post(
-    post_data: PostCreate,
+    title: str = Form(...),
+    category: str = Form("general"),
+    description: str = Form(...),
+    images: List[UploadFile] = File(default=[]),
     current_user=Depends(get_current_user),
     forum_service: ForumService = Depends(get_forum_service)
 ):
     """
-    Create a new forum post
+    Create a new forum post with images
     """
+    print(f"📸 Creating post with {len(images)} images")
+    
+    # Upload images to Cloudinary if provided
+    image_urls = []
+    for i, image in enumerate(images):
+        try:
+            print(f"📤 Processing image {i+1}: {image.filename}")
+            file_content = await image.read()
+            print(f"📊 File size: {len(file_content)} bytes")
+            
+            upload_result = cloudinary_service.upload_image(file_content)
+            image_url = upload_result["url"] if isinstance(upload_result, dict) else upload_result
+            image_urls.append(image_url)
+            print(f"✅ Uploaded to Cloudinary: {image_url}")
+        except Exception as e:
+            print(f"❌ Upload failed for image {i+1}: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Failed to upload image {image.filename}: {str(e)}"
+            )
+    
+    # Create post data
+    post_dict = {
+        "title": title,
+        "category": category,
+        "description": description,
+        "image_urls": image_urls
+    }
+    
+    # Create PostCreate object
+    post_data = PostCreate(**post_dict)
+    
+    # Create post
     post = await forum_service.create_post(post_data, current_user["id"])
     enriched = await forum_service.enrich_post(post, current_user["id"])
     return enriched
@@ -185,15 +222,15 @@ async def toggle_like(
 
 # ========== IMAGE ENDPOINTS ==========
 
-@router.post("/posts/{post_id}/image")
-async def upload_post_image(
+@router.post("/posts/{post_id}/images")
+async def upload_post_images(
     post_id: str,
-    image: UploadFile = File(...),
+    images: List[UploadFile] = File(...),
     current_user=Depends(get_current_user),
     forum_service: ForumService = Depends(get_forum_service)
 ):
     """
-    Upload image for a post
+    Upload multiple images for a post
     """
     post = await forum_service.get_post(post_id)
     
@@ -209,28 +246,71 @@ async def upload_post_image(
             detail="Not authorized to update this post"
         )
     
-    # Upload to Cloudinary
+    # Upload all images to Cloudinary
+    image_urls = []
     try:
-        # Read the image file
-        file_content = await image.read()
-        # Upload using CloudinaryService
-        upload_result = cloudinary_service.upload_image(file_content)
-        image_url = upload_result["url"] if isinstance(upload_result, dict) else upload_result
+        for image in images:
+            file_content = await image.read()
+            upload_result = cloudinary_service.upload_image(file_content)
+            image_url = upload_result["url"] if isinstance(upload_result, dict) else upload_result
+            image_urls.append(image_url)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to upload image: {str(e)}"
+            detail=f"Failed to upload images: {str(e)}"
         )
     
-    # Update post with image URL
+    # Update post with image URLs
     await forum_service.posts.update_one(
         {"_id": ObjectId(post_id)},
-        {"$set": {"image_url": image_url, "updated_at": datetime.utcnow()}}
+        {"$push": {"image_urls": {"$each": image_urls}}, "updated_at": datetime.utcnow()}
     )
     
-    return {"image_url": image_url}
+    return {"image_urls": image_urls}
 
-# ========== USER ENDPOINTS ==========
+@router.delete("/posts/{post_id}/images/{image_index}")
+async def delete_post_image(
+    post_id: str,
+    image_index: int,
+    current_user=Depends(get_current_user),
+    forum_service: ForumService = Depends(get_forum_service)
+):
+    """
+    Delete a specific image from a post
+    """
+    post = await forum_service.get_post(post_id)
+    
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post not found"
+        )
+    
+    if post.author_id != current_user["id"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update this post"
+        )
+    
+    if image_index < 0 or image_index >= len(post.image_urls):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid image index"
+        )
+    
+    # Remove image from list
+    await forum_service.posts.update_one(
+        {"_id": ObjectId(post_id)},
+        {"$unset": {f"image_urls.{image_index}": 1}, "updated_at": datetime.utcnow()}
+    )
+    
+    # Pull null values from array
+    await forum_service.posts.update_one(
+        {"_id": ObjectId(post_id)},
+        {"$pull": {"image_urls": None}, "updated_at": datetime.utcnow()}
+    )
+    
+    return {"message": "Image deleted successfully"}
 
 @router.get("/users/{user_id}/posts")
 async def get_user_posts(

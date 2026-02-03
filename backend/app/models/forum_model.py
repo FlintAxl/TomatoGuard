@@ -19,7 +19,7 @@ class PostBase(BaseModel):
     title: str
     category: str = "general"
     description: str
-    image_url: Optional[str] = None
+    image_urls: List[str] = Field(default_factory=list)
 
 class PostCreate(PostBase):
     """Model for creating posts"""
@@ -67,7 +67,7 @@ class PostResponse(BaseModel):
     title: str
     category: str
     description: str
-    image_url: Optional[str]
+    image_urls: List[str] = Field(default_factory=list)
     author_id: str
     author_name: Optional[str]
     author_email: Optional[str]

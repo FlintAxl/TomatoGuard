@@ -240,7 +240,7 @@ class ForumService:
             "title": post.title,
             "category": post.category,
             "description": post.description,
-            "image_url": post.image_url,
+            "image_urls": post.image_urls,
             "author_id": post.author_id,
             "author_name": post.author_name,
             "author_email": post.author_email,
