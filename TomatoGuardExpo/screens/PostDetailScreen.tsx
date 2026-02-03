@@ -10,22 +10,22 @@ import {
   StyleSheet,
   SafeAreaView,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import { useForum } from '../hooks/useForum';
-import { FontAwesome5 } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome5 } from '@expo/vector-icons'; // Fixed import
 import {
   faArrowLeft,
   faThumbsUp,
-  faThumbsDown,
   faComment,
   faShare,
   faBookmark,
   faFlag,
-  faUser,
   faPaperPlane,
   faEllipsisH,
+  faImage,
 } from '@fortawesome/free-solid-svg-icons';
 
 interface PostDetailScreenProps {
@@ -41,6 +41,7 @@ const PostDetailScreen: React.FC<PostDetailScreenProps> = ({ setActiveTab, postI
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   useEffect(() => {
     if (postId) {
@@ -122,7 +123,6 @@ const PostDetailScreen: React.FC<PostDetailScreenProps> = ({ setActiveTab, postI
   };
 
   const reportPost = (reason: string) => {
-    // Implement report functionality
     Alert.alert('Report Submitted', 'Thank you for your report. We will review it shortly.');
     setShowOptions(false);
   };
@@ -154,7 +154,7 @@ const PostDetailScreen: React.FC<PostDetailScreenProps> = ({ setActiveTab, postI
     return (
       <SafeAreaView style={styles.errorContainer}>
         <Text style={styles.errorText}>Post not found</Text>
-       <TouchableOpacity onPress={() => setActiveTab('forum')}>
+        <TouchableOpacity onPress={() => setActiveTab('forum')}>
           <Text style={styles.backButtonText}>Go Back</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -163,6 +163,11 @@ const PostDetailScreen: React.FC<PostDetailScreenProps> = ({ setActiveTab, postI
 
   const isAuthor = currentPost.author_id === authState.user?.id;
   const isAdmin = authState.user?.role === 'admin';
+  
+  // Get images from post - support multiple images
+  const images: string[] = Array.isArray(currentPost.image_urls) 
+    ? currentPost.image_urls.flat().filter(url => typeof url === 'string')
+    : (currentPost.image_urls ? [currentPost.image_urls] : []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -172,7 +177,7 @@ const PostDetailScreen: React.FC<PostDetailScreenProps> = ({ setActiveTab, postI
           style={styles.backButton}
           onPress={() => setActiveTab('forum')}
         >
-          <FontAwesome5 icon={faArrowLeft} size={20} color="#ffffff" />
+          <FontAwesome name="arrow-left" size={20} color="#ffffff" />
         </TouchableOpacity>
         
         <Text style={styles.headerTitle}>Post Details</Text>
@@ -181,31 +186,27 @@ const PostDetailScreen: React.FC<PostDetailScreenProps> = ({ setActiveTab, postI
           style={styles.optionsButton}
           onPress={() => setShowOptions(!showOptions)}
         >
-          <FontAwesome5 icon={faEllipsisH} size={20} color="#ffffff" />
+          <FontAwesome name="ellipsis-h" size={20} color="#ffffff" />
         </TouchableOpacity>
       </View>
 
       {showOptions && (
         <View style={styles.optionsMenu}>
-          // In your PostDetailScreen.tsx, replace the EditPost button:
-{isAuthor && (
-  <TouchableOpacity
-    style={styles.optionItem}
-    onPress={() => {
-      setShowOptions(false);
-      // Show alert until EditPost is implemented
-      Alert.alert(
-        'Edit Post',
-        'Edit feature is coming soon!',
-        [{ text: 'OK' }]
-      );
-      // Or navigate to CreatePost with edit data:
-      // navigation.navigate('CreatePost', { postId, isEditing: true });
-    }}
-  >
-    <Text style={styles.optionText}>Edit Post</Text>
-  </TouchableOpacity>
-)}
+          {isAuthor && (
+            <TouchableOpacity
+              style={styles.optionItem}
+              onPress={() => {
+                setShowOptions(false);
+                Alert.alert(
+                  'Edit Post',
+                  'Edit feature is coming soon!',
+                  [{ text: 'OK' }]
+                );
+              }}
+            >
+              <Text style={styles.optionText}>Edit Post</Text>
+            </TouchableOpacity>
+          )}
           
           {(isAuthor || isAdmin) && (
             <TouchableOpacity
@@ -227,7 +228,7 @@ const PostDetailScreen: React.FC<PostDetailScreenProps> = ({ setActiveTab, postI
                 handleReportPost();
               }}
             >
-              <FontAwesome5 icon={faFlag} size={16} color="#ef4444" />
+              <FontAwesome name="flag" size={16} color="#ef4444" />
               <Text style={[styles.optionText, styles.reportOptionText]}>Report Post</Text>
             </TouchableOpacity>
           )}
@@ -261,23 +262,71 @@ const PostDetailScreen: React.FC<PostDetailScreenProps> = ({ setActiveTab, postI
             </View>
           </View>
 
-          {/* Post Title & Content */}
+          {/* Post Title */}
           <Text style={styles.postTitle}>{currentPost.title}</Text>
           
-          {currentPost.image_url && (
-            <Image source={{ uri: currentPost.image_url }} style={styles.postImage} />
+          {/* Multiple Images Display */}
+          {images.length > 0 && (
+            <View style={styles.imagesContainer}>
+              <ScrollView 
+                horizontal 
+                pagingEnabled 
+                showsHorizontalScrollIndicator={false}
+                onMomentumScrollEnd={(event) => {
+                  const newIndex = Math.round(
+                    event.nativeEvent.contentOffset.x / Dimensions.get('window').width
+                  );
+                  setActiveImageIndex(newIndex);
+                }}
+                style={styles.imagesScrollView}
+              >
+                {images.map((imageUri, index) => (
+                  <View key={index} style={styles.imageSlide}>
+                    <Image 
+                      source={{ uri: imageUri }} 
+                      style={styles.postImage} 
+                      resizeMode="contain"
+                    />
+                  </View>
+                ))}
+              </ScrollView>
+              
+              {/* Pagination Dots */}
+              {images.length > 1 && (
+                <View style={styles.paginationContainer}>
+                  {images.map((_, index) => (
+                    <View
+                      key={index}
+                      style={[
+                        styles.paginationDot,
+                        index === activeImageIndex && styles.paginationDotActive
+                      ]}
+                    />
+                  ))}
+                </View>
+              )}
+              
+              {/* Image Count */}
+              <View style={styles.imageCountContainer}>
+                <FontAwesome name="image" size={12} color="#ffffff" />
+                <Text style={styles.imageCountText}>
+                  {images.length} {images.length === 1 ? 'image' : 'images'}
+                </Text>
+              </View>
+            </View>
           )}
           
+          {/* Post Content */}
           <Text style={styles.postContent}>{currentPost.description}</Text>
 
-          {/* Stats & Actions */}
+          {/* Stats */}
           <View style={styles.postStats}>
             <View style={styles.statsItem}>
-              <FontAwesome5 icon={faThumbsUp} size={16} color="#10b981" />
+              <FontAwesome name="thumbs-up" size={16} color="#10b981" />
               <Text style={styles.statsText}>{currentPost.likes_count} Likes</Text>
             </View>
             <View style={styles.statsItem}>
-              <FontAwesome5 icon={faComment} size={16} color="#3b82f6" />
+              <FontAwesome name="comment" size={16} color="#3b82f6" />
               <Text style={styles.statsText}>{currentPost.comments_count} Comments</Text>
             </View>
           </View>
@@ -288,8 +337,8 @@ const PostDetailScreen: React.FC<PostDetailScreenProps> = ({ setActiveTab, postI
               style={[styles.actionButton, currentPost.user_has_liked && styles.likedButton]}
               onPress={handleToggleLike}
             >
-              <FontAwesome5 
-                icon={faThumbsUp} 
+              <FontAwesome 
+                name="thumbs-up" 
                 size={18} 
                 color={currentPost.user_has_liked ? '#10b981' : '#94a3b8'} 
               />
@@ -302,17 +351,17 @@ const PostDetailScreen: React.FC<PostDetailScreenProps> = ({ setActiveTab, postI
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.actionButton}>
-              <FontAwesome5 icon={faComment} size={18} color="#94a3b8" />
+              <FontAwesome name="comment" size={18} color="#94a3b8" />
               <Text style={styles.actionButtonText}>Comment</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.actionButton}>
-              <FontAwesome5 icon={faShare} size={18} color="#94a3b8" />
+              <FontAwesome name="share" size={18} color="#94a3b8" />
               <Text style={styles.actionButtonText}>Share</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.actionButton}>
-              <FontAwesome5 icon={faBookmark} size={18} color="#94a3b8" />
+              <FontAwesome name="bookmark" size={18} color="#94a3b8" />
               <Text style={styles.actionButtonText}>Save</Text>
             </TouchableOpacity>
           </View>
@@ -345,7 +394,7 @@ const PostDetailScreen: React.FC<PostDetailScreenProps> = ({ setActiveTab, postI
                 onPress={handleAddComment}
                 disabled={!newComment.trim()}
               >
-                <FontAwesome5 icon={faPaperPlane} size={16} color="#ffffff" />
+                <FontAwesome name="paper-plane" size={16} color="#ffffff" />
               </TouchableOpacity>
             </View>
           </View>
@@ -353,7 +402,7 @@ const PostDetailScreen: React.FC<PostDetailScreenProps> = ({ setActiveTab, postI
           {/* Comments List */}
           {currentPost.comments?.length === 0 ? (
             <View style={styles.noComments}>
-              <FontAwesome5 icon={faComment} size={40} color="#475569" />
+              <FontAwesome name="comment" size={40} color="#475569" />
               <Text style={styles.noCommentsText}>No comments yet</Text>
               <Text style={styles.noCommentsSubtext}>Be the first to share your thoughts!</Text>
             </View>
@@ -547,11 +596,63 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     lineHeight: 32,
   },
+  // Multiple Images Styles
+  imagesContainer: {
+    marginBottom: 16,
+    position: 'relative',
+  },
+  imagesScrollView: {
+    height: 300,
+  },
+  imageSlide: {
+    width: Dimensions.get('window').width,
+    height: 300,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#000',
+  },
   postImage: {
     width: '100%',
-    height: 200,
+    height: '100%',
+    maxWidth: '100%',
+    maxHeight: '100%',
+  },
+  paginationContainer: {
+    position: 'absolute',
+    bottom: 20,
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  paginationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    marginHorizontal: 4,
+  },
+  paginationDotActive: {
+    backgroundColor: '#ffffff',
+    width: 10,
+    height: 10,
+  },
+  imageCountContainer: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 12,
-    marginBottom: 16,
+    gap: 6,
+  },
+  imageCountText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '500',
   },
   postContent: {
     fontSize: 16,

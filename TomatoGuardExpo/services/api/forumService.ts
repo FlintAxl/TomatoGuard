@@ -16,7 +16,7 @@ export interface Post {
   title: string;
   category: string;
   description: string;
-  image_url?: string;
+  image_urls: string[];
   author_id: string;
   author_name?: string;
   author_email?: string;
@@ -33,14 +33,14 @@ export interface CreatePostData {
   title: string;
   category: string;
   description: string;
-  image_url?: string;
+  images?: string[];  // Changed from image_urls to images for clarity
 }
 
 export interface UpdatePostData {
   title?: string;
   category?: string;
   description?: string;
-  image_url?: string;
+  image_urls?: string[];
 }
 
 export interface ForumStats {
@@ -118,12 +118,70 @@ export const forumService = {
   },
 
   /**
-   * Create a new forum post
+   * Create a new forum post with images
    */
   createPost: async (postData: CreatePostData, token: string): Promise<Post> => {
     const apiClient = getApiClient(token);
-    const response = await apiClient.post('/api/v1/forum/posts', postData);
-    return response.data;
+    
+    // If there are images, use FormData for multipart upload
+    if (postData.images && postData.images.length > 0) {
+      console.log(`📤 Creating post with ${postData.images.length} images using FormData`);
+      
+      const formData = new FormData();
+      
+      // Add text fields
+      formData.append('title', postData.title);
+      formData.append('category', postData.category);
+      formData.append('description', postData.description);
+      
+      // Add all images to FormData
+      for (let index = 0; index < postData.images.length; index++) {
+        const imageUri = postData.images[index];
+        const filename = imageUri.split('/').pop() || `image_${index}_${Date.now()}.jpg`;
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : 'image/jpeg';
+        
+        try {
+          // Fetch the image as a blob
+          const response = await fetch(imageUri);
+          const blob = await response.blob();
+          
+          // Append the blob as a file
+          formData.append('images', blob, filename);
+          
+          console.log(`📸 Added image ${index + 1}: ${filename} (${blob.size} bytes)`);
+        } catch (error) {
+          console.error(`❌ Failed to process image ${index + 1}:`, error);
+          throw new Error(`Failed to process image ${filename}`);
+        }
+      }
+      
+      try {
+        const response = await apiClient.post('/api/v1/forum/posts', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        
+        console.log('✅ Post created successfully with images');
+        return response.data;
+      } catch (error: any) {
+        console.error('❌ FormData upload error:', error);
+        console.error('Error response:', error.response?.data);
+        throw error;
+      }
+    } else {
+      // No images, use JSON for text-only post
+      console.log('📝 Creating text-only post');
+      
+      const response = await apiClient.post('/api/v1/forum/posts', {
+        title: postData.title,
+        category: postData.category,
+        description: postData.description,
+      });
+      
+      return response.data;
+    }
   },
 
   /**
@@ -190,32 +248,31 @@ export const forumService = {
   // ========== IMAGES ==========
   
   /**
-   * Upload an image for a post
+   * Upload additional images to an existing post (Optional)
    */
-  uploadPostImage: async (
+  uploadPostImages: async (
     postId: string, 
-    imageUri: string, 
+    imageUris: string[], 
     token: string
-  ): Promise<string> => {
+  ): Promise<string[]> => {
     const apiClient = getApiClient(token);
     
     // Create FormData
     const formData = new FormData();
     
-    // Extract filename and type from URI
-    const filename = imageUri.split('/').pop() || 'image.jpg';
-    const match = /\.(\w+)$/.exec(filename);
-    const type = match ? `image/${match[1]}` : 'image/jpeg';
-    
-    // Append the file
-    formData.append('image', {
-      uri: imageUri,
-      name: filename,
-      type,
-    } as any);
+    // Append all images as blobs
+    for (let index = 0; index < imageUris.length; index++) {
+      const imageUri = imageUris[index];
+      const filename = imageUri.split('/').pop() || `image${index}.jpg`;
+      
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+      
+      formData.append('images', blob, filename);
+    }
 
     const response = await apiClient.post(
-      `/api/v1/forum/posts/${postId}/image`,
+      `/api/v1/forum/posts/${postId}/images`,
       formData,
       {
         headers: {
@@ -224,7 +281,19 @@ export const forumService = {
       }
     );
     
-    return response.data.image_url;
+    return response.data.image_urls;
+  },
+
+  /**
+   * Delete a specific image from a post
+   */
+  deletePostImage: async (
+    postId: string, 
+    imageIndex: number, 
+    token: string
+  ): Promise<void> => {
+    const apiClient = getApiClient(token);
+    await apiClient.delete(`/api/v1/forum/posts/${postId}/images/${imageIndex}`);
   },
 
   // ========== USER POSTS ==========

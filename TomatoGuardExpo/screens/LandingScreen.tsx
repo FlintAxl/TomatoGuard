@@ -12,11 +12,14 @@ import {
   FlatList,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { RootStackNavigationProp } from '../navigation/types';
+import MainLayout from './../components/common/Layout/MainLayout';
+import Drawer from '../components/common/Drawer/Drawer';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -66,7 +69,39 @@ const ITEM_SPACING = isSmallDevice ? 15 : 20;
 const LandingScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
   const [activeSlide, setActiveSlide] = useState(0);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const drawerAnimation = useRef(new Animated.Value(0)).current;
   const flatListRef = useRef<FlatList>(null);
+
+  const handleMenuPress = () => {
+    setDrawerOpen(!drawerOpen);
+    Animated.spring(drawerAnimation, {
+      toValue: drawerOpen ? 0 : 1,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const handleCloseDrawer = () => {
+    setDrawerOpen(false);
+    Animated.spring(drawerAnimation, {
+      toValue: 0,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const handleNavItemPress = (itemId: string) => {
+    if (itemId === 'logout') {
+      // Handle logout
+      console.log('Logout');
+      return;
+    }
+    if (itemId === 'camera' || itemId === 'upload' || itemId === 'results' || itemId === 'forum' || itemId === 'profile') {
+      // Navigate to main app
+      navigation.navigate('Auth', { screen: 'Login' });
+      return;
+    }
+    handleCloseDrawer();
+  };
 
   const handleEmail = () => {
     Linking.openURL('mailto:tomatoguard@gmail.com');
@@ -76,10 +111,10 @@ const LandingScreen = () => {
     Linking.openURL('tel:+63123456789');
   };
 
- const handleCheckNow = () => {
-  // Navigate to Auth screen (Login)
-  navigation.navigate('Auth', { screen: 'Login' });
-};
+  const handleCheckNow = () => {
+    // Navigate to Auth screen (Login)
+    navigation.navigate('Auth', { screen: 'Login' });
+  };
 
   const handleLearnMore = () => {
     // Navigate to about screen
@@ -111,141 +146,168 @@ const LandingScreen = () => {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Section One - Hero */}
-      <ImageBackground
-        source={require('./../assets/section1-bg.png')}
-        style={styles.sectionOne}
-        resizeMode="cover"
+    <View style={localStyles.container}>
+      <MainLayout
+        drawerOpen={drawerOpen}
+        drawerAnimation={drawerAnimation}
+        pageTitle="TomatoGuard"
+        pageSubtitle="Disease Detection & Prevention"
+        onMenuPress={handleMenuPress}
+        onCloseDrawer={handleCloseDrawer}
       >
-        <LinearGradient
-          colors={['transparent', COLORS.color4]}
-          style={styles.heroGradient}
-        />
-        <View style={styles.heroContent}>
-          <Text style={styles.heroTitle}>
-            Helping Farmers Grow Healthier Tomatoes
-          </Text>
-          <Text style={styles.heroSubtitle}>
-            An immersive forum for Tomato Growers, along with a function for taking care of our crops!
-          </Text>
-        </View>
-        <View style={styles.contacts}>
-          <TouchableOpacity style={styles.contactButton} onPress={handleEmail}>
-            <Ionicons name="mail-outline" size={16} color={COLORS.textLight} />
-            <Text style={styles.contactText}>tomatoguard@gmail.com</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.contactButton} onPress={handlePhone}>
-            <Ionicons name="call-outline" size={16} color={COLORS.textLight} />
-            <Text style={styles.contactText}>+63 123456789</Text>
-          </TouchableOpacity>
-        </View>
-      </ImageBackground>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <View style={styles.container}>
+            {/* Section One - Hero */}
+            <ImageBackground
+              source={require('./../assets/section1-bg.png')}
+              style={styles.sectionOne}
+              resizeMode="cover"
+            >
+              <LinearGradient
+                colors={['transparent', COLORS.color4]}
+                style={styles.heroGradient}
+              />
+              <View style={styles.heroContent}>
+                <Text style={styles.heroTitle}>
+                  Helping Farmers Grow Healthier Tomatoes
+                </Text>
+                <Text style={styles.heroSubtitle}>
+                  An immersive forum for Tomato Growers, along with a function for taking care of our crops!
+                </Text>
+              </View>
+              <View style={styles.contacts}>
+                <TouchableOpacity style={styles.contactButton} onPress={handleEmail}>
+                  <Ionicons name="mail-outline" size={16} color={COLORS.textLight} />
+                  <Text style={styles.contactText}>tomatoguard@gmail.com</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.contactButton} onPress={handlePhone}>
+                  <Ionicons name="call-outline" size={16} color={COLORS.textLight} />
+                  <Text style={styles.contactText}>+63 123456789</Text>
+                </TouchableOpacity>
+              </View>
+            </ImageBackground>
 
-      {/* Section Two - Testimonial Card */}
-      <View style={styles.sectionTwo}>
-        <LinearGradient
-          colors={[COLORS.color5, COLORS.color4]}
-          style={styles.testimonialCard}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <View style={styles.testimonialLeft}>
-            <Text style={styles.testimonialText}>
-              Detect Diseases of your Tomatoes, in Real Time.
-            </Text>
-            <TouchableOpacity style={styles.learnMoreBtn} onPress={handleCheckNow}>
-              <Text style={styles.learnMoreBtnText}>Get Started</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.testimonialRight}>
-            <Image
-              source={require('./../assets/tomato.png')}
-              style={styles.tomatoImage}
-              resizeMode="contain"
-            />
-          </View>
-        </LinearGradient>
-      </View>
+            {/* Section Two - Testimonial Card */}
+            <View style={styles.sectionTwo}>
+              <LinearGradient
+                colors={[COLORS.color5, COLORS.color4]}
+                style={styles.testimonialCard}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <View style={styles.testimonialLeft}>
+                  <Text style={styles.testimonialText}>
+                    Detect Diseases of your Tomatoes, in Real Time.
+                  </Text>
+                  <TouchableOpacity style={styles.learnMoreBtn} onPress={handleCheckNow}>
+                    <Text style={styles.learnMoreBtnText}>Get Started</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.testimonialRight}>
+                  <Image
+                    source={require('./../assets/tomato.png')}
+                    style={styles.tomatoImage}
+                    resizeMode="contain"
+                  />
+                </View>
+              </LinearGradient>
+            </View>
 
-      {/* Section Three - About */}
-      <View style={styles.sectionThree}>
-        <View style={styles.sectionThreeWrapper}>
-          <View style={styles.visualArea}>
-            <View style={styles.imageCard}>
-              <Image
-                source={require('./../assets/section1-bg.png')}
-                style={styles.farmersImage}
-                resizeMode="cover"
+            {/* Section Three - About */}
+            <View style={styles.sectionThree}>
+              <View style={styles.sectionThreeWrapper}>
+                <View style={styles.visualArea}>
+                  <View style={styles.imageCard}>
+                    <Image
+                      source={require('./../assets/section1-bg.png')}
+                      style={styles.farmersImage}
+                      resizeMode="cover"
+                    />
+                  </View>
+                  <LinearGradient
+                    colors={[COLORS.color5, COLORS.color3]}
+                    style={styles.experienceCard}
+                  >
+                    <Text style={styles.experienceNumber}>10+</Text>
+                    <Text style={styles.experienceText}>
+                      Diseases Detected{'\n'}& Prevented
+                    </Text>
+                  </LinearGradient>
+                </View>
+                <View style={styles.contentArea}>
+                  <Text style={styles.contentTitle}>
+                    Where Plants Find{'\n'}Their People.
+                  </Text>
+                  <Text style={styles.contentText}>
+                    This system is an AI-powered web application designed to help tomato
+                    farmers detect fruit and leaf diseases early using image-based machine
+                    learning. By analyzing images captured from multiple angles, the system
+                    identifies possible diseases, suggests appropriate counteractive measures,
+                    and provides timely email and in-app alerts. Through smart
+                    technology and collaboration, the system aims to improve crop health,
+                    reduce losses, and promote sustainable tomato farming.
+                  </Text>
+                  <TouchableOpacity style={styles.learnMoreBtn} onPress={handleLearnMore}>
+                    <Text style={styles.learnMoreBtnText}>Learn More</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+
+            {/* Section Four - Diseases Carousel */}
+            <View style={styles.sectionFour}>
+              <Text style={styles.sectionTitle}>Detect These Diseases</Text>
+              <Text style={styles.sectionSubtitle}>
+                The following diseases can severely affect your crops and overall harvest.
+                Detect and prevent them early on.
+              </Text>
+              <FlatList
+                ref={flatListRef}
+                data={DISEASES}
+                renderItem={renderDiseaseItem}
+                keyExtractor={(item) => item.id.toString()}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                snapToInterval={ITEM_WIDTH + ITEM_SPACING}
+                decelerationRate="fast"
+                contentContainerStyle={styles.diseasesList}
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
               />
             </View>
-            <LinearGradient
-              colors={[COLORS.color5, COLORS.color3]}
-              style={styles.experienceCard}
-            >
-              <Text style={styles.experienceNumber}>10+</Text>
-              <Text style={styles.experienceText}>
-                Diseases Detected{'\n'}& Prevented
-              </Text>
+
+            {/* Section Five - Tech Stack */}
+            <LinearGradient colors={[COLORS.color5, COLORS.color3]} style={styles.sectionFive}>
+              <View style={styles.techRibbon}>
+                {TECH_STACK.map((tech, index) => (
+                  <View key={index} style={styles.techItem}>
+                    <Ionicons name={tech.icon as any} size={32} color={COLORS.textLight} />
+                    <Text style={styles.techText}>{tech.name}</Text>
+                  </View>
+                ))}
+              </View>
             </LinearGradient>
           </View>
-          <View style={styles.contentArea}>
-            <Text style={styles.contentTitle}>
-              Where Plants Find{'\n'}Their People.
-            </Text>
-            <Text style={styles.contentText}>
-              This system is an AI-powered web application designed to help tomato
-              farmers detect fruit and leaf diseases early using image-based machine
-              learning. By analyzing images captured from multiple angles, the system
-              identifies possible diseases, suggests appropriate counteractive measures,
-              and provides timely email and in-app alerts. Through smart
-              technology and collaboration, the system aims to improve crop health,
-              reduce losses, and promote sustainable tomato farming.
-            </Text>
-            <TouchableOpacity style={styles.learnMoreBtn} onPress={handleLearnMore}>
-              <Text style={styles.learnMoreBtnText}>Learn More</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+        </ScrollView>
+      </MainLayout>
 
-      {/* Section Four - Diseases Carousel */}
-      <View style={styles.sectionFour}>
-        <Text style={styles.sectionTitle}>Detect These Diseases</Text>
-        <Text style={styles.sectionSubtitle}>
-          The following diseases can severely affect your crops and overall harvest.
-          Detect and prevent them early on.
-        </Text>
-        <FlatList
-          ref={flatListRef}
-          data={DISEASES}
-          renderItem={renderDiseaseItem}
-          keyExtractor={(item) => item.id.toString()}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          snapToInterval={ITEM_WIDTH + ITEM_SPACING}
-          decelerationRate="fast"
-          contentContainerStyle={styles.diseasesList}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
-          // pagingEnabled={false}
-        />
-      </View>
-
-      {/* Section Five - Tech Stack */}
-      <LinearGradient colors={[COLORS.color5, COLORS.color3]} style={styles.sectionFive}>
-        <View style={styles.techRibbon}>
-          {TECH_STACK.map((tech, index) => (
-            <View key={index} style={styles.techItem}>
-              <Ionicons name={tech.icon as any} size={32} color={COLORS.textLight} />
-              <Text style={styles.techText}>{tech.name}</Text>
-            </View>
-          ))}
-        </View>
-      </LinearGradient>
-    </ScrollView>
+      <Drawer
+        activeTab="landing"
+        onItemPress={handleNavItemPress}
+        animation={drawerAnimation}
+        drawerOpen={drawerOpen}
+        onClose={handleCloseDrawer}
+      />
+    </View>
   );
 };
+
+const localStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    position: 'relative',
+  },
+});
 
 const styles = StyleSheet.create({
   container: {

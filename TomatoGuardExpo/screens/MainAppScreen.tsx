@@ -1,5 +1,5 @@
 // src/screens/MainAppScreen.tsx
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   SafeAreaView, 
   View, 
@@ -37,9 +37,21 @@ const MainAppScreen = () => {
   const mainNavigation = useNavigation<MainStackNavigationProp>();
   const { logout, authState } = useAuth();
   const { drawerOpen, drawerAnimation, toggleDrawer, closeDrawer } = useDrawer();
-  const [activeTab, setActiveTab] = useState('camera');
+  
+  // ADD THESE LINES - Get initial tab from route params
+  const params = route.params as any;
+  const initialTab = params?.initialTab || 'camera';
+  
+  const [activeTab, setActiveTab] = useState(initialTab); // CHANGE THIS LINE
   const [currentPostId, setCurrentPostId] = useState<string | null>(null);
   const { handleCameraCapture, handleUploadComplete, results, loading } = useImageAnalysis(setActiveTab);
+
+  // ADD THIS EFFECT - Update tab when route params change
+  useEffect(() => {
+    if (params?.initialTab) {
+      setActiveTab(params.initialTab);
+    }
+  }, [params?.initialTab]);
 
   const navigateToPostDetail = (postId: string) => {
     setCurrentPostId(postId);

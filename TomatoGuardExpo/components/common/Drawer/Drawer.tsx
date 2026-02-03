@@ -1,4 +1,3 @@
-// src/components/common/Drawer/Drawer.tsx
 import React from 'react';
 import {
   View,
@@ -30,15 +29,11 @@ const Drawer: React.FC<DrawerProps> = ({
   const { authState } = useAuth();
   
   const baseNavItems = [
-    { id: 'camera', label: 'Camera Capture', icon: 'camera' },
     { id: 'forums', label: 'Forums', icon: 'comments' },
     { id: 'blogs', label: 'Blogs', icon: 'pen' },
-    { id: 'upload', label: 'Upload Images', icon: 'folder-open' },
-    { id: 'results', label: 'Analysis Results', icon: 'chart-bar' },
     { id: 'about', label: 'About System', icon: 'info-circle' },
     { id: 'profile', label: 'My Profile', icon: 'user' },
     { id: 'logout', label: 'Logout', icon: 'sign-out-alt' },
-    { id: 'landingpage', label: 'Landing', icon: 'home' },
   ];  
 
   // Add admin option if user is admin

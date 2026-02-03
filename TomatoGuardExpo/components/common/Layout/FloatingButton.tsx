@@ -1,7 +1,10 @@
-// src/components/common/FAB/FloatingActionButton.tsx
+// src/components/common/Layout/FloatingButton.tsx
 import React, { useState } from 'react';
-import { StyleSheet, Platform } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { FAB } from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
+import { RootStackNavigationProp } from '../../navigation/types';
+import Chatbot from '../../Chatbot';
 
 interface FloatingActionButtonProps {
   onItemPress: (itemId: string) => void;
@@ -9,51 +12,74 @@ interface FloatingActionButtonProps {
 
 const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({ onItemPress }) => {
   const [open, setOpen] = useState(false);
+  const [chatbotVisible, setChatbotVisible] = useState(false);
+  const navigation = useNavigation<RootStackNavigationProp>();
+
+  const handleNavigation = (tab: string) => {
+    setOpen(false);
+    navigation.navigate('Main', {
+      screen: 'MainApp',
+      params: { initialTab: tab }
+    });
+  };
+
+  const handleOpenChatbot = () => {
+    setOpen(false);
+    setChatbotVisible(true);
+  };
 
   return (
-    <FAB.Group
-      open={open}
-      visible
-      icon={open ? 'close' : 'plus'}
-      actions={[
-        {
-          icon: 'camera',
-          label: 'Camera Capture',
-          onPress: () => onItemPress('camera'),
-          color: '#ffffff',
-          style: styles.actionButton,
-          labelStyle: styles.actionLabel,
-        },
-        {
-          icon: 'image',
-          label: 'Upload Images',
-          onPress: () => onItemPress('upload'),
-          color: '#ffffff',
-          style: styles.actionButton,
-          labelStyle: styles.actionLabel,
-        },
-        {
-          icon: 'chart-bar',
-          label: 'View Results',
-          onPress: () => onItemPress('results'),
-          color: '#ffffff',
-          style: styles.actionButton,
-          labelStyle: styles.actionLabel,
-        },
-        {
-          icon: 'forum',
-          label: 'Forums',
-          onPress: () => onItemPress('forums'),
-          color: '#ffffff',
-          style: styles.actionButton,
-          labelStyle: styles.actionLabel,
-        },
-      ]}
-      onStateChange={({ open }) => setOpen(open)}
-      fabStyle={styles.fab}
-      color="#ffffff"
-      style={styles.fabGroup}
-    />
+    <>
+      <FAB.Group
+        open={open}
+        visible
+        icon={open ? 'close' : 'plus'}
+        actions={[
+          {
+            icon: 'camera',
+            label: 'Camera Capture',
+            onPress: () => handleNavigation('camera'),
+            color: '#ffffff',
+            style: styles.actionButton,
+            labelStyle: styles.actionLabel,
+          },
+          {
+            icon: 'image',
+            label: 'Upload Images',
+            onPress: () => handleNavigation('upload'),
+            color: '#ffffff',
+            style: styles.actionButton,
+            labelStyle: styles.actionLabel,
+          },
+          {
+            icon: 'chart-bar',
+            label: 'View Results',
+            onPress: () => handleNavigation('results'),
+            color: '#ffffff',
+            style: styles.actionButton,
+            labelStyle: styles.actionLabel,
+          },
+          {
+            icon: 'robot',
+            label: 'Ask TomaBot',
+            onPress: handleOpenChatbot,
+            color: '#ffffff',
+            style: styles.actionButton,
+            labelStyle: styles.actionLabel,
+          },
+        ]}
+        onStateChange={({ open }) => setOpen(open)}
+        fabStyle={styles.fab}
+        color="#ffffff"
+        style={styles.fabGroup}
+      />
+
+      {/* Chatbot Modal */}
+      <Chatbot 
+        visible={chatbotVisible} 
+        onClose={() => setChatbotVisible(false)} 
+      />
+    </>
   );
 };
 
@@ -62,7 +88,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 16,
     right: 16,
-    zIndex: 1001, // Above drawer
+    zIndex: 1001,
   },
   fab: {
     backgroundColor: '#e9523a',
@@ -81,7 +107,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   actionLabel: {
-    color: '#ffffff',
+    color: '#2d7736',
     fontWeight: '600',
     fontSize: 14,
   },

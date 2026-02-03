@@ -11,6 +11,7 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MainStackNavigationProp } from '../navigation/types';
@@ -26,6 +27,9 @@ import {
   faFilter,
   faImage,
 } from '@fortawesome/free-solid-svg-icons';
+
+const { width } = Dimensions.get('window');
+const IMAGE_WIDTH = width - 72; // Account for padding
 
 interface Blog {
   id: string;
@@ -84,7 +88,8 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
           title: post.title,
           author_name: post.author_name,
           author_id: post.author_id,
-          likes_count: post.likes_count
+          likes_count: post.likes_count,
+          images_count: post.image_urls?.length || 0
         });
       });
       
@@ -140,6 +145,99 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
   // Posts are already filtered by the API call
   const filteredPosts = posts;
 
+  const renderPostImages = (imageUrls: string[]) => {
+    if (!imageUrls || imageUrls.length === 0) return null;
+
+    // Single image
+    if (imageUrls.length === 1) {
+      return (
+        <View style={styles.imageContainer}>
+          <Image
+            source={{ uri: imageUrls[0] }}
+            style={styles.singleImage}
+            resizeMode="cover"
+          />
+        </View>
+      );
+    }
+
+    // Two images
+    if (imageUrls.length === 2) {
+      return (
+        <View style={styles.imageContainer}>
+          <View style={styles.twoImagesContainer}>
+            <Image
+              source={{ uri: imageUrls[0] }}
+              style={styles.halfImage}
+              resizeMode="cover"
+            />
+            <Image
+              source={{ uri: imageUrls[1] }}
+              style={styles.halfImage}
+              resizeMode="cover"
+            />
+          </View>
+        </View>
+      );
+    }
+
+    // Three images
+    if (imageUrls.length === 3) {
+      return (
+        <View style={styles.imageContainer}>
+          <Image
+            source={{ uri: imageUrls[0] }}
+            style={styles.singleImage}
+            resizeMode="cover"
+          />
+          <View style={styles.twoImagesContainer}>
+            <Image
+              source={{ uri: imageUrls[1] }}
+              style={styles.halfImage}
+              resizeMode="cover"
+            />
+            <Image
+              source={{ uri: imageUrls[2] }}
+              style={styles.halfImage}
+              resizeMode="cover"
+            />
+          </View>
+        </View>
+      );
+    }
+
+    // Four or more images - show first 3 with "+N more" overlay on last
+    const remainingCount = imageUrls.length - 3;
+    return (
+      <View style={styles.imageContainer}>
+        <Image
+          source={{ uri: imageUrls[0] }}
+          style={styles.singleImage}
+          resizeMode="cover"
+        />
+        <View style={styles.twoImagesContainer}>
+          <Image
+            source={{ uri: imageUrls[1] }}
+            style={styles.halfImage}
+            resizeMode="cover"
+          />
+          <View style={styles.imageWrapper}>
+            <Image
+              source={{ uri: imageUrls[2] }}
+              style={styles.halfImage}
+              resizeMode="cover"
+            />
+            {remainingCount > 0 && (
+              <View style={styles.moreImagesOverlay}>
+                <Text style={styles.moreImagesText}>+{remainingCount}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   const renderPost = ({ item }: { item: ForumPost }) => (
     <TouchableOpacity
       style={styles.postCard}
@@ -155,6 +253,13 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
             <Text style={styles.postTime}>{new Date(item.created_at).toLocaleDateString()}</Text>
           </View>
         </View>
+        
+        {/* Category Badge */}
+        {item.category && (
+          <View style={[styles.categoryBadge, getCategoryColor(item.category)]}>
+            <Text style={styles.categoryBadgeText}>{item.category}</Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.postContent}>
@@ -164,13 +269,29 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
         </Text>
       </View>
 
+      {/* Render Images */}
+      {renderPostImages(item.image_urls)}
+
       <View style={styles.postActions}>
         <TouchableOpacity
-          style={[styles.actionBtn, styles.upvoteBtn]}
+          style={[
+            styles.actionBtn, 
+            styles.upvoteBtn,
+            item.user_has_liked && styles.upvoteBtnActive
+          ]}
           onPress={() => handleVote(item.id, 'like')}
         >
-          <FontAwesome5 icon={faThumbsUp} size={16} color="#ffffff" />
-          <Text style={styles.actionText}>{item.likes_count}</Text>
+          <FontAwesome5 
+            icon={faThumbsUp} 
+            size={16} 
+            color={item.user_has_liked ? "#10b981" : "#ffffff"} 
+          />
+          <Text style={[
+            styles.actionText,
+            item.user_has_liked && styles.actionTextActive
+          ]}>
+            {item.likes_count}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -183,6 +304,18 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
       </View>
     </TouchableOpacity>
   );
+
+  // Helper function to get category colors
+  const getCategoryColor = (category: string) => {
+    const colors: { [key: string]: any } = {
+      diseases: { backgroundColor: '#ef444420', borderColor: '#ef4444' },
+      treatment: { backgroundColor: '#10b98120', borderColor: '#10b981' },
+      general: { backgroundColor: '#3b82f620', borderColor: '#3b82f6' },
+      questions: { backgroundColor: '#f59e0b20', borderColor: '#f59e0b' },
+      success: { backgroundColor: '#8b5cf620', borderColor: '#8b5cf6' },
+    };
+    return colors[category] || { backgroundColor: '#3b82f620', borderColor: '#3b82f6' };
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -248,12 +381,20 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
           
           {loading ? (
             <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#10b981" />
               <Text style={styles.loadingText}>Loading posts...</Text>
             </View>
           ) : filteredPosts.length === 0 ? (
             <View style={styles.emptyContainer}>
+              <FontAwesome5 icon={faImage} size={48} color="#475569" />
               <Text style={styles.emptyText}>No posts found</Text>
               <Text style={styles.emptySubtext}>Be the first to start a discussion!</Text>
+              <TouchableOpacity 
+                style={styles.emptyButton}
+                onPress={() => setActiveTab('createpost')}
+              >
+                <Text style={styles.emptyButtonText}>Create Post</Text>
+              </TouchableOpacity>
             </View>
           ) : (
             <FlatList
@@ -405,6 +546,7 @@ const styles = StyleSheet.create({
   loadingText: {
     color: '#94a3b8',
     fontSize: 16,
+    marginTop: 12,
   },
   emptyContainer: {
     alignItems: 'center',
@@ -414,11 +556,24 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 18,
     fontWeight: '600',
+    marginTop: 16,
     marginBottom: 8,
   },
   emptySubtext: {
     color: '#94a3b8',
     fontSize: 14,
+    marginBottom: 20,
+  },
+  emptyButton: {
+    backgroundColor: '#10b981',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  emptyButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   postCard: {
     backgroundColor: '#1e293b',
@@ -441,6 +596,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
   },
   postAvatar: {
     width: 40,
@@ -460,6 +616,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
+  categoryBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  categoryBadgeText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
   postContent: {
     marginBottom: 12,
   },
@@ -475,6 +643,47 @@ const styles = StyleSheet.create({
     color: '#cbd5e1',
     fontSize: 14,
     lineHeight: 20,
+  },
+  // Image Styles
+  imageContainer: {
+    marginVertical: 12,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  singleImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+  },
+  twoImagesContainer: {
+    flexDirection: 'row',
+    gap: 4,
+    marginTop: 4,
+  },
+  halfImage: {
+    flex: 1,
+    height: 150,
+    borderRadius: 8,
+  },
+  imageWrapper: {
+    flex: 1,
+    position: 'relative',
+  },
+  moreImagesOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  moreImagesText: {
+    color: '#ffffff',
+    fontSize: 24,
+    fontWeight: 'bold',
   },
   postActions: {
     flexDirection: 'row',
@@ -494,6 +703,11 @@ const styles = StyleSheet.create({
   upvoteBtn: {
     backgroundColor: '#065f46',
   },
+  upvoteBtnActive: {
+    backgroundColor: '#10b98130',
+    borderWidth: 1,
+    borderColor: '#10b981',
+  },
   commentBtn: {
     backgroundColor: '#1e40af',
   },
@@ -501,6 +715,9 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 13,
     fontWeight: '500',
+  },
+  actionTextActive: {
+    color: '#10b981',
   },
   blogsContainer: {
     padding: 20,
