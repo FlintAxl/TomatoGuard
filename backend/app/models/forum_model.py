@@ -1,7 +1,8 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, validator
 from bson import ObjectId
+from app.utils.profanity_filter import filter_profanity
 
 # ========== CORE MODELS ==========
 
@@ -13,6 +14,13 @@ class Comment(BaseModel):
     user_email: Optional[str] = None
     comment: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    @validator('comment', pre=True)
+    def filter_comment_profanity(cls, v):
+        """Filter profanity from comment text"""
+        if v:
+            return filter_profanity(v)
+        return v
 
 class PostBase(BaseModel):
     """Base post model"""
@@ -20,6 +28,20 @@ class PostBase(BaseModel):
     category: str = "general"
     description: str
     image_urls: List[str] = Field(default_factory=list)
+    
+    @validator('title', pre=True)
+    def filter_title_profanity(cls, v):
+        """Filter profanity from post title"""
+        if v:
+            return filter_profanity(v)
+        return v
+    
+    @validator('description', pre=True)
+    def filter_description_profanity(cls, v):
+        """Filter profanity from post description"""
+        if v:
+            return filter_profanity(v)
+        return v
 
 class PostCreate(PostBase):
     """Model for creating posts"""
