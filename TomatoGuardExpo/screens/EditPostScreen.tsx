@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,9 +9,7 @@ import {
   Alert,
   StyleSheet,
   SafeAreaView,
-  Platform,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import { useForum } from '../hooks/useForum';
 import { forumService } from '../services/api/forumService';
@@ -21,23 +19,33 @@ import {
   faArrowLeft,
   faImage,
   faTag,
-  faPaperPlane,
+  faSave,
   faTimes,
 } from '@fortawesome/free-solid-svg-icons';
 
-interface CreatePostScreenProps {
+interface EditPostScreenProps {
   setActiveTab: (tab: string) => void;
+  postId: string;
+  initialData: {
+    title: string;
+    description: string;
+    category: string;
+    image_urls: string[];
+  };
 }
 
-const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ setActiveTab }) => {
-  const navigation = useNavigation();
+const EditPostScreen: React.FC<EditPostScreenProps> = ({ 
+  setActiveTab, 
+  postId, 
+  initialData 
+}) => {
   const { authState } = useAuth();
-  const { createPost } = useForum();
+  const { updatePost, fetchPost } = useForum(); // ✅ Added fetchPost
 
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [category, setCategory] = useState('general');
-  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [title, setTitle] = useState(initialData.title);
+  const [content, setContent] = useState(initialData.description);
+  const [category, setCategory] = useState(initialData.category);
+  const [selectedImages, setSelectedImages] = useState<string[]>(initialData.image_urls || []);
   const [loading, setLoading] = useState(false);
 
   const categories = [
@@ -49,17 +57,10 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ setActiveTab }) => 
   ];
 
   const pickImages = async () => {
-    console.log(' Image picker button pressed');
-
     try {
-      // Request permission first
-      console.log(' Requesting media library permissions...');
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-      console.log(' Permission status:', status);
-
       if (status !== 'granted') {
-        console.log(' Permission denied');
         Alert.alert(
           'Permission Required',
           'Sorry, we need camera roll permissions to make this work!',
@@ -67,8 +68,6 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ setActiveTab }) => 
         );
         return;
       }
-
-      console.log(' Permission granted, launching image picker...');
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -78,20 +77,14 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ setActiveTab }) => 
         base64: false,
       });
 
-      console.log(' Image picker result:', result);
-
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const newImageUris = result.assets.map(asset => asset.uri);
-        console.log(' Selected image URIs:', newImageUris);
         setSelectedImages(prev => [...prev, ...newImageUris]);
-        Alert.alert('Success', `${newImageUris.length} image(s) selected successfully!`);
-      } else {
-        console.log(' Image selection cancelled or failed');
+        Alert.alert('Success', `${newImageUris.length} image(s) added successfully!`);
       }
     } catch (error) {
-      console.error(' Error picking images:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      Alert.alert('Error', `Failed to pick images: ${errorMessage}`);
+      console.error('Error picking images:', error);
+      Alert.alert('Error', 'Failed to pick images');
     }
   };
 
@@ -103,7 +96,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ setActiveTab }) => 
     setSelectedImages([]);
   };
 
-  const handleSubmit = async () => {
+  const handleSave = async () => {
     if (!title.trim()) {
       Alert.alert('Error', 'Please enter a title');
       return;
@@ -116,43 +109,71 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ setActiveTab }) => 
 
     setLoading(true);
     try {
-      const postData = {
+      // Update post text content (title, category, description)
+      const updateData = {
         title,
         category,
         description: content,
-        // Images should be uploaded as part of post creation
-        images: selectedImages, // Send images array directly
       };
 
-      await createPost(postData);
+      console.log('📝 Updating post text fields...');
+      await updatePost(postId, updateData);
+
+      // Handle images separately
+      const originalImages = initialData.image_urls || [];
+      const hasImageChanges = JSON.stringify(originalImages.sort()) !== JSON.stringify(selectedImages.sort());
       
-      Alert.alert(
-        'Success',
-        'Post created successfully!',
-        [{ 
-          text: 'OK', 
-          onPress: () => {
-            console.log('🎉 Post created successfully, navigating to forum...');
-            setActiveTab('forum');
-          }
-        }]
-      );
-      
-      // Fallback for web - force navigation after a delay
+      if (hasImageChanges) {
+        console.log('🖼️ Images have changed, updating...');
+        console.log('Original:', originalImages);
+        console.log('New:', selectedImages);
+        
+        try {
+          await forumService.replacePostImages(postId, selectedImages, authState.accessToken || '');
+          console.log('✅ Images updated successfully');
+        } catch (error) {
+          console.error('❌ Failed to update images:', error);
+          Alert.alert('Warning', 'Post text updated but some images failed to update.');
+        }
+      } else {
+        console.log('✓ No image changes detected');
+      }
+
+      // ✅ REFETCH POST DATA TO UPDATE UI
+      console.log('🔄 Refreshing post data...');
+      try {
+        await fetchPost(postId);
+        console.log('✅ Post data refreshed - images should now be visible');
+      } catch (error) {
+        console.error('⚠️ Could not refresh post data:', error);
+      }
+
+      // Success handling with platform detection
       const isWeb = typeof window !== 'undefined' && typeof document !== 'undefined';
+      
       if (isWeb) {
-        setTimeout(() => {
-          console.log('🌐 Web fallback: navigating to forum...');
-          setActiveTab('forum');
-        }, 2000);
+        window.alert('Post updated successfully!');
+        setActiveTab('forum');
+      } else {
+        Alert.alert(
+          'Success',
+          'Post updated successfully!',
+          [{ 
+            text: 'OK', 
+            onPress: () => setActiveTab('forum')
+          }]
+        );
       }
     } catch (error: any) {
-      console.error('❌ Create post error:', error);
-      console.error('Error response:', error.response?.data);
-      Alert.alert('Error', `Failed to create post: ${error.response?.data?.detail || error.message}`);
+      console.error('❌ Update post error:', error);
+      Alert.alert('Error', `Failed to update post: ${error.response?.data?.detail || error.message}`);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCancel = () => {
+    setActiveTab('forum');
   };
 
   return (
@@ -161,20 +182,20 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ setActiveTab }) => 
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => setActiveTab('forum')}
+          onPress={handleCancel}
         >
           <FontAwesome5 icon={faArrowLeft} size={20} color="#ffffff" />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Create Post</Text>
+        <Text style={styles.headerTitle}>Edit Post</Text>
 
         <TouchableOpacity
-          style={[styles.postButton, loading && styles.postButtonDisabled]}
-          onPress={handleSubmit}
+          style={[styles.saveButton, loading && styles.saveButtonDisabled]}
+          onPress={handleSave}
           disabled={loading}
         >
-          <FontAwesome5 icon={faPaperPlane} size={16} color="#ffffff" />
-          <Text style={styles.postButtonText}>Post</Text>
+          <FontAwesome5 icon={faSave} size={16} color="#ffffff" />
+          <Text style={styles.saveButtonText}>Save</Text>
         </TouchableOpacity>
       </View>
 
@@ -256,11 +277,11 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ setActiveTab }) => 
           </ScrollView>
         </View>
 
-        {/* Image Upload */}
+        {/* Image Management */}
         <View style={styles.imageContainer}>
           <View style={styles.imageHeader}>
             <FontAwesome5 icon={faImage} size={16} color="#94a3b8" />
-            <Text style={styles.imageTitle}>Add Images (Optional)</Text>
+            <Text style={styles.imageTitle}>Manage Images</Text>
             {selectedImages.length > 0 && (
               <TouchableOpacity style={styles.clearAllButton} onPress={removeAllImages}>
                 <Text style={styles.clearAllText}>Clear All</Text>
@@ -296,7 +317,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ setActiveTab }) => 
           ) : (
             <TouchableOpacity style={styles.imageUploadButton} onPress={pickImages}>
               <FontAwesome5 icon={faImage} size={32} color="#94a3b8" />
-              <Text style={styles.imageUploadText}>Tap to upload images</Text>
+              <Text style={styles.imageUploadText}>Tap to add images</Text>
               <Text style={styles.imageUploadSubtext}>JPG, PNG (max 10 images, 5MB each)</Text>
             </TouchableOpacity>
           )}
@@ -304,12 +325,11 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ setActiveTab }) => 
 
         {/* Tips */}
         <View style={styles.tipsContainer}>
-          <Text style={styles.tipsTitle}> Tips for a great post:</Text>
-          <Text style={styles.tip}>• Be clear and descriptive in your title</Text>
-          <Text style={styles.tip}>• Share specific details about your experience</Text>
-          <Text style={styles.tip}>• Include photos if relevant to your question</Text>
-          <Text style={styles.tip}>• Be respectful to other community members</Text>
-          <Text style={styles.tip}>• Use appropriate category for better visibility</Text>
+          <Text style={styles.tipsTitle}>💡 Edit Tips:</Text>
+          <Text style={styles.tip}>• You can change title, content, and category</Text>
+          <Text style={styles.tip}>• Add or remove images as needed</Text>
+          <Text style={styles.tip}>• Changes are saved immediately</Text>
+          <Text style={styles.tip}>• Original post will be updated</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -343,7 +363,7 @@ const styles = StyleSheet.create({
     fontFamily: 'serif',
     fontStyle: 'italic',
   },
-  postButton: {
+  saveButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#10b981',
@@ -352,10 +372,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     gap: 8,
   },
-  postButtonDisabled: {
+  saveButtonDisabled: {
     opacity: 0.5,
   },
-  postButtonText: {
+  saveButtonText: {
     color: '#ffffff',
     fontSize: 14,
     fontWeight: '600',
@@ -367,23 +387,23 @@ const styles = StyleSheet.create({
   authorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#334155',
+    marginBottom: 20,
+    padding: 16,
+    backgroundColor: '#1e293b',
+    borderRadius: 12,
   },
   authorAvatar: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#10b981',
+    backgroundColor: '#334155',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   authorInitial: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: '#ffffff',
   },
   authorName: {
@@ -393,36 +413,38 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   authorEmail: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#94a3b8',
   },
   inputContainer: {
     marginBottom: 20,
   },
   titleInput: {
-    backgroundColor: '#334155',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#1e293b',
     color: '#ffffff',
     fontSize: 18,
     fontWeight: '600',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
+    marginBottom: 8,
   },
   charCount: {
-    textAlign: 'right',
     color: '#94a3b8',
     fontSize: 12,
-    marginTop: 4,
+    textAlign: 'right',
   },
   contentInput: {
-    backgroundColor: '#334155',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#1e293b',
     color: '#ffffff',
-    fontSize: 14,
-    minHeight: 200,
-    textAlignVertical: 'top',
+    fontSize: 16,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
     marginBottom: 20,
-    lineHeight: 20,
+    minHeight: 120,
   },
   categoryContainer: {
     marginBottom: 20,
@@ -430,13 +452,13 @@ const styles = StyleSheet.create({
   categoryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
     marginBottom: 12,
+    gap: 8,
   },
   categoryTitle: {
-    color: '#94a3b8',
-    fontSize: 14,
-    fontWeight: '500',
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   categoryList: {
     flexDirection: 'row',
@@ -446,15 +468,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#334155',
   },
   categoryChipText: {
     color: '#94a3b8',
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '500',
   },
   categoryChipTextActive: {
     color: '#ffffff',
-    fontWeight: '600',
   },
   imageContainer: {
     marginBottom: 20,
@@ -462,49 +485,50 @@ const styles = StyleSheet.create({
   imageHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
     marginBottom: 12,
   },
   imageTitle: {
-    color: '#94a3b8',
-    fontSize: 14,
-    fontWeight: '500',
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    flex: 1,
+    marginLeft: 8,
   },
-  imageUploadButton: {
-    backgroundColor: '#334155',
-    borderRadius: 12,
-    padding: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#475569',
-    borderStyle: 'dashed',
+  clearAllButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#ef4444',
+    borderRadius: 6,
   },
-  imageUploadText: {
-    color: '#94a3b8',
-    fontSize: 14,
-    fontWeight: '500',
-    marginTop: 12,
-  },
-  imageUploadSubtext: {
-    color: '#64748b',
+  clearAllText: {
+    color: '#ffffff',
     fontSize: 12,
-    marginTop: 4,
+    fontWeight: '600',
   },
   imagePreviewContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
+  },
+  imageWrapper: {
+    position: 'relative',
+    marginRight: 8,
   },
   selectedImage: {
     width: 150,
     height: 150,
     borderRadius: 12,
-    marginRight: 8,
   },
-  imageWrapper: {
-    position: 'relative',
-    marginRight: 8,
+  removeImageButton: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: '#ef4444',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   addMoreButton: {
     width: 150,
@@ -530,28 +554,25 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'center',
   },
-  clearAllButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#ef4444',
-    borderRadius: 6,
-    marginLeft: 'auto',
-  },
-  clearAllText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  removeImageButton: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: '#ef4444',
-    width: 24,
-    height: 24,
+  imageUploadButton: {
+    backgroundColor: '#1e293b',
+    borderWidth: 2,
+    borderColor: '#334155',
+    borderStyle: 'dashed',
     borderRadius: 12,
-    justifyContent: 'center',
+    padding: 32,
     alignItems: 'center',
+  },
+  imageUploadText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 12,
+  },
+  imageUploadSubtext: {
+    color: '#94a3b8',
+    fontSize: 14,
+    marginTop: 4,
   },
   tipsContainer: {
     backgroundColor: '#1e293b',
@@ -566,11 +587,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   tip: {
-    color: '#cbd5e1',
-    fontSize: 13,
+    color: '#94a3b8',
+    fontSize: 14,
     marginBottom: 4,
-    lineHeight: 18,
+    lineHeight: 20,
   },
 });
 
-export default CreatePostScreen;
+export default EditPostScreen;

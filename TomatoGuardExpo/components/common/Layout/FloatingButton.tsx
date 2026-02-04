@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   actionLabel: {
-    color: '#2d7736',
+    color: '#ffffff',
     fontWeight: '600',
     fontSize: 14,
   },

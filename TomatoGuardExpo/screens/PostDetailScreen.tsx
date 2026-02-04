@@ -15,7 +15,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import { useForum } from '../hooks/useForum';
-import { FontAwesome, FontAwesome5 } from '@expo/vector-icons'; // Fixed import
+import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import {
   faArrowLeft,
   faThumbsUp,
@@ -27,6 +27,7 @@ import {
   faEllipsisH,
   faImage,
 } from '@fortawesome/free-solid-svg-icons';
+import EditPostScreen from './EditPostScreen';
 
 interface PostDetailScreenProps {
   setActiveTab: (tab: string) => void;
@@ -42,12 +43,22 @@ const PostDetailScreen: React.FC<PostDetailScreenProps> = ({ setActiveTab, postI
   const [loading, setLoading] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [showEditScreen, setShowEditScreen] = useState(false);
 
+  // Load post when component mounts or postId changes
   useEffect(() => {
     if (postId) {
       loadPost();
     }
   }, [postId]);
+
+  // ✅ REFETCH POST DATA WHEN EDIT SCREEN CLOSES
+  useEffect(() => {
+    if (!showEditScreen && postId) {
+      console.log('🔄 Edit screen closed, refreshing post data...');
+      loadPost();
+    }
+  }, [showEditScreen]);
 
   const loadPost = async () => {
     if (!postId) return;
@@ -55,7 +66,9 @@ const PostDetailScreen: React.FC<PostDetailScreenProps> = ({ setActiveTab, postI
     setLoading(true);
     try {
       await fetchPost(postId);
+      console.log('✅ Post data refreshed successfully');
     } catch (error) {
+      console.error('Error loading post:', error);
       Alert.alert('Error', 'Failed to load post');
       setActiveTab('forum');
     } finally {
@@ -87,26 +100,48 @@ const PostDetailScreen: React.FC<PostDetailScreenProps> = ({ setActiveTab, postI
   const handleDeletePost = () => {
     if (!postId) return;
     
-    Alert.alert(
-      'Delete Post',
-      'Are you sure you want to delete this post? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deletePost(postId);
-              setActiveTab('forum');
-              Alert.alert('Success', 'Post deleted successfully');
-            } catch (error) {
-              Alert.alert('Error', 'Failed to delete post');
-            }
+    const isWeb = typeof window !== 'undefined' && typeof document !== 'undefined';
+    
+    if (isWeb) {
+      const confirmed = window.confirm('Are you sure you want to delete this post? This action cannot be undone.');
+      if (confirmed) {
+        performDelete();
+      }
+    } else {
+      Alert.alert(
+        'Delete Post',
+        'Are you sure you want to delete this post? This action cannot be undone.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: performDelete,
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
+  };
+
+  const performDelete = async () => {
+    if (!postId) return;
+    
+    try {
+      await deletePost(postId);
+      setActiveTab('forum');
+      
+      if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+        window.alert('Post deleted successfully');
+      } else {
+        Alert.alert('Success', 'Post deleted successfully');
+      }
+    } catch (error) {
+      if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+        window.alert('Failed to delete post');
+      } else {
+        Alert.alert('Error', 'Failed to delete post');
+      }
+    }
   };
 
   const handleReportPost = () => {
@@ -197,11 +232,7 @@ const PostDetailScreen: React.FC<PostDetailScreenProps> = ({ setActiveTab, postI
               style={styles.optionItem}
               onPress={() => {
                 setShowOptions(false);
-                Alert.alert(
-                  'Edit Post',
-                  'Edit feature is coming soon!',
-                  [{ text: 'OK' }]
-                );
+                setShowEditScreen(true);
               }}
             >
               <Text style={styles.optionText}>Edit Post</Text>
@@ -428,6 +459,23 @@ const PostDetailScreen: React.FC<PostDetailScreenProps> = ({ setActiveTab, postI
           )}
         </View>
       </ScrollView>
+
+      {/* Edit Post Screen Modal */}
+      {showEditScreen && currentPost && (
+        <EditPostScreen
+          setActiveTab={(tab) => {
+            setShowEditScreen(false);
+            if (tab !== 'forum') setActiveTab(tab);
+          }}
+          postId={postId!}
+          initialData={{
+            title: currentPost.title,
+            description: currentPost.description,
+            category: currentPost.category,
+            image_urls: currentPost.image_urls || [],
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 };

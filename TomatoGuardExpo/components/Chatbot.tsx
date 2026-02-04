@@ -11,12 +11,11 @@ import {
   Platform,
   ActivityIndicator,
   StyleSheet,
-  Dimensions,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-// import { sendMessageToOpenAI, ChatMessage as OpenAIChatMessage } from '../services/openaiService';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { sendMessageToWitAI } from '../services/api/witaiServices';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ChatbotProps {
   visible: boolean;
@@ -28,9 +27,12 @@ interface Message {
   type: 'user' | 'bot';
   text: string;
   timestamp: Date;
+  intent?: string;
+  confidence?: number;
 }
 
 const Chatbot: React.FC<ChatbotProps> = ({ visible, onClose }) => {
+  const { authState } = useAuth();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -41,6 +43,9 @@ const Chatbot: React.FC<ChatbotProps> = ({ visible, onClose }) => {
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [sessionId] = useState(() => 
+    authState.user?.id?.toString() || `session_${Date.now()}`
+  );
   const flatListRef = useRef<FlatList>(null);
 
   // Auto-scroll to bottom when new messages arrive
@@ -52,6 +57,19 @@ const Chatbot: React.FC<ChatbotProps> = ({ visible, onClose }) => {
     }
   }, [messages]);
 
+  // Reset messages when modal opens
+  useEffect(() => {
+    if (visible && messages.length === 1) {
+      // Keep only the welcome message
+      setMessages([{
+        id: '1',
+        type: 'bot',
+        text: "Hello! I'm TomaBot, your TomatoGuard AI assistant. How can I help you with your tomato farming today?",
+        timestamp: new Date(),
+      }]);
+    }
+  }, [visible]);
+
   const handleSendMessage = async () => {
     if (message.trim() && !isLoading) {
       const userMessage: Message = {
@@ -62,58 +80,89 @@ const Chatbot: React.FC<ChatbotProps> = ({ visible, onClose }) => {
       };
 
       setMessages((prev) => [...prev, userMessage]);
+      const currentMessage = message.trim();
       setMessage('');
       setIsLoading(true);
 
       try {
-        // Convert messages to OpenAI format
-        const chatHistory: OpenAIChatMessage[] = messages
-          .filter((msg) => msg.type !== 'bot' || msg.id !== '1') // Exclude initial greeting
-          .map((msg) => ({
-            role: msg.type === 'user' ? 'user' : 'assistant',
-            content: msg.text,
-          }));
+        // Check if user is authenticated
+        if (!authState.accessToken) {
+          throw new Error('Please log in to chat with TomaBot.');
+        }
 
-        // Add current user message
-        chatHistory.push({
-          role: 'user',
-          content: userMessage.text,
-        });
-
-        // Get response from OpenAI
-        const botResponseText = await sendMessageToOpenAI(chatHistory);
+        // Send to Wit.ai via backend
+        const result = await sendMessageToWitAI(
+          currentMessage,
+          sessionId,
+          authState.accessToken
+        );
 
         const botMessage: Message = {
           id: (Date.now() + 1).toString(),
           type: 'bot',
-          text: botResponseText,
+          text: result.response,
           timestamp: new Date(),
+          intent: result.intent,
+          confidence: result.confidence,
         };
 
         setMessages((prev) => [...prev, botMessage]);
       } catch (error: any) {
+        console.error('Chat error:', error);
+        
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
           type: 'bot',
           text: error.message || 'Sorry, I encountered an error. Please try again.',
           timestamp: new Date(),
         };
+        
         setMessages((prev) => [...prev, errorMessage]);
+
+        // Show alert for authentication errors
+        if (error.message.includes('log in')) {
+          Alert.alert('Authentication Required', error.message);
+        }
       } finally {
         setIsLoading(false);
       }
     }
   };
 
+  const handleKeyPress = (e: any) => {
+    if (e.nativeEvent.key === 'Enter' && !isLoading) {
+      handleSendMessage();
+    }
+  };
+
   const renderMessage = ({ item }: { item: Message }) => (
-    <View style={[styles.messageContainer, item.type === 'user' ? styles.userMessageContainer : styles.botMessageContainer]}>
-      <View style={[styles.messageBubble, item.type === 'user' ? styles.userBubble : styles.botBubble]}>
-        <Text style={[styles.messageText, item.type === 'user' ? styles.userMessageText : styles.botMessageText]}>
+    <View style={[
+      styles.messageContainer, 
+      item.type === 'user' ? styles.userMessageContainer : styles.botMessageContainer
+    ]}>
+      <View style={[
+        styles.messageBubble, 
+        item.type === 'user' ? styles.userBubble : styles.botBubble
+      ]}>
+        <Text style={[
+          styles.messageText, 
+          item.type === 'user' ? styles.userMessageText : styles.botMessageText
+        ]}>
           {item.text}
         </Text>
-        <Text style={[styles.timestamp, item.type === 'user' ? styles.userTimestamp : styles.botTimestamp]}>
-          {item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </Text>
+        <View style={styles.messageFooter}>
+          <Text style={[
+            styles.timestamp, 
+            item.type === 'user' ? styles.userTimestamp : styles.botTimestamp
+          ]}>
+            {item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </Text>
+          {item.type === 'bot' && item.intent && item.confidence && (
+            <Text style={styles.intentBadge}>
+              {item.intent} • {Math.round(item.confidence * 100)}%
+            </Text>
+          )}
+        </View>
       </View>
     </View>
   );
@@ -128,7 +177,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ visible, onClose }) => {
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        keyboardVerticalOffset={0}
       >
         {/* Header */}
         <View style={styles.header}>
@@ -171,13 +220,18 @@ const Chatbot: React.FC<ChatbotProps> = ({ visible, onClose }) => {
               value={message}
               onChangeText={setMessage}
               onSubmitEditing={handleSendMessage}
+              onKeyPress={handleKeyPress}
               multiline
               maxLength={500}
               editable={!isLoading}
+              returnKeyType="send"
             />
             <TouchableOpacity
               onPress={handleSendMessage}
-              style={[styles.sendButton, (!message.trim() || isLoading) && styles.sendButtonDisabled]}
+              style={[
+                styles.sendButton, 
+                (!message.trim() || isLoading) && styles.sendButtonDisabled
+              ]}
               disabled={!message.trim() || isLoading}
             >
               <Ionicons name="send" size={20} color="#ffffff" />
@@ -274,17 +328,25 @@ const styles = StyleSheet.create({
   botMessageText: {
     color: '#1f2937',
   },
+  messageFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+  },
   timestamp: {
     fontSize: 11,
-    marginTop: 4,
   },
   userTimestamp: {
     color: 'rgba(255, 255, 255, 0.8)',
-    textAlign: 'right',
   },
   botTimestamp: {
     color: '#9ca3af',
-    textAlign: 'left',
+  },
+  intentBadge: {
+    fontSize: 10,
+    color: '#6b7280',
+    fontStyle: 'italic',
   },
   loadingContainer: {
     flexDirection: 'row',

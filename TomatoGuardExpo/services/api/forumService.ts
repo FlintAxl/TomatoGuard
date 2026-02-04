@@ -185,7 +185,7 @@ export const forumService = {
   },
 
   /**
-   * Update an existing post
+   * Update an existing post (text fields only, not images)
    */
   updatePost: async (
     postId: string, 
@@ -193,7 +193,9 @@ export const forumService = {
     token: string
   ): Promise<Post> => {
     const apiClient = getApiClient(token);
-    const response = await apiClient.put(`/api/v1/forum/posts/${postId}`, postData);
+    // Only send text fields, not images
+    const { image_urls, ...textData } = postData;
+    const response = await apiClient.put(`/api/v1/forum/posts/${postId}`, textData);
     return response.data;
   },
 
@@ -294,6 +296,118 @@ export const forumService = {
   ): Promise<void> => {
     const apiClient = getApiClient(token);
     await apiClient.delete(`/api/v1/forum/posts/${postId}/images/${imageIndex}`);
+  },
+
+  /**
+   * Replace all images for a post (for editing)
+   */
+  replacePostImages: async (
+    postId: string,
+    imageUris: string[],
+    token: string
+  ): Promise<Post> => {
+    const apiClient = getApiClient(token);
+    
+    if (imageUris.length === 0) {
+      // Just clear all images
+      const response = await apiClient.put(`/api/v1/forum/posts/${postId}`, {
+        image_urls: []
+      });
+      return response.data;
+    }
+    
+    // Detect which images are new (local URIs) vs existing (Cloudinary URLs)
+    const newImages: string[] = [];
+    const existingImages: string[] = [];
+    
+    for (const uri of imageUris) {
+      if (uri.startsWith('http://') || uri.startsWith('https://')) {
+        // Existing Cloudinary URL
+        existingImages.push(uri);
+      } else {
+        // New local image
+        newImages.push(uri);
+      }
+    }
+    
+    console.log(`📊 Images breakdown: ${existingImages.length} existing, ${newImages.length} new`);
+    
+    // Upload new images if any
+    let uploadedUrls: string[] = [];
+    if (newImages.length > 0) {
+      const formData = new FormData();
+      
+      const isWeb = typeof window !== 'undefined' && typeof document !== 'undefined';
+      
+      for (let index = 0; index < newImages.length; index++) {
+        const imageUri = newImages[index];
+        const filename = imageUri.split('/').pop() || `image_${index}_${Date.now()}.jpg`;
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : 'image/jpeg';
+        
+        try {
+          if (isWeb) {
+            const response = await fetch(imageUri);
+            const blob = await response.blob();
+            formData.append('images', blob, filename);
+            console.log(`📸 Added web image ${index + 1}: ${filename}`);
+          } else {
+            const fileObject = {
+              uri: imageUri,
+              type: type,
+              name: filename,
+            } as any;
+            formData.append('images', fileObject);
+            console.log(`📸 Added mobile image ${index + 1}: ${filename}`);
+          }
+        } catch (error) {
+          console.error(`❌ Failed to process image ${index + 1}:`, error);
+          throw new Error(`Failed to process image ${filename}`);
+        }
+      }
+      
+      // Upload new images
+      try {
+        const uploadResponse = await apiClient.post(
+          `/api/v1/forum/posts/${postId}/images`,
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+            timeout: 30000,
+          }
+        );
+        uploadedUrls = uploadResponse.data.image_urls;
+        console.log(`✅ Uploaded ${uploadedUrls.length} new images`);
+      } catch (error: any) {
+        console.error('❌ Image upload error:', error);
+        throw error;
+      }
+    }
+    
+    // Combine existing and newly uploaded URLs in the correct order
+    const allImageUrls: string[] = [];
+    let existingIndex = 0;
+    let uploadedIndex = 0;
+    
+    for (const uri of imageUris) {
+      if (uri.startsWith('http://') || uri.startsWith('https://')) {
+        allImageUrls.push(existingImages[existingIndex]);
+        existingIndex++;
+      } else {
+        allImageUrls.push(uploadedUrls[uploadedIndex]);
+        uploadedIndex++;
+      }
+    }
+    
+    // Update post with all image URLs
+    const response = await apiClient.put(`/api/v1/forum/posts/${postId}`, {
+      image_urls: allImageUrls
+    });
+    
+    console.log(`✅ Post images updated: ${allImageUrls.length} total images`);
+    return response.data;
   },
 
   // ========== USER POSTS ==========
