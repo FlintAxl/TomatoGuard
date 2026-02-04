@@ -10,6 +10,7 @@ from .routes.upload import router as upload_router
 from .routes.auth import router as auth_router
 from app.routes.forum import router as forum_router
 from .services.database import connect_to_mongo, close_mongo_connection
+from .routes.chatbot import router as chatbot_router
 
 load_dotenv()
 settings = get_settings()
@@ -71,6 +72,8 @@ app.include_router(analysis_router)
 app.include_router(upload_router)
 app.include_router(auth_router)
 app.include_router(forum_router)
+app.include_router(chatbot_router)
+
 if __name__ == "__main__":
     import uvicorn
     print("🌐 Starting server...")
