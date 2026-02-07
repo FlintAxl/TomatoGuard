@@ -9,13 +9,15 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  ImageBackground,
+  Image,
   StyleSheet,
   Dimensions,
   Animated,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { useAuth } from '../contexts/AuthContext';
+import MainLayout from '../components/Layout/MainLayout';
+import Drawer from '../components/Layout/Drawer';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -35,6 +37,8 @@ const LoginScreen = ({ navigation }: any) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const drawerAnimation = useRef(new Animated.Value(0)).current;
 
   const { login } = useAuth();
 
@@ -57,6 +61,30 @@ const LoginScreen = ({ navigation }: any) => {
     ]).start();
   }, []);
 
+  const handleMenuPress = () => {
+    setDrawerOpen(!drawerOpen);
+    Animated.spring(drawerAnimation, {
+      toValue: drawerOpen ? 0 : 1,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const handleCloseDrawer = () => {
+    setDrawerOpen(false);
+    Animated.spring(drawerAnimation, {
+      toValue: 0,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const handleNavItemPress = (itemId: string) => {
+    if (itemId === 'logout') {
+      console.log('Logout');
+      return;
+    }
+    handleCloseDrawer();
+  };
+
   const handleLogin = async () => {
     if (!email || !password) {
       setError('Please fill in all fields');
@@ -76,177 +104,181 @@ const LoginScreen = ({ navigation }: any) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={{ flex: 1 }}
-    >
-      <ScrollView 
-        contentContainerStyle={{ flexGrow: 1 }}
-        keyboardShouldPersistTaps="always"
-        showsVerticalScrollIndicator={false}
+    <View style={{ flex: 1 }}>
+      <MainLayout
+        drawerOpen={drawerOpen}
+        drawerAnimation={drawerAnimation}
+        pageTitle="TomatoGuard"
+        pageSubtitle="Sign In"
+        onMenuPress={handleMenuPress}
+        onCloseDrawer={handleCloseDrawer}
       >
-        {/* Section One - Hero Background */}
-        <ImageBackground
-          source={require('./../assets/section1-bg.png')}
-          style={styles.sectionOne}
-          resizeMode="cover"
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
         >
-          <LinearGradient
-          colors={['transparent', COLORS.color4]}
-          style={styles.heroGradient}
-          />
-        </ImageBackground>
-
-        {/* Section Two - Continues the gradient */}
-        <LinearGradient
-          colors={[COLORS.color4, COLORS.color4]}
-          style={styles.sectionTwo}
-        >
-          {/* Floating Login Card */}
-          <Animated.View
-            style={[
-              styles.loginCard,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
+          <ScrollView 
+            contentContainerStyle={{ flexGrow: 1 }}
+            keyboardShouldPersistTaps="always"
+            showsVerticalScrollIndicator={false}
           >
-            <LinearGradient
-              colors={[COLORS.color5, COLORS.color3]}
-              style={styles.cardGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+            <Animated.View
+              style={[
+                styles.containerWrapper,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                },
+              ]}
             >
-              {/* Logo and Header */}
-              <View style={styles.authHeader}>
-                <Text style={styles.authLogo}>TomatoGuard</Text>
-                <Text style={styles.authSubtitle}>Sign in to your account</Text>
-              </View>
+              <BlurView
+                intensity={30}
+                tint="dark"
+                style={styles.container}
+              >
+                {/* Picture on Left */}
+                <View style={styles.imageSection}>
+                  <Image
+                    source={require('./../assets/tomatofarmers.png')}
+                    style={styles.sideImage}
+                    resizeMode="cover"
+                  />
+                </View>
 
-              {/* Login Form */}
-              <View style={styles.authForm}>
-                {error ? (
-                  <View style={styles.errorMessage}>
-                    <Text style={styles.errorIcon}>⚠️</Text>
-                    <Text style={styles.errorText}>{error}</Text>
+                {/* Form on Right */}
+                <View style={styles.formSection}>
+                  <View style={styles.formContent}>
+                    {/* Logo and Header */}
+                    <View style={styles.authHeader}>
+                      <Text style={styles.authLogo}>TomatoGuard</Text>
+                      <Text style={styles.authSubtitle}>Sign in to your account</Text>
+                    </View>
+
+                    {/* Login Form */}
+                    <View style={styles.authForm}>
+                      {error ? (
+                        <View style={styles.errorMessage}>
+                          <Text style={styles.errorIcon}>⚠️</Text>
+                          <Text style={styles.errorText}>{error}</Text>
+                        </View>
+                      ) : null}
+
+                      <View style={styles.inputContainer}>
+                        <Text style={styles.inputLabel}>Email</Text>
+                        <TextInput
+                          style={[
+                            styles.textInput,
+                            focusedInput === 'email' && styles.textInputFocused,
+                          ]}
+                          placeholder="Enter your email"
+                          placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                          value={email}
+                          onChangeText={setEmail}
+                          onFocus={() => setFocusedInput('email')}
+                          onBlur={() => setFocusedInput(null)}
+                          autoCapitalize="none"
+                          keyboardType="email-address"
+                          editable={!loading}
+                        />
+                      </View>
+
+                      <View style={styles.inputContainer}>
+                        <Text style={styles.inputLabel}>Password</Text>
+                        <TextInput
+                          style={[
+                            styles.textInput,
+                            focusedInput === 'password' && styles.textInputFocused,
+                          ]}
+                          placeholder="Enter your password"
+                          placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                          value={password}
+                          onChangeText={setPassword}
+                          onFocus={() => setFocusedInput('password')}
+                          onBlur={() => setFocusedInput(null)}
+                          secureTextEntry={true}
+                          editable={!loading}
+                        />
+                        <TouchableOpacity style={styles.forgotPassword}>
+                          <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      <TouchableOpacity
+                        style={[
+                          styles.authButton,
+                          loading && styles.authButtonDisabled,
+                        ]}
+                        onPress={handleLogin}
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <ActivityIndicator color="#ffffff" />
+                        ) : (
+                          <Text style={styles.authButtonText}>Sign In</Text>
+                        )}
+                      </TouchableOpacity>
+
+                      <View style={styles.authLinkContainer}>
+                        <Text style={styles.authLinkText}>Don't have an account?</Text>
+                        <TouchableOpacity onPress={() => navigation.navigate('Auth', { screen: 'Register' })}>
+                          <Text style={styles.authLink}>Sign up</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
                   </View>
-                ) : null}
-
-                <View style={styles.inputContainer}>
-                  <Text style={styles.inputLabel}>Email</Text>
-                  <TextInput
-                    style={[
-                      styles.textInput,
-                      focusedInput === 'email' && styles.textInputFocused,
-                    ]}
-                    placeholder="Enter your email"
-                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                    value={email}
-                    onChangeText={setEmail}
-                    onFocus={() => setFocusedInput('email')}
-                    onBlur={() => setFocusedInput(null)}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    editable={!loading}
-                  />
                 </View>
+              </BlurView>
+            </Animated.View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </MainLayout>
 
-                <View style={styles.inputContainer}>
-                  <Text style={styles.inputLabel}>Password</Text>
-                  <TextInput
-                    style={[
-                      styles.textInput,
-                      focusedInput === 'password' && styles.textInputFocused,
-                    ]}
-                    placeholder="Enter your password"
-                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                    value={password}
-                    onChangeText={setPassword}
-                    onFocus={() => setFocusedInput('password')}
-                    onBlur={() => setFocusedInput(null)}
-                    secureTextEntry={true}
-                    editable={!loading}
-                  />
-                  <TouchableOpacity style={styles.forgotPassword}>
-                    <Text style={styles.forgotPasswordText}>Forgot password?</Text>
-                  </TouchableOpacity>
-                </View>
-
-                <TouchableOpacity
-                  style={[
-                    styles.authButton,
-                    loading && styles.authButtonDisabled,
-                  ]}
-                  onPress={handleLogin}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <ActivityIndicator color="#ffffff" />
-                  ) : (
-                    <Text style={styles.authButtonText}>Sign In</Text>
-                  )}
-                </TouchableOpacity>
-
-                <View style={styles.authLinkContainer}>
-                  <Text style={styles.authLinkText}>Don't have an account?</Text>
-                  <TouchableOpacity onPress={() => navigation.navigate('Auth', { screen: 'Register' })}>
-                    <Text style={styles.authLink}>Sign up</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </LinearGradient>
-          </Animated.View>
-        </LinearGradient>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <Drawer
+        activeTab="login"
+        onItemPress={handleNavItemPress}
+        animation={drawerAnimation}
+        drawerOpen={drawerOpen}
+        onClose={handleCloseDrawer}
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  // Section One - Hero Background
-  sectionOne: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT * 0.7,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
+  containerWrapper: {
+    flex: 1,
+    margin: 50,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
-  heroGradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 400,
+  container: {
+    flex: 1,
+    flexDirection: 'row',
+    minHeight: SCREEN_HEIGHT - 150,
   },
 
-  // Section Two - Gradient continuation
-  sectionTwo: {
-    paddingHorizontal: 20,
-    paddingVertical: 40,
-    paddingBottom: 80,
-    paddingTop: 100,
-    backgroundColor: COLORS.color4,
-    alignItems: 'center',
+  // Image Section (Left)
+  imageSection: {
+    flex: 1,
+    minWidth: '40%',
   },
-
-  // Floating Login Card
-  loginCard: {
+  sideImage: {
     width: '100%',
-    maxWidth: 480,
-    marginTop: -570, // Overlaps both sections
-    borderRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 15,
+    height: '100%',
   },
-  cardGradient: {
-    borderRadius: 24,
+
+  // Form Section (Right)
+  formSection: {
+    flex: 1,
+    minWidth: '60%',
     padding: 40,
-    paddingTop: 50,
-    paddingBottom: 50,
+    justifyContent: 'center',
+  },
+  formContent: {
+    maxWidth: 480,
+    width: '100%',
+    alignSelf: 'center',
   },
 
   // Header
@@ -279,7 +311,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(233, 82, 58, 0.15)',
     borderWidth: 1,
-    borderColor: COLORS.color2,
+    borderColor: COLORS.color3,
     borderRadius: 12,
     padding: 14,
     marginBottom: 24,
@@ -319,7 +351,7 @@ const styles = StyleSheet.create({
   },
   textInputFocused: {
     borderColor: COLORS.color1,
-    backgroundColor: 'rgba(248, 255, 118, 0.05)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
 
   // Forgot Password
@@ -328,14 +360,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   forgotPasswordText: {
-    color: COLORS.color1,
+    color: COLORS.color3,
     fontSize: 13,
     fontFamily: 'System',
   },
 
   // Auth Button
   authButton: {
-    backgroundColor: COLORS.color2,
+    backgroundColor: COLORS.color3,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
@@ -371,7 +403,7 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
   },
   authLink: {
-    color: COLORS.color1,
+    color: COLORS.color3,
     fontSize: 14,
     fontWeight: '600',
     fontFamily: 'System',

@@ -15,7 +15,6 @@ const MainNavigator = () => {
       <Stack.Screen name="MainApp" component={MainAppScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
-      {/* ForumScreen, CreatePostScreen, and PostDetailScreen are now handled within MainAppScreen */}
     </Stack.Navigator>
   );
 };

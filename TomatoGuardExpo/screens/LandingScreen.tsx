@@ -18,8 +18,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { RootStackNavigationProp } from '../navigation/types';
-import MainLayout from './../components/common/Layout/MainLayout';
-import Drawer from '../components/common/Drawer/Drawer';
+import MainLayout from './../components/Layout/MainLayout';
+import Drawer from '../components/Layout/Drawer';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 

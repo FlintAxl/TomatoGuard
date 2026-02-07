@@ -1,3 +1,4 @@
+// TomatoGuardExpo/src/screens/ForumScreen.tsx
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -7,14 +8,12 @@ import {
   TextInput,
   Image,
   FlatList,
-  SafeAreaView,
-  StyleSheet,
   Alert,
   ActivityIndicator,
   Dimensions,
+  StyleSheet,
+  Platform,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { MainStackNavigationProp } from '../navigation/types';
 import { useAuth } from '../contexts/AuthContext';
 import { forumService, Post as ForumPost } from '../services/api/forumService';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -27,15 +26,10 @@ import {
   faFilter,
   faImage,
 } from '@fortawesome/free-solid-svg-icons';
+import CreatePostOverlay from '../components/CreatePost';
+import PostDetailOverlay from '../components/PostDetails';
 
 const { width } = Dimensions.get('window');
-const IMAGE_WIDTH = width - 72; // Account for padding
-
-interface Blog {
-  id: string;
-  title: string;
-  author: string;
-}
 
 interface ForumScreenProps {
   setActiveTab: (tab: string) => void;
@@ -43,76 +37,20 @@ interface ForumScreenProps {
 }
 
 const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostDetail }) => {
-  const navigation = useNavigation<MainStackNavigationProp>();
-  const { authState } = useAuth();
+  const { authState, updateUser, logout } = useAuth();
   
   // State for posts and UI
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
-
-  // Fetch posts from backend
-  const fetchPosts = async () => {
-    console.log('🔍 Auth State Check:');
-    console.log('Has user:', !!authState.user);
-    console.log('Has accessToken:', !!authState.accessToken);
-    console.log('AccessToken length:', authState.accessToken?.length || 0);
-    
-    if (!authState.accessToken) {
-      console.log('❌ No access token - cannot fetch posts');
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      console.log('📡 Fetching posts with token...');
-      const fetchedPosts = await forumService.getPosts(authState.accessToken, {
-        category: filterCategory !== 'all' ? filterCategory : undefined,
-        search: searchQuery || undefined
-      });
-      
-      // Debug logging - check what we actually received
-      console.log('📊 Forum Posts Debug:');
-      console.log('Raw response from API:', fetchedPosts);
-      console.log('Type of response:', typeof fetchedPosts);
-      console.log('Is array?', Array.isArray(fetchedPosts));
-      
-      // Ensure we have an array
-      const postsArray = Array.isArray(fetchedPosts) ? fetchedPosts : [];
-      
-      console.log('Total posts fetched:', postsArray.length);
-      postsArray.forEach((post, index) => {
-        console.log(`Post ${index + 1}:`, {
-          id: post.id,
-          title: post.title,
-          author_name: post.author_name,
-          author_id: post.author_id,
-          likes_count: post.likes_count,
-          images_count: post.image_urls?.length || 0
-        });
-      });
-      
-      setPosts(postsArray);
-    } catch (error) {
-      console.error('Error fetching posts:', error);
-      Alert.alert('Error', 'Failed to load posts');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch posts on component mount and when filters change
-  useEffect(() => {
-    fetchPosts();
-  }, [filterCategory, searchQuery]);
-
-  const blogs: Blog[] = [
-    { id: '1', title: '10 Ways to Prevent Tomato Diseases', author: 'Admin' },
-    { id: '2', title: 'Understanding Late Blight', author: 'Dr. Garcia' },
-    { id: '3', title: 'Organic Farming Best Practices', author: 'Admin' },
-    { id: '4', title: 'Seasonal Care Guide', author: 'Expert Team' }
-  ];
+  const [userData, setUserData] = useState<any>(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  
+  // Overlay states
+  const [showCreatePost, setShowCreatePost] = useState(false);
+  const [showPostDetail, setShowPostDetail] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
 
   const categories = [
     { id: 'all', label: 'All' },
@@ -122,6 +60,126 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
     { id: 'questions', label: 'Questions' },
   ];
 
+  // Fetch user profile
+  const fetchUserProfile = async () => {
+    if (!authState.accessToken) return;
+    
+    // Use existing user data from authState if available
+    if (authState.user) {
+      setUserData(authState.user);
+      setLoadingProfile(false);
+      return;
+    }
+    
+    setLoadingProfile(true);
+    try {
+      let API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+      
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        const currentOrigin = window.location.origin;
+        const isNgrok = currentOrigin.includes('.ngrok-free.dev') || 
+                        currentOrigin.includes('.exp.direct') || 
+                        currentOrigin.includes('.ngrok.io');
+        
+        if (isNgrok) {
+          API_BASE_URL = 'http://localhost:8000';
+        }
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authState.accessToken}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        // Add these options to help with CORS and ad blockers
+        mode: 'cors',
+        credentials: 'omit',
+      });
+
+      if (response.status === 401) {
+        console.log('Session expired, using cached user data');
+        // Use cached user data instead of logging out
+        if (authState.user) {
+          setUserData(authState.user);
+        }
+        return;
+      }
+
+      if (!response.ok) {
+        console.error('Profile fetch failed with status:', response.status);
+        // Fallback to cached user data
+        if (authState.user) {
+          setUserData(authState.user);
+        }
+        return;
+      }
+
+      const responseText = await response.text();
+      
+      try {
+        const data = JSON.parse(responseText);
+        setUserData(data);
+        updateUser(data);
+      } catch (parseError) {
+        console.error('Failed to parse response:', parseError);
+        // Fallback to cached user data
+        if (authState.user) {
+          setUserData(authState.user);
+        }
+      }
+      
+    } catch (error: any) {
+      console.error('Profile fetch error:', error);
+      // Fallback to cached user data instead of showing error
+      if (authState.user) {
+        setUserData(authState.user);
+      }
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
+  // Fetch posts from backend
+  const fetchPosts = async () => {
+    if (!authState.accessToken) return;
+    
+    try {
+      setLoading(true);
+      const fetchedPosts = await forumService.getPosts(authState.accessToken, {
+        category: filterCategory !== 'all' ? filterCategory : undefined,
+        search: searchQuery || undefined
+      });
+      
+      const postsArray = Array.isArray(fetchedPosts) ? fetchedPosts : [];
+      setPosts(postsArray);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      Alert.alert('Error', 'Failed to load posts');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch posts and profile on component mount
+  useEffect(() => {
+    fetchUserProfile();
+    fetchPosts();
+  }, []);
+
+  // Refetch posts when filters change
+  useEffect(() => {
+    fetchPosts();
+  }, [filterCategory, searchQuery]);
+
+  // Refetch posts when overlays close
+  useEffect(() => {
+    if (!showCreatePost && !showPostDetail) {
+      fetchPosts();
+    }
+  }, [showCreatePost, showPostDetail]);
+
   const handleVote = async (postId: string, type: 'like') => {
     if (!authState.accessToken) {
       Alert.alert('Error', 'You must be logged in to vote');
@@ -130,8 +188,6 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
 
     try {
       const updatedPost = await forumService.toggleLike(postId, authState.accessToken);
-      
-      // Update the post in the posts list
       const updatedPosts = posts.map(post => 
         post.id === postId ? updatedPost : post
       );
@@ -142,13 +198,16 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
     }
   };
 
-  // Posts are already filtered by the API call
+  const handlePostClick = (postId: string) => {
+    setSelectedPostId(postId);
+    setShowPostDetail(true);
+  };
+
   const filteredPosts = posts;
 
   const renderPostImages = (imageUrls: string[]) => {
     if (!imageUrls || imageUrls.length === 0) return null;
 
-    // Single image
     if (imageUrls.length === 1) {
       return (
         <View style={styles.imageContainer}>
@@ -161,7 +220,6 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
       );
     }
 
-    // Two images
     if (imageUrls.length === 2) {
       return (
         <View style={styles.imageContainer}>
@@ -181,7 +239,6 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
       );
     }
 
-    // Three images
     if (imageUrls.length === 3) {
       return (
         <View style={styles.imageContainer}>
@@ -206,7 +263,6 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
       );
     }
 
-    // Four or more images - show first 3 with "+N more" overlay on last
     const remainingCount = imageUrls.length - 3;
     return (
       <View style={styles.imageContainer}>
@@ -241,7 +297,7 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
   const renderPost = ({ item }: { item: ForumPost }) => (
     <TouchableOpacity
       style={styles.postCard}
-      onPress={() => navigateToPostDetail(item.id)}
+      onPress={() => handlePostClick(item.id)}
     >
       <View style={styles.postHeader}>
         <View style={styles.postAuthorInfo}>
@@ -254,7 +310,6 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
           </View>
         </View>
         
-        {/* Category Badge */}
         {item.category && (
           <View style={[styles.categoryBadge, getCategoryColor(item.category)]}>
             <Text style={styles.categoryBadgeText}>{item.category}</Text>
@@ -269,7 +324,6 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
         </Text>
       </View>
 
-      {/* Render Images */}
       {renderPostImages(item.image_urls)}
 
       <View style={styles.postActions}>
@@ -296,7 +350,7 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
 
         <TouchableOpacity
           style={[styles.actionBtn, styles.commentBtn]}
-          onPress={() => navigateToPostDetail(item.id)}
+          onPress={() => handlePostClick(item.id)}
         >
           <FontAwesome5 icon={faComment} size={16} color="#ffffff" />
           <Text style={styles.actionText}>{item.comments_count} Comments</Text>
@@ -305,7 +359,6 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
     </TouchableOpacity>
   );
 
-  // Helper function to get category colors
   const getCategoryColor = (category: string) => {
     const colors: { [key: string]: any } = {
       diseases: { backgroundColor: '#ef444420', borderColor: '#ef4444' },
@@ -318,208 +371,311 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.headerTitle}>Community Forum</Text>
-          <Text style={styles.headerSubtitle}>Share knowledge, ask questions, grow together</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.createPostBtn}
-          onPress={() => setActiveTab('createpost')}
-        >
-          <FontAwesome5 icon={faEdit} size={16} color="#ffffff" />
-          <Text style={styles.createPostText}>New Post</Text>
-        </TouchableOpacity>
+    <View style={styles.container}>
+      {/* Left Sidebar - User Profile (30%) */}
+      <View style={styles.sidebar}>
+          {/* User Profile Section */}
+          <View style={styles.profileSection}>
+            <View style={styles.profileHeader}>
+              <View style={styles.profileAvatar}>
+                <Text style={styles.profileInitial}>
+                  {userData?.full_name?.[0]?.toUpperCase() || userData?.email?.[0]?.toUpperCase() || 'U'}
+                </Text>
+              </View>
+              <Text style={styles.profileName}>
+                {userData?.full_name || 'User'}
+              </Text>
+              <Text style={styles.profileEmail}>
+                {userData?.email}
+              </Text>
+            </View>
+
+            {/* Account Info */}
+            <View style={styles.accountInfo}>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Full Name</Text>
+                <Text style={styles.infoValue}>{userData?.full_name || 'Not set'}</Text>
+              </View>
+              
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Email</Text>
+                <Text style={styles.infoValue} numberOfLines={1}>{userData?.email}</Text>
+              </View>
+              
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Status</Text>
+                <View style={styles.statusContainer}>
+                  <View style={[
+                    styles.statusDot,
+                    { backgroundColor: userData?.is_active ? '#10b981' : '#ef4444' }
+                  ]} />
+                  <Text style={styles.infoValue}>
+                    {userData?.is_active ? 'Active' : 'Inactive'}
+                  </Text>
+                </View>
+              </View>
+              
+              {userData?.created_at && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Member Since</Text>
+                  <Text style={styles.infoValue}>
+                    {new Date(userData.created_at).toLocaleDateString()}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* Create Post Button */}
+          <TouchableOpacity
+            style={styles.createPostButton}
+            onPress={() => setShowCreatePost(true)}
+          >
+            <FontAwesome5 icon={faEdit} size={16} color="#ffffff" />
+            <Text style={styles.createPostButtonText}>Create New Post</Text>
+          </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.mainContent}>
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <View style={styles.searchInputContainer}>
-            <FontAwesome5 icon={faSearch} size={18} color="#94a3b8" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search posts..."
-              placeholderTextColor="#94a3b8"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            <TouchableOpacity style={styles.filterBtn}>
-              <FontAwesome5 icon={faFilter} size={18} color="#ffffff" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Category Filter */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryContainer}>
-          {categories.map(category => (
-            <TouchableOpacity
-              key={category.id}
-              style={[
-                styles.categoryChip,
-                filterCategory === category.id && styles.categoryChipActive,
-              ]}
-              onPress={() => setFilterCategory(category.id)}
-            >
-              <Text
-                style={[
-                  styles.categoryText,
-                  filterCategory === category.id && styles.categoryTextActive,
-                ]}
-              >
-                {category.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Posts Feed */}
-        <View style={styles.postsContainer}>
-          <Text style={styles.sectionTitle}>Recent Discussions</Text>
-          
-          {loading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#10b981" />
-              <Text style={styles.loadingText}>Loading posts...</Text>
-            </View>
-          ) : filteredPosts.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <FontAwesome5 icon={faImage} size={48} color="#475569" />
-              <Text style={styles.emptyText}>No posts found</Text>
-              <Text style={styles.emptySubtext}>Be the first to start a discussion!</Text>
-              <TouchableOpacity 
-                style={styles.emptyButton}
-                onPress={() => setActiveTab('createpost')}
-              >
-                <Text style={styles.emptyButtonText}>Create Post</Text>
+      {/* Main Content Area - Posts (70%) */}
+      <View style={styles.mainContent}>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <View style={styles.searchInputContainer}>
+              <FontAwesome5 icon={faSearch} size={18} color="#94a3b8" />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search posts..."
+                placeholderTextColor="#94a3b8"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+              <TouchableOpacity style={styles.filterBtn}>
+                <FontAwesome5 icon={faFilter} size={18} color="#ffffff" />
               </TouchableOpacity>
             </View>
-          ) : (
-            <FlatList
-              data={filteredPosts}
-              renderItem={renderPost}
-              keyExtractor={item => item.id}
-              scrollEnabled={false}
-              showsVerticalScrollIndicator={false}
-            />
-          )}
-        </View>
-
-        {/* Featured Blogs */}
-        <View style={styles.blogsContainer}>
-          <View style={styles.blogsHeader}>
-            <Text style={styles.sectionTitle}>Featured Blogs</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAllText}>See All</Text>
-            </TouchableOpacity>
           </View>
-          
-          {blogs.map(blog => (
-            <TouchableOpacity key={blog.id} style={styles.blogCard}>
-              <View style={styles.blogIcon}>
-                <FontAwesome5 icon={faImage} size={20} color="#10b981" />
+
+          {/* Category Filter */}
+          <View style={styles.categoryContainer}>
+            {categories.map(category => (
+              <TouchableOpacity
+                key={category.id}
+                style={[
+                  styles.categoryChip,
+                  filterCategory === category.id && styles.categoryChipActive,
+                ]}
+                onPress={() => setFilterCategory(category.id)}
+              >
+                <Text
+                  style={[
+                    styles.categoryText,
+                    filterCategory === category.id && styles.categoryTextActive,
+                  ]}
+                >
+                  {category.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Posts Feed */}
+          <View style={styles.postsContainer}>
+            <Text style={styles.sectionTitle}>Recent Discussions</Text>
+            
+            {loading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#10b981" />
+                <Text style={styles.loadingText}>Loading posts...</Text>
               </View>
-              <View style={styles.blogContent}>
-                <Text style={styles.blogTitle}>{blog.title}</Text>
-                <Text style={styles.blogAuthor}>by {blog.author}</Text>
+            ) : filteredPosts.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <FontAwesome5 icon={faImage} size={48} color="#475569" />
+                <Text style={styles.emptyText}>No posts found</Text>
+                <Text style={styles.emptySubtext}>Be the first to start a discussion!</Text>
+                <TouchableOpacity 
+                  style={styles.emptyButton}
+                  onPress={() => setShowCreatePost(true)}
+                >
+                  <Text style={styles.emptyButtonText}>Create Post</Text>
+                </TouchableOpacity>
               </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+            ) : (
+              <FlatList
+                data={filteredPosts}
+                renderItem={renderPost}
+                keyExtractor={item => item.id}
+                scrollEnabled={false}
+                showsVerticalScrollIndicator={false}
+              />
+            )}
+          </View>
+        </ScrollView>
+      </View>
+
+      {/* Overlays */}
+      <CreatePostOverlay
+        visible={showCreatePost}
+        onClose={() => setShowCreatePost(false)}
+      />
+
+      <PostDetailOverlay
+        visible={showPostDetail}
+        onClose={() => {
+          setShowPostDetail(false);
+          setSelectedPostId(null);
+        }}
+        postId={selectedPostId}
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
-  },
-  header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    gap: 20,
+  },
+  
+  // Sidebar Styles (30%)
+  sidebar: {
+    width: '30%',
     backgroundColor: '#1e293b',
+    borderRightWidth: 1,
+    borderRightColor: '#334155',
+    borderRadius: 20,
+    padding: 20,
+    alignSelf: 'flex-start',
+    position: 'relative',
+  },
+  profileSection: {
+    marginBottom: 24,
+  },
+  profileHeader: {
+    alignItems: 'center',
+    marginBottom: 24,
+    paddingBottom: 24,
     borderBottomWidth: 1,
     borderBottomColor: '#334155',
   },
-  headerLeft: {
-    flex: 1,
+  profileAvatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#10b981',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
   },
-  headerTitle: {
-    fontSize: 24,
+  profileInitial: {
+    fontSize: 32,
+    color: '#ffffff',
+    fontWeight: 'bold',
+  },
+  profileName: {
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#ffffff',
-    fontFamily: 'serif',
-    fontStyle: 'italic',
+    marginBottom: 4,
+    textAlign: 'center',
   },
-  headerSubtitle: {
+  profileEmail: {
+    fontSize: 14,
+    color: '#94a3b8',
+    textAlign: 'center',
+  },
+  accountInfo: {
+    gap: 16,
+  },
+  infoRow: {
+    gap: 4,
+  },
+  infoLabel: {
     fontSize: 12,
     color: '#94a3b8',
-    marginTop: 2,
+    fontWeight: '500',
+    textTransform: 'uppercase',
   },
-  createPostBtn: {
+  infoValue: {
+    fontSize: 14,
+    color: '#ffffff',
+  },
+  statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  createPostButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#10b981',
+    paddingVertical: 12,
     paddingHorizontal: 16,
-    paddingVertical: 10,
     borderRadius: 8,
     gap: 8,
   },
-  createPostText: {
+  createPostButtonText: {
     color: '#ffffff',
-    fontWeight: '600',
     fontSize: 14,
+    fontWeight: '600',
   },
+
+  // Main Content Styles (70%)
   mainContent: {
     flex: 1,
+    backgroundColor: '#2d7736',
+    borderRadius: 20,
   },
   searchContainer: {
     padding: 20,
-    backgroundColor: '#1e293b',
+    borderRadius: 20,
   },
   searchInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#334155',
+    backgroundColor: '#ffffff',
     borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
   },
   searchInput: {
     flex: 1,
-    color: '#ffffff',
+    color: '#2d7736',
     fontSize: 14,
     marginLeft: 12,
   },
   filterBtn: {
     padding: 8,
-    backgroundColor: '#475569',
+    backgroundColor: '#2d7736',
     borderRadius: 8,
   },
   categoryContainer: {
+    flexDirection: 'row',
     paddingHorizontal: 20,
     paddingVertical: 12,
-    backgroundColor: '#1e293b',
+    gap: 8,  
   },
   categoryChip: {
+    flex: 1, 
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: '#334155',
+    backgroundColor: '#ffffff',
     borderRadius: 20,
-    marginRight: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   categoryChipActive: {
-    backgroundColor: '#10b981',
+    backgroundColor: '#e9523a',
   },
   categoryText: {
-    color: '#cbd5e1',
+    color: '#2d7736',
     fontSize: 14,
     fontWeight: '500',
   },
@@ -644,14 +800,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
-  // Image Styles
   imageContainer: {
     marginVertical: 12,
     borderRadius: 12,
     overflow: 'hidden',
   },
   singleImage: {
-    width: '100%',
+    width: 200,
     height: 200,
     borderRadius: 12,
   },
@@ -662,7 +817,7 @@ const styles = StyleSheet.create({
   },
   halfImage: {
     flex: 1,
-    height: 150,
+    height: 200,
     borderRadius: 8,
   },
   imageWrapper: {
@@ -718,52 +873,6 @@ const styles = StyleSheet.create({
   },
   actionTextActive: {
     color: '#10b981',
-  },
-  blogsContainer: {
-    padding: 20,
-    backgroundColor: '#1e293b',
-    marginTop: 8,
-  },
-  blogsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  seeAllText: {
-    color: '#10b981',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  blogCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#334155',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  blogIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: '#10b98120',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  blogContent: {
-    flex: 1,
-  },
-  blogTitle: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  blogAuthor: {
-    color: '#94a3b8',
-    fontSize: 14,
   },
 });
 

@@ -1,11 +1,29 @@
-import React from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  RefreshControl,
+  ActivityIndicator,
+  TouchableOpacity,
+} from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { useDrawer } from '../hooks/useDrawer';
-import Drawer from '../components/common/Drawer/Drawer';
-import AdminLayout from '../components/common/Layout/AdminLayout';
+import Drawer from '../components/Layout/Drawer';
+import AdminLayout from '../components/Layout/AdminLayout';
 import { MainStackNavigationProp, RootStackNavigationProp } from '../navigation/types';
 import { useNavigation } from '@react-navigation/native';
+
+// Analytics components
+import MLOverviewCards from '../components/MLOverviewCards';
+import ModelAccuracyPanel from '../components/ModelAccuracyPanel';
+import DiseaseDetectionStats from '../components/DiseaseDetectionStats';
+import DetectionTrendChart from '../components/DetectionTrendChart';
+import ConfidenceDistribution from '../components/ConfidenceDistribution';
+import SeverityBreakdown from '../components/SeverityBreakdown';
+import RecentAnalysesFeed from '../components/RecentAnalysesFeed';
+import { fetchMLAnalytics, MLAnalyticsData } from '../services/api/analyticsService';
 
 const AdminDashboardScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
@@ -13,31 +31,109 @@ const AdminDashboardScreen = () => {
   const { authState } = useAuth();
   const { drawerOpen, drawerAnimation, toggleDrawer, closeDrawer } = useDrawer();
 
-  const handleNavItemPress = (itemId: string) => {
-    if (itemId === 'logout') {
-      // Handle logout
-      return;
+  const [analytics, setAnalytics] = useState<MLAnalyticsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadAnalytics = useCallback(async (isRefresh = false) => {
+    try {
+      if (isRefresh) setRefreshing(true);
+      else setLoading(true);
+      setError(null);
+
+      const data = await fetchMLAnalytics(authState.accessToken || undefined);
+      setAnalytics(data);
+    } catch (err: any) {
+      console.error('Failed to load analytics:', err);
+      setError(err?.response?.data?.detail || err.message || 'Failed to load analytics');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
+  }, [authState.accessToken]);
+
+  useEffect(() => {
+    loadAnalytics();
+  }, [loadAnalytics]);
+
+  const handleNavItemPress = (itemId: string) => {
+    if (itemId === 'logout') return;
     if (itemId === 'profile') {
       mainNavigation.navigate('Profile');
       return;
     }
     if (itemId === 'admin') {
-      // Already on admin dashboard, just close drawer
       closeDrawer();
       return;
     }
-    // Navigate back to MainApp for other items
     mainNavigation.navigate('MainApp');
     closeDrawer();
+  };
+
+  // ---- Render helpers ----
+  const renderLoading = () => (
+    <View style={s.centerContainer}>
+      <ActivityIndicator size="large" color="#6366f1" />
+      <Text style={s.loadingText}>Loading ML Analytics...</Text>
+    </View>
+  );
+
+  const renderError = () => (
+    <View style={s.centerContainer}>
+      <Text style={s.errorIcon}>⚠️</Text>
+      <Text style={s.errorText}>{error}</Text>
+      <TouchableOpacity style={s.retryBtn} onPress={() => loadAnalytics()}>
+        <Text style={s.retryText}>Retry</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderDashboard = () => {
+    if (!analytics) return null;
+    return (
+      <>
+        {/* Header */}
+        <View style={s.header}>
+          <Text style={s.headerTitle}>ML Analytics Dashboard</Text>
+          <Text style={s.headerSub}>
+            Tomato disease detection model performance & statistics
+          </Text>
+        </View>
+
+        {/* 1. Overview KPI cards */}
+        <MLOverviewCards data={analytics.overview} />
+
+        {/* 2. Model Accuracy (static eval metrics, expandable per-class) */}
+        <ModelAccuracyPanel data={analytics.model_evaluation} />
+
+        {/* 3. Disease Detection Statistics (all diseases, 0-filled) */}
+        <DiseaseDetectionStats data={analytics.disease_stats} />
+
+        {/* 4. Detection Trend (daily bar chart per model) */}
+        <DetectionTrendChart data={analytics.detection_trends} />
+
+        {/* 5. Confidence Distribution (buckets + per-disease avg) */}
+        <ConfidenceDistribution data={analytics.confidence_distribution} />
+
+        {/* 6. Severity & Plant Part Distribution */}
+        <SeverityBreakdown
+          data={analytics.severity_breakdown}
+          partDistribution={analytics.part_distribution}
+        />
+
+        {/* 7. Recent Analyses Feed */}
+        <RecentAnalysesFeed data={analytics.recent_analyses} />
+      </>
+    );
   };
 
   return (
     <AdminLayout
       drawerOpen={drawerOpen}
       drawerAnimation={drawerAnimation}
-      pageTitle="Admin Dashboard"
-      pageSubtitle="System administration and management"
+      pageTitle="ML Analytics"
+      pageSubtitle="Model performance & detection statistics"
       userEmail={authState.user?.email?.split('@')[0]}
       onMenuPress={toggleDrawer}
       onCloseDrawer={closeDrawer}
@@ -51,48 +147,81 @@ const AdminDashboardScreen = () => {
         />
       }
     >
-      <ScrollView style={{ flex: 1, padding: 20 }}>
-        <View style={{ marginBottom: 20 }}>
-          <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 10 }}>
-            Admin Dashboard
-          </Text>
-          <Text style={{ fontSize: 16, color: '#666' }}>
-            Welcome to the admin panel. Manage users and system settings here.
-          </Text>
-        </View>
-
-        <View style={{ 
-          backgroundColor: '#f5f5f5', 
-          padding: 20, 
-          borderRadius: 10,
-          marginBottom: 20 
-        }}>
-          <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>
-            Admin Functions
-          </Text>
-          <Text style={{ fontSize: 14, color: '#666' }}>
-            • User management{'\n'}
-            • System analytics{'\n'}
-            • Content moderation{'\n'}
-            • Settings configuration
-          </Text>
-        </View>
-
-        <View style={{ 
-          backgroundColor: '#e8f4fd', 
-          padding: 20, 
-          borderRadius: 10 
-        }}>
-          <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>
-            System Status
-          </Text>
-          <Text style={{ fontSize: 14, color: '#666' }}>
-            All systems operational
-          </Text>
-        </View>
+      <ScrollView
+        style={s.scrollView}
+        contentContainerStyle={s.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => loadAnalytics(true)}
+            tintColor="#6366f1"
+            colors={['#6366f1']}
+            progressBackgroundColor="#1e293b"
+          />
+        }
+      >
+        {loading ? renderLoading() : error ? renderError() : renderDashboard()}
       </ScrollView>
     </AdminLayout>
   );
 };
+
+const s = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#0f172a',
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  header: {
+    marginBottom: 20,
+  },
+  headerTitle: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#f8fafc',
+    letterSpacing: 0.5,
+  },
+  headerSub: {
+    fontSize: 13,
+    color: '#64748b',
+    marginTop: 4,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 80,
+  },
+  loadingText: {
+    color: '#94a3b8',
+    marginTop: 12,
+    fontSize: 14,
+  },
+  errorIcon: {
+    fontSize: 40,
+    marginBottom: 12,
+  },
+  errorText: {
+    color: '#f87171',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 20,
+  },
+  retryBtn: {
+    backgroundColor: '#6366f1',
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+});
 
 export default AdminDashboardScreen;

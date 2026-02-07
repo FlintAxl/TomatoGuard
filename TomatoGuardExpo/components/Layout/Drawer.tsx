@@ -9,7 +9,7 @@ import {
   Platform,
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface DrawerProps {
   activeTab: string;
@@ -103,7 +103,7 @@ const Drawer: React.FC<DrawerProps> = ({
                 </View>
               ) : (
                 <Animated.Image
-                  source={require('../../../assets/favicon.png')}
+                  source={require('../../assets/favicon.png')}
                   style={styles.logoImage}
                 />
               )}

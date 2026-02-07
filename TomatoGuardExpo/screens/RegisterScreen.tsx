@@ -9,13 +9,15 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  ImageBackground,
+  Image,
   StyleSheet,
   Dimensions,
   Animated,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { useAuth } from '../contexts/AuthContext';
+import MainLayout from '../components/Layout/MainLayout';
+import Drawer from '../components/Layout/Drawer';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -38,6 +40,8 @@ const RegisterScreen = ({ navigation }: any) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const drawerAnimation = useRef(new Animated.Value(0)).current;
 
   const { register } = useAuth();
 
@@ -59,6 +63,30 @@ const RegisterScreen = ({ navigation }: any) => {
       }),
     ]).start();
   }, []);
+
+  const handleMenuPress = () => {
+    setDrawerOpen(!drawerOpen);
+    Animated.spring(drawerAnimation, {
+      toValue: drawerOpen ? 0 : 1,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const handleCloseDrawer = () => {
+    setDrawerOpen(false);
+    Animated.spring(drawerAnimation, {
+      toValue: 0,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const handleNavItemPress = (itemId: string) => {
+    if (itemId === 'logout') {
+      console.log('Logout');
+      return;
+    }
+    handleCloseDrawer();
+  };
 
   const handleRegister = async () => {
     // Validation
@@ -97,216 +125,220 @@ const RegisterScreen = ({ navigation }: any) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={{ flex: 1 }}
-    >
-      <ScrollView 
-        contentContainerStyle={{ flexGrow: 1 }}
-        keyboardShouldPersistTaps="always"
-        showsVerticalScrollIndicator={false}
+    <View style={{ flex: 1 }}>
+      <MainLayout
+        drawerOpen={drawerOpen}
+        drawerAnimation={drawerAnimation}
+        pageTitle="TomatoGuard"
+        pageSubtitle="Sign Up"
+        onMenuPress={handleMenuPress}
+        onCloseDrawer={handleCloseDrawer}
       >
-        {/* Section One - Hero Background */}
-        <ImageBackground
-          source={require('./../assets/section1-bg.png')}
-          style={styles.sectionOne}
-          resizeMode="cover"
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
         >
-          <LinearGradient
-            colors={['transparent', COLORS.color4]}
-            style={styles.heroGradient}
-          />
-        </ImageBackground>
-
-        {/* Section Two - Continues the gradient */}
-        <LinearGradient
-          colors={[COLORS.color4, COLORS.color4]}
-          style={styles.sectionTwo}
-        >
-          {/* Floating Register Card */}
-          <Animated.View
-            style={[
-              styles.registerCard,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
+          <ScrollView 
+            contentContainerStyle={{ flexGrow: 1 }}
+            keyboardShouldPersistTaps="always"
+            showsVerticalScrollIndicator={false}
           >
-            <LinearGradient
-              colors={[COLORS.color5, COLORS.color3]}
-              style={styles.cardGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+            <Animated.View
+              style={[
+                styles.containerWrapper,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                },
+              ]}
             >
-              {/* Logo and Header */}
-              <View style={styles.authHeader}>
-                <Text style={styles.authLogo}>TomatoGuard</Text>
-                <Text style={styles.authSubtitle}>Create your account</Text>
-              </View>
+              <BlurView
+                intensity={30}
+                tint="dark"
+                style={styles.container}
+              >
+                {/* Form on Left */}
+                <View style={styles.formSection}>
+                  <View style={styles.formContent}>
+                    {/* Logo and Header */}
+                    <View style={styles.authHeader}>
+                      <Text style={styles.authLogo}>TomatoGuard</Text>
+                      <Text style={styles.authSubtitle}>Create your account</Text>
+                    </View>
 
-              {/* Register Form */}
-              <View style={styles.authForm}>
-                {error ? (
-                  <View style={styles.errorMessage}>
-                    <Text style={styles.errorIcon}>⚠️</Text>
-                    <Text style={styles.errorText}>{error}</Text>
+                    {/* Register Form */}
+                    <View style={styles.authForm}>
+                      {error ? (
+                        <View style={styles.errorMessage}>
+                          <Text style={styles.errorIcon}>⚠️</Text>
+                          <Text style={styles.errorText}>{error}</Text>
+                        </View>
+                      ) : null}
+
+                      {success ? (
+                        <View style={styles.successMessage}>
+                          <Text style={styles.successIcon}>✓</Text>
+                          <Text style={styles.successText}>{success}</Text>
+                        </View>
+                      ) : null}
+
+                      <View style={styles.inputContainer}>
+                        <Text style={styles.inputLabel}>Full Name (Optional)</Text>
+                        <TextInput
+                          style={[
+                            styles.textInput,
+                            focusedInput === 'fullName' && styles.textInputFocused,
+                          ]}
+                          placeholder="Enter your full name"
+                          placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                          value={fullName}
+                          onChangeText={setFullName}
+                          onFocus={() => setFocusedInput('fullName')}
+                          onBlur={() => setFocusedInput(null)}
+                          editable={!loading}
+                        />
+                      </View>
+
+                      <View style={styles.inputContainer}>
+                        <Text style={styles.inputLabel}>Email *</Text>
+                        <TextInput
+                          style={[
+                            styles.textInput,
+                            focusedInput === 'email' && styles.textInputFocused,
+                          ]}
+                          placeholder="Enter your email"
+                          placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                          value={email}
+                          onChangeText={setEmail}
+                          onFocus={() => setFocusedInput('email')}
+                          onBlur={() => setFocusedInput(null)}
+                          autoCapitalize="none"
+                          keyboardType="email-address"
+                          editable={!loading}
+                        />
+                      </View>
+
+                      <View style={styles.inputContainer}>
+                        <Text style={styles.inputLabel}>Password *</Text>
+                        <TextInput
+                          style={[
+                            styles.textInput,
+                            focusedInput === 'password' && styles.textInputFocused,
+                          ]}
+                          placeholder="Create a password (min. 6 characters)"
+                          placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                          value={password}
+                          onChangeText={setPassword}
+                          onFocus={() => setFocusedInput('password')}
+                          onBlur={() => setFocusedInput(null)}
+                          secureTextEntry={true}
+                          editable={!loading}
+                        />
+                      </View>
+
+                      <View style={styles.inputContainer}>
+                        <Text style={styles.inputLabel}>Confirm Password *</Text>
+                        <TextInput
+                          style={[
+                            styles.textInput,
+                            focusedInput === 'confirmPassword' && styles.textInputFocused,
+                          ]}
+                          placeholder="Confirm your password"
+                          placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                          value={confirmPassword}
+                          onChangeText={setConfirmPassword}
+                          onFocus={() => setFocusedInput('confirmPassword')}
+                          onBlur={() => setFocusedInput(null)}
+                          secureTextEntry={true}
+                          editable={!loading}
+                        />
+                      </View>
+
+                      <TouchableOpacity
+                        style={[
+                          styles.authButton,
+                          loading && styles.authButtonDisabled,
+                        ]}
+                        onPress={handleRegister}
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <ActivityIndicator color="#ffffff" />
+                        ) : (
+                          <Text style={styles.authButtonText}>Create Account</Text>
+                        )}
+                      </TouchableOpacity>
+
+                      <View style={styles.authLinkContainer}>
+                        <Text style={styles.authLinkText}>Already have an account?</Text>
+                        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                          <Text style={styles.authLink}>Sign in</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
                   </View>
-                ) : null}
+                </View>
 
-                {success ? (
-                  <View style={styles.successMessage}>
-                    <Text style={styles.successIcon}>✓</Text>
-                    <Text style={styles.successText}>{success}</Text>
-                  </View>
-                ) : null}
-
-                <View style={styles.inputContainer}>
-                  <Text style={styles.inputLabel}>Full Name (Optional)</Text>
-                  <TextInput
-                    style={[
-                      styles.textInput,
-                      focusedInput === 'fullName' && styles.textInputFocused,
-                    ]}
-                    placeholder="Enter your full name"
-                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                    value={fullName}
-                    onChangeText={setFullName}
-                    onFocus={() => setFocusedInput('fullName')}
-                    onBlur={() => setFocusedInput(null)}
-                    editable={!loading}
+                {/* Picture on Right */}
+                <View style={styles.imageSection}>
+                  <Image
+                    source={require('./../assets/section3-bg.png')}
+                    style={styles.sideImage}
+                    resizeMode="cover"
                   />
                 </View>
+              </BlurView>
+            </Animated.View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </MainLayout>
 
-                <View style={styles.inputContainer}>
-                  <Text style={styles.inputLabel}>Email *</Text>
-                  <TextInput
-                    style={[
-                      styles.textInput,
-                      focusedInput === 'email' && styles.textInputFocused,
-                    ]}
-                    placeholder="Enter your email"
-                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                    value={email}
-                    onChangeText={setEmail}
-                    onFocus={() => setFocusedInput('email')}
-                    onBlur={() => setFocusedInput(null)}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    editable={!loading}
-                  />
-                </View>
-
-                <View style={styles.inputContainer}>
-                  <Text style={styles.inputLabel}>Password *</Text>
-                  <TextInput
-                    style={[
-                      styles.textInput,
-                      focusedInput === 'password' && styles.textInputFocused,
-                    ]}
-                    placeholder="Create a password (min. 6 characters)"
-                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                    value={password}
-                    onChangeText={setPassword}
-                    onFocus={() => setFocusedInput('password')}
-                    onBlur={() => setFocusedInput(null)}
-                    secureTextEntry={true}
-                    editable={!loading}
-                  />
-                </View>
-
-                <View style={styles.inputContainer}>
-                  <Text style={styles.inputLabel}>Confirm Password *</Text>
-                  <TextInput
-                    style={[
-                      styles.textInput,
-                      focusedInput === 'confirmPassword' && styles.textInputFocused,
-                    ]}
-                    placeholder="Confirm your password"
-                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                    onFocus={() => setFocusedInput('confirmPassword')}
-                    onBlur={() => setFocusedInput(null)}
-                    secureTextEntry={true}
-                    editable={!loading}
-                  />
-                </View>
-
-                <TouchableOpacity
-                  style={[
-                    styles.authButton,
-                    loading && styles.authButtonDisabled,
-                  ]}
-                  onPress={handleRegister}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <ActivityIndicator color="#ffffff" />
-                  ) : (
-                    <Text style={styles.authButtonText}>Create Account</Text>
-                  )}
-                </TouchableOpacity>
-
-                <View style={styles.authLinkContainer}>
-                  <Text style={styles.authLinkText}>Already have an account?</Text>
-                  <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                    <Text style={styles.authLink}>Sign in</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </LinearGradient>
-          </Animated.View>
-        </LinearGradient>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <Drawer
+        activeTab="register"
+        onItemPress={handleNavItemPress}
+        animation={drawerAnimation}
+        drawerOpen={drawerOpen}
+        onClose={handleCloseDrawer}
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  // Section One - Hero Background
-  sectionOne: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT * 0.7,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
+  containerWrapper: {
+    flex: 1,
+    margin: 50,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
-  heroGradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 400,
+  container: {
+    flex: 1,
+    flexDirection: 'row',
+    minHeight: SCREEN_HEIGHT - 150,
   },
 
-  // Section Two - Gradient continuation
-  sectionTwo: {
-    paddingHorizontal: 20,
-    paddingVertical: 40,
-    paddingBottom: 80,
-    paddingTop: 100,
-    backgroundColor: COLORS.color4,
-    alignItems: 'center',
-  },
-
-  // Floating Register Card
-  registerCard: {
-    width: '100%',
-    maxWidth: 480,
-    marginTop: -570, // Overlaps both sections
-    borderRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 15,
-  },
-  cardGradient: {
-    borderRadius: 24,
+  // Form Section (Left)
+  formSection: {
+    flex: 1,
+    minWidth: '60%',
     padding: 40,
-    paddingTop: 50,
-    paddingBottom: 50,
+    justifyContent: 'center',
+  },
+  formContent: {
+    maxWidth: 480,
+    width: '100%',
+    alignSelf: 'center',
+  },
+
+  // Image Section (Right)
+  imageSection: {
+    flex: 1,
+    minWidth: '40%',
+  },
+  sideImage: {
+    width: '100%',
+    height: '100%',
   },
 
   // Header
@@ -407,7 +439,7 @@ const styles = StyleSheet.create({
 
   // Auth Button
   authButton: {
-    backgroundColor: COLORS.color2,
+    backgroundColor: COLORS.color3,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
@@ -443,7 +475,7 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
   },
   authLink: {
-    color: COLORS.color1,
+    color: COLORS.color3,
     fontSize: 14,
     fontWeight: '600',
     fontFamily: 'System',

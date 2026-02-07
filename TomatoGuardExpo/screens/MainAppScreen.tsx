@@ -26,10 +26,10 @@ import PostDetailScreen from './PostDetailScreen';
 import { useDrawer } from '../hooks/useDrawer';
 import { useImageAnalysis } from '../hooks/useImageAnalysis';
 import { appStyles } from '../styles';
-import Drawer from '../components/common/Drawer/Drawer';
-import MainLayout from '../components/common/Layout/MainLayout';
+import Drawer from '../components/Layout/Drawer';
+import MainLayout from '../components/Layout/MainLayout';
 import ForumScreen from './ForumScreen';
-import FloatingActionButton from '../components/common/Layout/FloatingButton';
+import FloatingActionButton from '../components/Layout/FloatingButton';
 
 const MainAppScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
@@ -40,7 +40,7 @@ const MainAppScreen = () => {
   
   // ADD THESE LINES - Get initial tab from route params
   const params = route.params as any;
-  const initialTab = params?.initialTab || 'camera';
+  const initialTab = params?.initialTab || 'forum';
   
   const [activeTab, setActiveTab] = useState(initialTab); // CHANGE THIS LINE
   const [currentPostId, setCurrentPostId] = useState<string | null>(null);

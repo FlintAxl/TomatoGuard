@@ -4,7 +4,7 @@ import { StyleSheet } from 'react-native';
 import { FAB } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { RootStackNavigationProp } from '../../navigation/types';
-import Chatbot from '../../Chatbot';
+import Chatbot from '../Chatbot';
 
 interface FloatingActionButtonProps {
   onItemPress: (itemId: string) => void;
@@ -33,6 +33,7 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({ onItemPress
       <FAB.Group
         open={open}
         visible
+        backdropColor='transparent'
         icon={open ? 'close' : 'plus'}
         actions={[
           {
@@ -89,9 +90,10 @@ const styles = StyleSheet.create({
     bottom: 16,
     right: 16,
     zIndex: 1001,
+    backgroundColor: 'transparent',
   },
   fab: {
-    backgroundColor: '#e9523a',
+    backgroundColor: '#2d7736',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,

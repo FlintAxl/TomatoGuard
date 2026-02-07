@@ -9,7 +9,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { appStyles } from '../../../styles';
+import { appStyles } from '../../styles';
 
 interface AdminLayoutProps {
   drawerOpen: boolean;

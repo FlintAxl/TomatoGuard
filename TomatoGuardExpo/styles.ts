@@ -906,7 +906,6 @@ export const protectedStyles = StyleSheet.create({
   },
 });
 
-// Add to your style.ts
 export const profileStyles = StyleSheet.create({
   container: {
     flex: 1,
