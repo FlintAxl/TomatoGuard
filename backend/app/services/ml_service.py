@@ -256,7 +256,7 @@ class MLService:
         self.class_names = {
             'part': ['fruit', 'leaf', 'stem'],
             'fruit': ['Anthracnose', 'Blossom End Rot', 'Botrytis Gray Mold', 'Buckeye Rot', 'Healthy', 'Sunscald'],
-            'leaf': ['Septoria Leaf Spot', 'Bacterial Spot', 'Early Blight', 'Late Blight', 'Yellow Leaf Curl', 'Healthy'],
+            'leaf': ['Bacterial Spot', 'Early Blight', 'Healthy', 'Late Blight', 'Septoria Leaf Spot', 'Yellow Leaf Curl'],
             'stem': ['Blight', 'Healthy', 'Wilt']  # Fixed order to match your confusion matrix
         }
         self.load_models()
