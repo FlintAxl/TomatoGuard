@@ -255,7 +255,7 @@ class MLService:
         # Updated class names to match your evaluation results
         self.class_names = {
             'part': ['fruit', 'leaf', 'stem'],
-            'fruit': ['Anthracnose', 'Botrytis Gray Mold', 'Blossom End Rot', 'Buckeye Rot', 'Healthy', 'Sunscald'],
+            'fruit': ['Anthracnose', 'Blossom End Rot', 'Botrytis Gray Mold', 'Buckeye Rot', 'Healthy', 'Sunscald'],
             'leaf': ['Septoria Leaf Spot', 'Bacterial Spot', 'Early Blight', 'Late Blight', 'Yellow Leaf Curl', 'Healthy'],
             'stem': ['Blight', 'Healthy', 'Wilt']  # Fixed order to match your confusion matrix
         }
