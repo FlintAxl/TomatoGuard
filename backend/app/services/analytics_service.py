@@ -102,18 +102,6 @@ class AnalyticsService:
                         "$analysis_result.part_detection.part",
                     ]
                 },
-                "_severity_level": {
-                    "$ifNull": [
-                        "$analysis_result.analysis.spot_detection.severity.level",
-                        "$analysis_result.spot_detection.severity.level",
-                    ]
-                },
-                "_severity_score": {
-                    "$ifNull": [
-                        "$analysis_result.analysis.spot_detection.severity.score",
-                        "$analysis_result.spot_detection.severity.score",
-                    ]
-                },
             }
         }
 
@@ -354,48 +342,7 @@ class AnalyticsService:
             raise
 
     # ------------------------------------------------------------------
-    # 6. Severity breakdown
-    # ------------------------------------------------------------------
-    async def get_severity_breakdown(self) -> Dict[str, Any]:
-        """Distribution of severity levels among diseased analyses."""
-        try:
-            pipeline = [
-                self._normalize_stage(),
-                {"$match": {
-                    "_disease": {"$ne": "Healthy"},
-                    "_severity_level": {"$ne": None},
-                }},
-                {"$group": {
-                    "_id": "$_severity_level",
-                    "count": {"$sum": 1},
-                    "avg_score": {"$avg": "$_severity_score"},
-                }},
-                {"$sort": {"count": -1}},
-            ]
-            raw = await self.analyses.aggregate(pipeline).to_list(length=None)
-
-            all_levels = ["Low", "Moderate", "High", "Critical"]
-            severity_map = {r["_id"]: r for r in raw}
-            total_diseased = sum(r["count"] for r in raw) if raw else 0
-
-            result = []
-            for level in all_levels:
-                data = severity_map.get(level, {"count": 0, "avg_score": 0})
-                pct = round(data["count"] / total_diseased * 100, 2) if total_diseased > 0 else 0
-                result.append({
-                    "level": level,
-                    "count": data["count"],
-                    "percentage": pct,
-                    "avg_score": round(data.get("avg_score") or 0, 4),
-                })
-
-            return {"total_diseased": total_diseased, "levels": result}
-        except Exception as e:
-            logger.error(f"❌ severity breakdown failed: {e}")
-            raise
-
-    # ------------------------------------------------------------------
-    # 7. Plant part distribution
+    # 6. Plant part distribution
     # ------------------------------------------------------------------
     async def get_part_distribution(self) -> List[Dict[str, Any]]:
         """Count of analyses per plant part."""
@@ -443,7 +390,6 @@ class AnalyticsService:
                     "disease": "$_disease",
                     "confidence": "$_confidence",
                     "plant_part": "$_part",
-                    "severity": "$_severity_level",
                     "created_at": 1,
                 }},
             ]
@@ -467,7 +413,6 @@ class AnalyticsService:
         model_eval = self.get_model_evaluation()
         trends = await self.get_detection_trends(days=trend_days)
         confidence = await self.get_confidence_distribution()
-        severity = await self.get_severity_breakdown()
         parts = await self.get_part_distribution()
         recent = await self.get_recent_analyses()
 
@@ -477,7 +422,6 @@ class AnalyticsService:
             "model_evaluation": model_eval,
             "detection_trends": trends,
             "confidence_distribution": confidence,
-            "severity_breakdown": severity,
             "part_distribution": parts,
             "recent_analyses": recent,
         }

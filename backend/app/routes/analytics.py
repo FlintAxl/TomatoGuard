@@ -60,13 +60,6 @@ async def confidence_distribution(current_user: dict = Depends(get_current_admin
     return {"status": "success", "data": await svc.get_confidence_distribution()}
 
 
-@router.get("/severity-breakdown")
-async def severity_breakdown(current_user: dict = Depends(get_current_admin_user)):
-    """Severity level distribution."""
-    svc = _get_service()
-    return {"status": "success", "data": await svc.get_severity_breakdown()}
-
-
 @router.get("/part-distribution")
 async def part_distribution(current_user: dict = Depends(get_current_admin_user)):
     """Plant part distribution."""
