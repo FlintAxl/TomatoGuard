@@ -16,13 +16,14 @@ import { MainStackNavigationProp, RootStackNavigationProp } from '../navigation/
 import { useNavigation } from '@react-navigation/native';
 
 // Analytics components
-import MLOverviewCards from '../components/MLOverviewCards';
-import ModelAccuracyPanel from '../components/ModelAccuracyPanel';
-import DiseaseDetectionStats from '../components/DiseaseDetectionStats';
-import DetectionTrendChart from '../components/DetectionTrendChart';
-import ConfidenceDistribution from '../components/ConfidenceDistribution';
-import SeverityBreakdown from '../components/SeverityBreakdown';
-import RecentAnalysesFeed from '../components/RecentAnalysesFeed';
+import MLOverviewCards from '../components/analytics/MLOverviewCards';
+import ModelAccuracyPanel from '../components/analytics/ModelAccuracyPanel';
+import DiseaseDetectionStats from '../components/analytics/DiseaseDetectionStats';
+import DetectionTrendChart from '../components/analytics/DetectionTrendChart';
+import ModelAccuracyScatterPlot from '../components/analytics/ModelAccuracyScatterPlot';
+import ConfidenceDistribution from '../components/analytics/ConfidenceDistribution';
+import PlantPartDistribution from '../components/analytics/PlantPartDistribution';
+import RecentAnalysesFeed from '../components/analytics/RecentAnalysesFeed';
 import { fetchMLAnalytics, MLAnalyticsData } from '../services/api/analyticsService';
 
 const AdminDashboardScreen = () => {
@@ -113,16 +114,16 @@ const AdminDashboardScreen = () => {
         {/* 4. Detection Trend (daily bar chart per model) */}
         <DetectionTrendChart data={analytics.detection_trends} />
 
-        {/* 5. Confidence Distribution (buckets + per-disease avg) */}
+        {/* 5. Model Accuracy Scatter Plot */}
+        <ModelAccuracyScatterPlot data={analytics.model_evaluation} />
+
+        {/* 6. Confidence Distribution (buckets + per-disease avg) */}
         <ConfidenceDistribution data={analytics.confidence_distribution} />
 
-        {/* 6. Severity & Plant Part Distribution */}
-        <SeverityBreakdown
-          data={analytics.severity_breakdown}
-          partDistribution={analytics.part_distribution}
-        />
+        {/* 7. Plant Part Distribution */}
+        <PlantPartDistribution data={analytics.part_distribution} />
 
-        {/* 7. Recent Analyses Feed */}
+        {/* 8. Recent Analyses Feed */}
         <RecentAnalysesFeed data={analytics.recent_analyses} />
       </>
     );

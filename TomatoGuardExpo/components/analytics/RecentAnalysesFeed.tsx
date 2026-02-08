@@ -8,20 +8,12 @@ interface AnalysisItem {
   disease: string;
   confidence: number;
   plant_part: string;
-  severity: string | null;
   created_at: string;
 }
 
 interface Props {
   data: AnalysisItem[];
 }
-
-const SEVERITY_COLORS: Record<string, string> = {
-  Low: '#22c55e',
-  Moderate: '#f59e0b',
-  High: '#f97316',
-  Critical: '#ef4444',
-};
 
 const RecentAnalysesFeed: React.FC<Props> = ({ data }) => {
   if (!data || data.length === 0) {
@@ -44,7 +36,6 @@ const RecentAnalysesFeed: React.FC<Props> = ({ data }) => {
         const isHealthy = item.disease === 'Healthy';
         const confColor =
           item.confidence >= 0.9 ? '#22c55e' : item.confidence >= 0.7 ? '#f59e0b' : '#ef4444';
-        const sevColor = SEVERITY_COLORS[item.severity || ''] || '#475569';
 
         const dateStr = new Date(item.created_at).toLocaleString('en-US', {
           month: 'short',
@@ -80,11 +71,6 @@ const RecentAnalysesFeed: React.FC<Props> = ({ data }) => {
                 <Text style={[s.metaConf, { color: confColor }]}>
                   {(item.confidence * 100).toFixed(1)}%
                 </Text>
-                {item.severity && (
-                  <View style={[s.sevBadge, { backgroundColor: sevColor + '22', borderColor: sevColor }]}>
-                    <Text style={[s.sevText, { color: sevColor }]}>{item.severity}</Text>
-                  </View>
-                )}
               </View>
 
               <Text style={s.date}>{dateStr}</Text>
@@ -163,16 +149,6 @@ const s = StyleSheet.create({
   metaConf: {
     fontSize: 12,
     fontWeight: '700',
-  },
-  sevBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  sevText: {
-    fontSize: 10,
-    fontWeight: '600',
   },
   date: {
     fontSize: 10,

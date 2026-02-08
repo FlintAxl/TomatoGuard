@@ -44,15 +44,6 @@ export interface MLAnalyticsData {
       count: number;
     }>;
   };
-  severity_breakdown: {
-    total_diseased: number;
-    levels: Array<{
-      level: string;
-      count: number;
-      percentage: number;
-      avg_score: number;
-    }>;
-  };
   part_distribution: Array<{
     part: string;
     count: number;
@@ -65,7 +56,6 @@ export interface MLAnalyticsData {
     disease: string;
     confidence: number;
     plant_part: string;
-    severity: string | null;
     created_at: string;
   }>;
 }
