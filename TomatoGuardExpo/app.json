@@ -23,7 +23,10 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.tomatoguard.app"
+      "package": "com.tomatoguard.app",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -33,6 +36,11 @@
       "description": "AI-powered system for detecting diseases in tomato plants using MobileNetV2",
       "themeColor": "#4CAF50",
       "backgroundColor": "#f5f5f5"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "74a8460e-af46-4384-a7a1-bc1a252ecc08"
+      }
     }
   }
 }

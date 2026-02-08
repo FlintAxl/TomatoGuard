@@ -30,6 +30,10 @@ import Drawer from '../components/Layout/Drawer';
 import MainLayout from '../components/Layout/MainLayout';
 import ForumScreen from './ForumScreen';
 import FloatingActionButton from '../components/Layout/FloatingButton';
+import BlogsList from './BlogsListScreen';
+import BlogOne from './blogs/BlogOne';
+import BlogTwo from './blogs/BlogTwo';
+import BlogThree from './blogs/BlogThree';
 
 const MainAppScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
@@ -37,6 +41,7 @@ const MainAppScreen = () => {
   const mainNavigation = useNavigation<MainStackNavigationProp>();
   const { logout, authState } = useAuth();
   const { drawerOpen, drawerAnimation, toggleDrawer, closeDrawer } = useDrawer();
+  const [currentBlogId, setCurrentBlogId] = useState<string | null>(null);
   
   // ADD THESE LINES - Get initial tab from route params
   const params = route.params as any;
@@ -56,6 +61,11 @@ const MainAppScreen = () => {
   const navigateToPostDetail = (postId: string) => {
     setCurrentPostId(postId);
     setActiveTab('postdetail');
+  };
+
+  const navigateToBlog = (blogId: string) => {
+    setCurrentBlogId(blogId);
+    setActiveTab(blogId);
   };
 
   const handleLogout = async () => {
@@ -127,6 +137,10 @@ const MainAppScreen = () => {
       case 'postdetail': return 'View post details and comments';
       case 'profile': return 'View and manage your account information';
       case 'about': return 'System information and technical specifications';
+      case 'blogs': return 'Expert insights on tomato cultivation and health';
+      case 'blogone': return 'Disease identification and prevention guide';
+      case 'blogtwo': return 'Nutritional information and health benefits';
+      case 'blogthree': return 'Complete guide to tomato health benefits';
       default: return '';
     }
   };
@@ -184,6 +198,30 @@ const MainAppScreen = () => {
             <ProfileScreen />
           </View>
         );
+        case 'blogs':
+          return (
+            <View style={styles.contentPadding}>
+              <BlogsList setActiveTab={setActiveTab} navigateToBlog={navigateToBlog} />
+            </View>
+          );
+        case 'blogone':
+          return (
+            <View style={styles.contentPadding}>
+              <BlogOne setActiveTab={setActiveTab} />
+            </View>
+          );
+        case 'blogtwo':
+          return (
+            <View style={styles.contentPadding}>
+              <BlogTwo setActiveTab={setActiveTab} />
+            </View>
+          );
+        case 'blogthree':
+          return (
+            <View style={styles.contentPadding}>
+              <BlogThree setActiveTab={setActiveTab} />
+            </View>
+          );
       default:
         return null;
     }
