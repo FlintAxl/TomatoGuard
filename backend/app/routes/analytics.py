@@ -75,3 +75,28 @@ async def recent_analyses(
     """Recent analyses feed."""
     svc = _get_service()
     return {"status": "success", "data": await svc.get_recent_analyses(limit=limit)}
+
+
+@router.get("/analysis-history")
+async def analysis_history(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=5, le=100),
+    current_user: dict = Depends(get_current_admin_user),
+):
+    """Paginated analysis history."""
+    svc = _get_service()
+    return {"status": "success", "data": await svc.get_analysis_history(page=page, page_size=page_size)}
+
+
+@router.get("/analysis-detail/{analysis_id}")
+async def analysis_detail(
+    analysis_id: str,
+    current_user: dict = Depends(get_current_admin_user),
+):
+    """Full analysis detail with images."""
+    from fastapi import HTTPException
+    svc = _get_service()
+    detail = await svc.get_analysis_detail(analysis_id)
+    if not detail:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+    return {"status": "success", "data": detail}

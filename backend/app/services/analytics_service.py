@@ -403,6 +403,133 @@ class AnalyticsService:
             logger.error(f"❌ recent analyses failed: {e}")
             raise
 
+    async def get_analysis_history(self, page: int = 1, page_size: int = 20) -> Dict[str, Any]:
+        """Paginated analysis history for admin dashboard."""
+        try:
+            skip = (page - 1) * page_size
+            total = await self.analyses.count_documents({})
+
+            pipeline = [
+                self._normalize_stage(),
+                {"$sort": {"created_at": -1}},
+                {"$skip": skip},
+                {"$limit": page_size},
+                {"$project": {
+                    "id": {"$toString": "$_id"},
+                    "user_id": 1,
+                    "image_url": 1,
+                    "disease": "$_disease",
+                    "confidence": "$_confidence",
+                    "plant_part": "$_part",
+                    "created_at": 1,
+                }},
+            ]
+            results = await self.analyses.aggregate(pipeline).to_list(length=page_size)
+            for r in results:
+                r.pop("_id", None)
+                if r.get("created_at"):
+                    r["created_at"] = r["created_at"].isoformat()
+
+            return {
+                "analyses": results,
+                "total": total,
+                "page": page,
+                "page_size": page_size,
+                "total_pages": (total + page_size - 1) // page_size,
+            }
+        except Exception as e:
+            logger.error(f"❌ analysis history failed: {e}")
+            raise
+
+    async def get_analysis_detail(self, analysis_id: str) -> Dict[str, Any]:
+        """Get full analysis detail by ID, including spot detection images."""
+        try:
+            from bson import ObjectId
+            doc = await self.analyses.find_one({"_id": ObjectId(analysis_id)})
+            if not doc:
+                return None
+
+            result = doc.get("analysis_result", {})
+
+            # Handle both storage formats:
+            # Upload route stores under analysis_result.analysis.*
+            # URL route stores under analysis_result.*
+            analysis = result.get("analysis", result)
+
+            disease_detection = analysis.get("disease_detection", {})
+            part_detection = analysis.get("part_detection", {})
+            spot_detection = analysis.get("spot_detection", {}) or {}
+
+            annotated_image = spot_detection.get("annotated_image")
+            original_image = spot_detection.get("original_image")
+
+            logger.info(f"📋 Analysis detail for {analysis_id}: "
+                        f"has_analysis_key={'analysis' in result}, "
+                        f"spot_detection_keys={list(spot_detection.keys()) if spot_detection else 'None'}, "
+                        f"has_annotated={annotated_image is not None and len(str(annotated_image)) > 0}, "
+                        f"has_original={original_image is not None and len(str(original_image)) > 0}, "
+                        f"annotated_len={len(str(annotated_image)) if annotated_image else 0}, "
+                        f"original_len={len(str(original_image)) if original_image else 0}")
+
+            return {
+                "id": str(doc["_id"]),
+                "user_id": doc.get("user_id"),
+                "image_url": doc.get("image_url", ""),
+                "created_at": doc["created_at"].isoformat() if doc.get("created_at") else None,
+                "disease": disease_detection.get("disease", "Unknown"),
+                "confidence": disease_detection.get("confidence", 0),
+                "plant_part": part_detection.get("part", "unknown"),
+                "part_confidence": part_detection.get("confidence", 0),
+                "annotated_image": annotated_image,
+                "original_image": original_image,
+                "total_spots": spot_detection.get("total_spots", 0),
+                "bounding_boxes": spot_detection.get("bounding_boxes", []),
+                "alternative_predictions": disease_detection.get("alternative_predictions", []),
+                "alternative_parts": part_detection.get("alternative_parts", []),
+            }
+        except Exception as e:
+            logger.error(f"❌ analysis detail failed: {e}")
+            raise
+
+    async def get_scatter_plot_data(self, limit: int = 500) -> List[Dict[str, Any]]:
+        """Get individual analysis points for scatter plot visualization."""
+        try:
+            pipeline = [
+                self._normalize_stage(),
+                {"$match": {
+                    "_confidence": {"$exists": True, "$ne": None},
+                    "_disease": {"$exists": True, "$ne": None},
+                    "_part": {"$exists": True, "$ne": None}
+                }},
+                {"$sort": {"created_at": -1}},
+                {"$limit": limit},
+                {"$project": {
+                    "id": {"$toString": "$_id"},
+                    "disease": "$_disease",
+                    "confidence": "$_confidence",
+                    "plant_part": "$_part",
+                    "created_at": 1,
+                    "days_ago": {
+                        "$divide": [
+                            {"$subtract": ["$$NOW", "$created_at"]},
+                            86400000  # Convert milliseconds to days
+                        ]
+                    }
+                }},
+            ]
+            results = await self.analyses.aggregate(pipeline).to_list(length=limit)
+            for r in results:
+                r.pop("_id", None)
+                if r.get("created_at"):
+                    r["created_at"] = r["created_at"].isoformat()
+                # Round days_ago to 2 decimal places
+                if r.get("days_ago") is not None:
+                    r["days_ago"] = round(r["days_ago"], 2)
+            return results
+        except Exception as e:
+            logger.error(f"❌ scatter plot data failed: {e}")
+            return []
+
     # ------------------------------------------------------------------
     # Combined endpoint – returns everything in one call
     # ------------------------------------------------------------------
@@ -415,6 +542,7 @@ class AnalyticsService:
         confidence = await self.get_confidence_distribution()
         parts = await self.get_part_distribution()
         recent = await self.get_recent_analyses()
+        scatter_data = await self.get_scatter_plot_data()
 
         return {
             "overview": overview,
@@ -424,4 +552,5 @@ class AnalyticsService:
             "confidence_distribution": confidence,
             "part_distribution": parts,
             "recent_analyses": recent,
+            "scatter_plot_data": scatter_data,
         }
