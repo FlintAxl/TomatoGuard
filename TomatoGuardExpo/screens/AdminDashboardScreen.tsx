@@ -23,7 +23,8 @@ import DetectionTrendChart from '../components/analytics/DetectionTrendChart';
 import ModelAccuracyScatterPlot from '../components/analytics/ModelAccuracyScatterPlot';
 import ConfidenceDistribution from '../components/analytics/ConfidenceDistribution';
 import PlantPartDistribution from '../components/analytics/PlantPartDistribution';
-import RecentAnalysesFeed from '../components/analytics/RecentAnalysesFeed';
+import AnalysisHistory from '../components/analytics/AnalysisHistory';
+import AnalysisDetailModal from '../components/analytics/AnalysisDetailModal';
 import { fetchMLAnalytics, MLAnalyticsData } from '../services/api/analyticsService';
 
 const AdminDashboardScreen = () => {
@@ -36,6 +37,9 @@ const AdminDashboardScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'analytics' | 'history'>('analytics');
+  const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
 
   const loadAnalytics = useCallback(async (isRefresh = false) => {
     try {
@@ -90,18 +94,37 @@ const AdminDashboardScreen = () => {
     </View>
   );
 
-  const renderDashboard = () => {
+  const handleSelectAnalysis = (id: string) => {
+    setSelectedAnalysisId(id);
+    setDetailModalVisible(true);
+  };
+
+  const renderTabs = () => (
+    <View style={s.tabContainer}>
+      <TouchableOpacity
+        style={[s.tab, activeTab === 'analytics' && s.activeTab]}
+        onPress={() => setActiveTab('analytics')}
+      >
+        <Text style={[s.tabText, activeTab === 'analytics' && s.activeTabText]}>
+          Analytics
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[s.tab, activeTab === 'history' && s.activeTab]}
+        onPress={() => setActiveTab('history')}
+      >
+        <Text style={[s.tabText, activeTab === 'history' && s.activeTabText]}>
+          Analysis History
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderAnalyticsTab = () => {
     if (!analytics) return null;
+    
     return (
       <>
-        {/* Header */}
-        <View style={s.header}>
-          <Text style={s.headerTitle}>ML Analytics Dashboard</Text>
-          <Text style={s.headerSub}>
-            Tomato disease detection model performance & statistics
-          </Text>
-        </View>
-
         {/* 1. Overview KPI cards */}
         <MLOverviewCards data={analytics.overview} />
 
@@ -115,16 +138,39 @@ const AdminDashboardScreen = () => {
         <DetectionTrendChart data={analytics.detection_trends} />
 
         {/* 5. Model Accuracy Scatter Plot */}
-        <ModelAccuracyScatterPlot data={analytics.model_evaluation} />
+        <ModelAccuracyScatterPlot data={analytics.scatter_plot_data || []} />
 
         {/* 6. Confidence Distribution (buckets + per-disease avg) */}
         <ConfidenceDistribution data={analytics.confidence_distribution} />
 
         {/* 7. Plant Part Distribution */}
         <PlantPartDistribution data={analytics.part_distribution} />
+      </>
+    );
+  };
 
-        {/* 8. Recent Analyses Feed */}
-        <RecentAnalysesFeed data={analytics.recent_analyses} />
+  const renderHistoryTab = () => {
+    return (
+      <AnalysisHistory onSelectAnalysis={handleSelectAnalysis} />
+    );
+  };
+
+  const renderDashboard = () => {
+    if (!analytics) return null;
+    return (
+      <>
+        {/* Header */}
+        <View style={s.header}>
+          <Text style={s.headerTitle}>ML Analytics Dashboard</Text>
+          <Text style={s.headerSub}>
+            Tomato disease detection model performance & statistics
+          </Text>
+        </View>
+
+        {renderTabs()}
+        <View style={s.tabContent}>
+          {activeTab === 'analytics' ? renderAnalyticsTab() : renderHistoryTab()}
+        </View>
       </>
     );
   };
@@ -163,6 +209,15 @@ const AdminDashboardScreen = () => {
       >
         {loading ? renderLoading() : error ? renderError() : renderDashboard()}
       </ScrollView>
+
+      <AnalysisDetailModal
+        analysisId={selectedAnalysisId}
+        visible={detailModalVisible}
+        onClose={() => {
+          setDetailModalVisible(false);
+          setSelectedAnalysisId(null);
+        }}
+      />
     </AdminLayout>
   );
 };
@@ -222,6 +277,34 @@ const s = StyleSheet.create({
     color: '#fff',
     fontWeight: '700',
     fontSize: 14,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    backgroundColor: '#1e293b',
+    borderRadius: 12,
+    padding: 4,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  activeTab: {
+    backgroundColor: '#3b82f6',
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#94a3b8',
+  },
+  activeTabText: {
+    color: '#ffffff',
+  },
+  tabContent: {
+    flex: 1,
   },
 });
 

@@ -1,149 +1,172 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 
-interface ModelData {
-  accuracy: number;
-  loss: number | null;
-  avg_confidence: number | null;
-  per_class: Record<string, any>;
+interface AnalysisPoint {
+  id: string;
+  disease: string;
+  confidence: number;
+  plant_part: string;
+  created_at: string;
+  days_ago: number;
 }
 
 interface Props {
-  data: {
-    overall_accuracy: number;
-    models: Record<string, ModelData>;
-  };
+  data: AnalysisPoint[];
 }
 
-interface ScatterPoint {
-  x: number;
-  y: number;
-  model: string;
-  displayName: string;
+interface ScatterPoint extends AnalysisPoint {
+  x: number; // normalized position (0-1)
+  y: number; // normalized position (0-1)
   color: string;
-  accuracy: number;
+  displayName: string;
 }
 
-const MODEL_CONFIG: Record<string, { displayName: string; color: string; cluster: number }> = {
-  part_classifier: { displayName: 'Part Classifier', color: '#8b5cf6', cluster: 0 },
-  fruit: { displayName: 'Fruit Model', color: '#ef4444', cluster: 1 },
-  leaf: { displayName: 'Leaf Model', color: '#22c55e', cluster: 1 },
-  stem: { displayName: 'Stem Model', color: '#f59e0b', cluster: 1 },
+const PLANT_PART_CONFIG: Record<string, { displayName: string; color: string }> = {
+  fruit: { displayName: 'Fruit Analysis', color: '#ef4444' },
+  leaf: { displayName: 'Leaf Analysis', color: '#22c55e' },
+  stem: { displayName: 'Stem Analysis', color: '#f59e0b' },
+  part: { displayName: 'Part Classification', color: '#8b5cf6' },
 };
 
 const ModelAccuracyScatterPlot: React.FC<Props> = ({ data }) => {
+  const [selectedPoint, setSelectedPoint] = useState<ScatterPoint | null>(null);
   const animatedValues = useRef<Record<string, Animated.Value>>({});
   
-  // Initialize animations
-  Object.keys(MODEL_CONFIG).forEach(key => {
-    if (!animatedValues.current[key]) {
-      animatedValues.current[key] = new Animated.Value(0);
-    }
-  });
+  // Initialize animations for each point
+  useEffect(() => {
+    data.forEach((_, index) => {
+      if (!animatedValues.current[index]) {
+        animatedValues.current[index] = new Animated.Value(0);
+      }
+    });
+  }, [data]);
 
   useEffect(() => {
-    // Stagger the animations
-    const animations = Object.keys(MODEL_CONFIG).map((key, index) => 
-      Animated.timing(animatedValues.current[key], {
+    // Stagger animations for points
+    const animations = data.map((_, index) => 
+      Animated.timing(animatedValues.current[index], {
         toValue: 1,
-        duration: 600,
-        delay: index * 150,
+        duration: 400,
+        delay: Math.min(index * 20, 1000), // Cap delay to avoid too long waits
         useNativeDriver: true,
       })
     );
-    
     Animated.sequence(animations).start();
-  }, []);
+  }, [data]);
 
-  // Prepare scatter points
-  const points: ScatterPoint[] = Object.entries(data.models)
-    .filter(([key]) => MODEL_CONFIG[key])
-    .map(([key, model]) => {
-      const config = MODEL_CONFIG[key];
-      // X position: cluster 0 (part classifier) at 0.2, cluster 1 (disease models) at 0.8
-      const baseX = config.cluster === 0 ? 0.2 : 0.8;
-      // Add small random offset for cluster 1 to separate overlapping points
-      const xOffset = config.cluster === 1 ? (Math.random() - 0.5) * 0.15 : 0;
+  // Transform analysis data into scatter points
+  const points: ScatterPoint[] = React.useMemo(() => {
+    if (!data || data.length === 0) return [];
+
+    return data.map((analysis, index) => {
+      const plantPartKey = analysis.plant_part?.toLowerCase() || 'part';
+      const config = PLANT_PART_CONFIG[plantPartKey] || PLANT_PART_CONFIG.part;
       
+      // X-axis: Plant part clusters with jitter for visual separation
+      let baseX = 0.5; // Default center
+      switch (plantPartKey) {
+        case 'fruit': baseX = 0.2; break;
+        case 'leaf': baseX = 0.5; break;
+        case 'stem': baseX = 0.8; break;
+        case 'part': baseX = 0.35; break;
+      }
+      
+      // Add random jitter within cluster for visual separation
+      const jitter = (Math.random() - 0.5) * 0.25;
+      const x = Math.max(0.05, Math.min(0.95, baseX + jitter));
+      
+      // Y-axis: confidence (higher = top) - confidence is already 0.0-1.0
+      const y = analysis.confidence || 0;
+
       return {
-        x: Math.max(0.1, Math.min(0.9, baseX + xOffset)),
-        y: (model.accuracy - 0.85) / 0.15, // Scale to 85%-100% range
-        model: key,
-        displayName: config.displayName,
+        ...analysis,
+        x,
+        y: Math.max(0, Math.min(1, y)),
         color: config.color,
-        accuracy: model.accuracy,
+        displayName: config.displayName,
       };
     });
+  }, [data]);
 
-  // Chart dimensions
   const chartWidth = 280;
-  const chartHeight = 160;
-  const padding = 20;
-
+  const chartHeight = 200;
   return (
     <View style={s.container}>
-      <Text style={s.sectionTitle}>Model Accuracy Distribution</Text>
-      <Text style={s.subTitle}>Interactive scatter plot of all model accuracies</Text>
+      <Text style={s.sectionTitle}>Analysis Confidence Distribution</Text>
+      <Text style={s.subTitle}>Plant part clustering by confidence levels ({points.length} analyses)</Text>
 
       <View style={s.chartCard}>
         {/* Y-axis labels */}
         <View style={s.yAxisContainer}>
           <Text style={s.yLabel}>100%</Text>
-          <Text style={s.yLabel}>95%</Text>
-          <Text style={s.yLabel}>90%</Text>
-          <Text style={s.yLabel}>85%</Text>
+          <Text style={s.yLabel}>75%</Text>
+          <Text style={s.yLabel}>50%</Text>
+          <Text style={s.yLabel}>25%</Text>
+          <Text style={s.yLabel}>0%</Text>
         </View>
 
         {/* Chart area */}
         <View style={[s.chartArea, { width: chartWidth, height: chartHeight }]}>
-          {/* Grid lines */}
-          {[0.25, 0.5, 0.75].map((y, i) => (
+          {/* Grid lines - positioned at 0%, 25%, 50%, 75%, 100% */}
+          {[0, 0.25, 0.5, 0.75, 1].map((y, i) => (
             <View
-              key={i}
+              key={`grid-${i}`}
               style={[s.gridLine, { top: y * chartHeight, width: chartWidth }]}
             />
           ))}
 
-          {/* Cluster separators */}
-          <View style={[s.clusterLine, { left: chartWidth * 0.5, height: chartHeight }]} />
-
           {/* Scatter points */}
-          {points.map((point) => {
-            const animatedValue = animatedValues.current[point.model];
+          {points.map((point, index) => {
+            const animatedValue = animatedValues.current[index];
             const left = point.x * (chartWidth - 20) + 10;
-            const top = (1 - point.y) * (chartHeight - 20) + 10;
+            // Map confidence to chart height: 100% = top (0), 0% = bottom (chartHeight)
+            const top = (1 - point.y) * chartHeight;
+            // Clamp to chart bounds with small padding
+            const clampedTop = Math.max(5, Math.min(chartHeight - 5, top));
 
             return (
               <Animated.View
-                key={point.model}
+                key={`${point.id}-${index}`}
                 style={[
                   s.pointContainer,
-                  { left, top },
+                  { left, top: clampedTop },
                   {
                     transform: [
                       {
-                        scale: animatedValue.interpolate({
+                        scale: animatedValue ? animatedValue.interpolate({
                           inputRange: [0, 1],
                           outputRange: [0, 1],
-                        }),
+                        }) : 1,
                       },
                     ],
-                    opacity: animatedValue,
+                    opacity: animatedValue || 1,
                   },
                 ]}
               >
-                <TouchableOpacity style={s.point} activeOpacity={0.7}>
+                <TouchableOpacity 
+                  style={s.point} 
+                  activeOpacity={0.7}
+                  onPress={() => setSelectedPoint(selectedPoint?.id === point.id ? null : point)}
+                >
                   <View
                     style={[
                       s.dot,
                       { backgroundColor: point.color, shadowColor: point.color },
                     ]}
                   />
-                  <View style={s.tooltip}>
-                    <Text style={s.tooltipText}>
-                      {point.displayName}: {(point.accuracy * 100).toFixed(1)}%
-                    </Text>
-                  </View>
+                  {selectedPoint?.id === point.id && (
+                    <View style={s.tooltip}>
+                      <Text style={s.tooltipText}>
+                        {point.disease} ({point.displayName})
+                      </Text>
+                      <Text style={s.tooltipSubText}>
+                        Confidence: {(point.confidence).toFixed(1)}%
+                      </Text>
+                      <Text style={s.tooltipSubText}>
+                        Plant Part: {point.plant_part}
+                      </Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
               </Animated.View>
             );
@@ -152,19 +175,25 @@ const ModelAccuracyScatterPlot: React.FC<Props> = ({ data }) => {
 
         {/* X-axis labels */}
         <View style={s.xAxisContainer}>
-          <Text style={s.xLabel}>Part Classifier</Text>
-          <Text style={s.xLabel}>Disease Models</Text>
+          <Text style={s.xLabel}>Fruit</Text>
+          <Text style={s.xLabel}>Leaf</Text>
+          <Text style={s.xLabel}>Stem</Text>
         </View>
       </View>
 
       {/* Legend */}
       <View style={s.legend}>
-        {points.map((point) => (
-          <View key={point.model} style={s.legendItem}>
-            <View style={[s.legendDot, { backgroundColor: point.color }]} />
-            <Text style={s.legendText}>{point.displayName}</Text>
-          </View>
-        ))}
+        {Object.entries(PLANT_PART_CONFIG).map(([key, config]) => {
+          const count = points.filter(p => p.plant_part?.toLowerCase() === key).length;
+          if (count === 0) return null;
+          
+          return (
+            <View key={key} style={s.legendItem}>
+              <View style={[s.legendDot, { backgroundColor: config.color }]} />
+              <Text style={s.legendText}>{config.displayName} ({count})</Text>
+            </View>
+          );
+        })}
       </View>
     </View>
   );
@@ -195,9 +224,9 @@ const s = StyleSheet.create({
     position: 'absolute',
     left: 8,
     top: 16,
-    height: 160,
+    height: 200,
     justifyContent: 'space-between',
-    paddingVertical: 10,
+    paddingVertical: 0,
   },
   yLabel: {
     fontSize: 10,
@@ -215,8 +244,8 @@ const s = StyleSheet.create({
   gridLine: {
     position: 'absolute',
     height: 1,
-    backgroundColor: '#334155',
-    opacity: 0.3,
+    backgroundColor: '#1e293b',
+    opacity: 0.6,
   },
   clusterLine: {
     position: 'absolute',
@@ -232,40 +261,49 @@ const s = StyleSheet.create({
     marginTop: -10,
   },
   point: {
-    width: 20,
-    height: 20,
+    width: 12,
+    height: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   dot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
-    elevation: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 2,
   },
   tooltip: {
     position: 'absolute',
-    top: 22,
-    left: -30,
+    top: 15,
+    left: -40,
     backgroundColor: '#374151',
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 6,
     borderRadius: 6,
-    opacity: 0,
-    minWidth: 80,
+    minWidth: 120,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#4b5563',
   },
   tooltipText: {
     fontSize: 10,
     color: '#f9fafb',
-    fontWeight: '600',
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  tooltipSubText: {
+    fontSize: 9,
+    color: '#d1d5db',
+    fontWeight: '400',
+    textAlign: 'center',
+    marginTop: 2,
   },
   xAxisContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
     width: 280,
     paddingHorizontal: 20,
   },

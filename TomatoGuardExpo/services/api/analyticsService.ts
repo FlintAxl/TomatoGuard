@@ -58,10 +58,78 @@ export interface MLAnalyticsData {
     plant_part: string;
     created_at: string;
   }>;
+  scatter_plot_data: Array<{
+    id: string;
+    disease: string;
+    confidence: number;
+    plant_part: string;
+    created_at: string;
+    days_ago: number;
+  }>;
 }
 
 export const fetchMLAnalytics = async (token?: string): Promise<MLAnalyticsData> => {
   const client = getApiClient(token);
   const response = await client.get('/api/v1/analytics/ml-overview');
+  return response.data.data;
+};
+
+export interface AnalysisHistoryItem {
+  id: string;
+  user_id: string;
+  image_url: string;
+  disease: string;
+  confidence: number;
+  plant_part: string;
+  created_at: string;
+}
+
+export interface AnalysisHistoryResponse {
+  analyses: AnalysisHistoryItem[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
+export interface AnalysisDetail {
+  id: string;
+  user_id: string;
+  image_url: string;
+  created_at: string;
+  disease: string;
+  confidence: number;
+  plant_part: string;
+  part_confidence: number;
+  annotated_image: string | null;
+  original_image: string | null;
+  total_spots: number;
+  bounding_boxes: Array<{
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    area: number;
+  }>;
+  alternative_predictions: Array<{ disease: string; confidence: number }>;
+  alternative_parts: Array<{ part: string; confidence: number }>;
+}
+
+export const fetchAnalysisHistory = async (
+  token?: string,
+  page: number = 1,
+  pageSize: number = 20
+): Promise<AnalysisHistoryResponse> => {
+  const client = getApiClient(token);
+  const response = await client.get(`/api/v1/analytics/analysis-history?page=${page}&page_size=${pageSize}`);
+  return response.data.data;
+};
+
+export const fetchAnalysisDetail = async (
+  token?: string,
+  analysisId?: string
+): Promise<AnalysisDetail> => {
+  const client = getApiClient(token);
+  const response = await client.get(`/api/v1/analytics/analysis-detail/${analysisId}`);
   return response.data.data;
 };
