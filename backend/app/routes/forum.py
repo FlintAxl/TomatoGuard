@@ -263,7 +263,7 @@ async def upload_post_images(
     # Update post with image URLs
     await forum_service.posts.update_one(
         {"_id": ObjectId(post_id)},
-        {"$push": {"image_urls": {"$each": image_urls}}, "updated_at": datetime.utcnow()}
+        {"$push": {"image_urls": {"$each": image_urls}}, "$set": {"updated_at": datetime.utcnow()}}
     )
     
     return {"image_urls": image_urls}
@@ -301,13 +301,13 @@ async def delete_post_image(
     # Remove image from list
     await forum_service.posts.update_one(
         {"_id": ObjectId(post_id)},
-        {"$unset": {f"image_urls.{image_index}": 1}, "updated_at": datetime.utcnow()}
+        {"$unset": {f"image_urls.{image_index}": 1}, "$set": {"updated_at": datetime.utcnow()}}
     )
     
     # Pull null values from array
     await forum_service.posts.update_one(
         {"_id": ObjectId(post_id)},
-        {"$pull": {"image_urls": None}, "updated_at": datetime.utcnow()}
+        {"$pull": {"image_urls": None}, "$set": {"updated_at": datetime.utcnow()}}
     )
     
     return {"message": "Image deleted successfully"}
