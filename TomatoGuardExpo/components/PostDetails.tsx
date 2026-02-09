@@ -95,29 +95,48 @@ const PostDetailOverlay: React.FC<PostDetailOverlayProps> = ({ visible, onClose,
   const handleDeletePost = () => {
     if (!postId) return;
     
-    Alert.alert(
-      'Delete Post',
-      'Are you sure you want to delete this post? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: performDelete,
-        },
-      ]
-    );
+    const isWeb = typeof window !== 'undefined' && typeof document !== 'undefined';
+    
+    if (isWeb) {
+      const confirmed = window.confirm('Are you sure you want to delete this post? This action cannot be undone.');
+      if (confirmed) {
+        performDelete();
+      }
+    } else {
+      Alert.alert(
+        'Delete Post',
+        'Are you sure you want to delete this post? This action cannot be undone.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: performDelete,
+          },
+        ]
+      );
+    }
   };
 
   const performDelete = async () => {
     if (!postId) return;
     
+    const isWeb = typeof window !== 'undefined' && typeof document !== 'undefined';
+    
     try {
       await deletePost(postId);
-      Alert.alert('Success', 'Post deleted successfully');
       onClose();
+      if (isWeb) {
+        window.alert('Post deleted successfully');
+      } else {
+        Alert.alert('Success', 'Post deleted successfully');
+      }
     } catch (error) {
-      Alert.alert('Error', 'Failed to delete post');
+      if (isWeb) {
+        window.alert('Failed to delete post');
+      } else {
+        Alert.alert('Error', 'Failed to delete post');
+      }
     }
   };
 

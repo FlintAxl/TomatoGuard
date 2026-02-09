@@ -135,6 +135,8 @@ export const forumService = {
       formData.append('description', postData.description);
       
       // Add all images to FormData
+      const isWeb = typeof window !== 'undefined' && typeof document !== 'undefined';
+      
       for (let index = 0; index < postData.images.length; index++) {
         const imageUri = postData.images[index];
         const filename = imageUri.split('/').pop() || `image_${index}_${Date.now()}.jpg`;
@@ -142,14 +144,19 @@ export const forumService = {
         const type = match ? `image/${match[1]}` : 'image/jpeg';
         
         try {
-          // Fetch the image as a blob
-          const response = await fetch(imageUri);
-          const blob = await response.blob();
-          
-          // Append the blob as a file
-          formData.append('images', blob, filename);
-          
-          console.log(`📸 Added image ${index + 1}: ${filename} (${blob.size} bytes)`);
+          if (isWeb) {
+            const response = await fetch(imageUri);
+            const blob = await response.blob();
+            formData.append('images', blob, filename);
+          } else {
+            const fileObject = {
+              uri: imageUri,
+              type: type,
+              name: filename,
+            } as any;
+            formData.append('images', fileObject);
+          }
+          console.log(`📸 Added image ${index + 1}: ${filename}`);
         } catch (error) {
           console.error(`❌ Failed to process image ${index + 1}:`, error);
           throw new Error(`Failed to process image ${filename}`);
@@ -157,11 +164,7 @@ export const forumService = {
       }
       
       try {
-        const response = await apiClient.post('/api/v1/forum/posts', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
+        const response = await apiClient.post('/api/v1/forum/posts', formData);
         
         console.log('✅ Post created successfully with images');
         return response.data;
@@ -185,7 +188,7 @@ export const forumService = {
   },
 
   /**
-   * Update an existing post (text fields only, not images)
+   * Update an existing post (text fields and images)
    */
   updatePost: async (
     postId: string, 
@@ -193,9 +196,7 @@ export const forumService = {
     token: string
   ): Promise<Post> => {
     const apiClient = getApiClient(token);
-    // Only send text fields, not images
-    const { image_urls, ...textData } = postData;
-    const response = await apiClient.put(`/api/v1/forum/posts/${postId}`, textData);
+    const response = await apiClient.put(`/api/v1/forum/posts/${postId}`, postData);
     return response.data;
   },
 
@@ -259,27 +260,34 @@ export const forumService = {
   ): Promise<string[]> => {
     const apiClient = getApiClient(token);
     
-    // Create FormData
     const formData = new FormData();
+    const isWeb = typeof window !== 'undefined' && typeof document !== 'undefined';
     
-    // Append all images as blobs
     for (let index = 0; index < imageUris.length; index++) {
       const imageUri = imageUris[index];
-      const filename = imageUri.split('/').pop() || `image${index}.jpg`;
+      const filename = imageUri.split('/').pop() || `image_${index}_${Date.now()}.jpg`;
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : 'image/jpeg';
       
-      const response = await fetch(imageUri);
-      const blob = await response.blob();
-      
-      formData.append('images', blob, filename);
+      if (isWeb) {
+        const response = await fetch(imageUri);
+        const blob = await response.blob();
+        formData.append('images', blob, filename);
+      } else {
+        const fileObject = {
+          uri: imageUri,
+          type: type,
+          name: filename,
+        } as any;
+        formData.append('images', fileObject);
+      }
     }
 
     const response = await apiClient.post(
       `/api/v1/forum/posts/${postId}/images`,
       formData,
       {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        timeout: 30000,
       }
     );
     
@@ -372,9 +380,6 @@ export const forumService = {
           `/api/v1/forum/posts/${postId}/images`,
           formData,
           {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
             timeout: 30000,
           }
         );

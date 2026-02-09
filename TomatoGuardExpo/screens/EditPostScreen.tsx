@@ -97,60 +97,71 @@ const EditPostScreen: React.FC<EditPostScreenProps> = ({
   };
 
   const handleSave = async () => {
+    const isWeb = typeof window !== 'undefined' && typeof document !== 'undefined';
+
     if (!title.trim()) {
-      Alert.alert('Error', 'Please enter a title');
+      isWeb ? window.alert('Please enter a title') : Alert.alert('Error', 'Please enter a title');
       return;
     }
 
     if (!content.trim()) {
-      Alert.alert('Error', 'Please enter content');
+      isWeb ? window.alert('Please enter content') : Alert.alert('Error', 'Please enter content');
       return;
     }
 
     setLoading(true);
     try {
-      // Update post text content (title, category, description)
+      // 1. Separate existing cloud URLs from new local images
+      const newLocalImages: string[] = [];
+      for (const uri of selectedImages) {
+        if (!uri.startsWith('http://') && !uri.startsWith('https://')) {
+          newLocalImages.push(uri);
+        }
+      }
+
+      // 2. Upload new local images to get cloud URLs
+      let uploadedUrls: string[] = [];
+      if (newLocalImages.length > 0) {
+        console.log(`📤 Uploading ${newLocalImages.length} new image(s)...`);
+        uploadedUrls = await forumService.uploadPostImages(postId, newLocalImages, authState.accessToken || '');
+        console.log(`✅ Uploaded ${uploadedUrls.length} new image(s)`);
+      }
+
+      // 3. Build final image URLs preserving order
+      const finalImageUrls: string[] = [];
+      let uploadedIdx = 0;
+      for (const uri of selectedImages) {
+        if (uri.startsWith('http://') || uri.startsWith('https://')) {
+          finalImageUrls.push(uri);
+        } else {
+          if (uploadedIdx < uploadedUrls.length) {
+            finalImageUrls.push(uploadedUrls[uploadedIdx]);
+            uploadedIdx++;
+          }
+        }
+      }
+
+      // 4. Update everything in a single call
       const updateData = {
         title,
         category,
         description: content,
+        image_urls: finalImageUrls,
       };
 
-      console.log('📝 Updating post text fields...');
+      console.log(`📝 Updating post with ${finalImageUrls.length} image(s)...`);
       await updatePost(postId, updateData);
 
-      // Handle images separately
-      const originalImages = initialData.image_urls || [];
-      const hasImageChanges = JSON.stringify(originalImages.sort()) !== JSON.stringify(selectedImages.sort());
-      
-      if (hasImageChanges) {
-        console.log('🖼️ Images have changed, updating...');
-        console.log('Original:', originalImages);
-        console.log('New:', selectedImages);
-        
-        try {
-          await forumService.replacePostImages(postId, selectedImages, authState.accessToken || '');
-          console.log('✅ Images updated successfully');
-        } catch (error) {
-          console.error('❌ Failed to update images:', error);
-          Alert.alert('Warning', 'Post text updated but some images failed to update.');
-        }
-      } else {
-        console.log('✓ No image changes detected');
-      }
-
-      // ✅ REFETCH POST DATA TO UPDATE UI
+      // 5. Refetch to update UI
       console.log('🔄 Refreshing post data...');
       try {
         await fetchPost(postId);
-        console.log('✅ Post data refreshed - images should now be visible');
+        console.log('✅ Post data refreshed');
       } catch (error) {
         console.error('⚠️ Could not refresh post data:', error);
       }
 
-      // Success handling with platform detection
-      const isWeb = typeof window !== 'undefined' && typeof document !== 'undefined';
-      
+      // 6. Success
       if (isWeb) {
         window.alert('Post updated successfully!');
         setActiveTab('forum');
@@ -166,7 +177,8 @@ const EditPostScreen: React.FC<EditPostScreenProps> = ({
       }
     } catch (error: any) {
       console.error('❌ Update post error:', error);
-      Alert.alert('Error', `Failed to update post: ${error.response?.data?.detail || error.message}`);
+      const errorMsg = `Failed to update post: ${error.response?.data?.detail || error.message}`;
+      isWeb ? window.alert(errorMsg) : Alert.alert('Error', errorMsg);
     } finally {
       setLoading(false);
     }

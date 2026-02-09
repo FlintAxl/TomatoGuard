@@ -187,7 +187,9 @@ export const useForum = (): UseForumReturn => {
   }, [authState.accessToken, updatePostInList]);
 
   const deletePost = useCallback(async (postId: string) => {
-    if (!authState.accessToken) return;
+    if (!authState.accessToken) {
+      throw new Error('Not authenticated');
+    }
     
     setState(prev => ({ ...prev, loading: true, error: null }));
     
@@ -198,7 +200,6 @@ export const useForum = (): UseForumReturn => {
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || err.message || 'Failed to delete post';
       setState(prev => ({ ...prev, error: errorMessage, loading: false }));
-      Alert.alert('Error', errorMessage);
       throw err;
     }
   }, [authState.accessToken, removePostFromList]);

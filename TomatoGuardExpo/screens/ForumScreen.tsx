@@ -41,11 +41,14 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
   
   // State for posts and UI
   const [posts, setPosts] = useState<ForumPost[]>([]);
+  const [myPosts, setMyPosts] = useState<ForumPost[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMyPosts, setLoadingMyPosts] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [userData, setUserData] = useState<any>(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
+  const [activeTab, setActiveForumTab] = useState<'all' | 'mine'>('all');
   
   // Overlay states
   const [showCreatePost, setShowCreatePost] = useState(false);
@@ -162,10 +165,27 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
     }
   };
 
+  // Fetch my posts
+  const fetchMyPosts = async () => {
+    if (!authState.accessToken || !authState.user?.id) return;
+    
+    try {
+      setLoadingMyPosts(true);
+      const fetchedPosts = await forumService.getUserPosts(authState.user.id, authState.accessToken);
+      const postsArray = Array.isArray(fetchedPosts) ? fetchedPosts : [];
+      setMyPosts(postsArray);
+    } catch (error) {
+      console.error('Error fetching my posts:', error);
+    } finally {
+      setLoadingMyPosts(false);
+    }
+  };
+
   // Fetch posts and profile on component mount
   useEffect(() => {
     fetchUserProfile();
     fetchPosts();
+    fetchMyPosts();
   }, []);
 
   // Refetch posts when filters change
@@ -177,6 +197,7 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
   useEffect(() => {
     if (!showCreatePost && !showPostDetail) {
       fetchPosts();
+      fetchMyPosts();
     }
   }, [showCreatePost, showPostDetail]);
 
@@ -192,6 +213,10 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
         post.id === postId ? updatedPost : post
       );
       setPosts(updatedPosts);
+      // Also update in myPosts if present
+      setMyPosts(prev => prev.map(post => 
+        post.id === postId ? updatedPost : post
+      ));
     } catch (error) {
       console.error('Error voting:', error);
       Alert.alert('Error', 'Failed to vote');
@@ -434,6 +459,35 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
             <FontAwesome5 icon={faEdit} size={16} color="#ffffff" />
             <Text style={styles.createPostButtonText}>Create New Post</Text>
           </TouchableOpacity>
+
+          {/* Feed Toggle Tabs */}
+          <View style={styles.feedToggle}>
+            <TouchableOpacity
+              style={[
+                styles.feedToggleBtn,
+                activeTab === 'all' && styles.feedToggleBtnActive,
+              ]}
+              onPress={() => setActiveForumTab('all')}
+            >
+              <FontAwesome5 icon={faComment} size={14} color={activeTab === 'all' ? '#ffffff' : '#94a3b8'} />
+              <Text style={[styles.feedToggleText, activeTab === 'all' && styles.feedToggleTextActive]}>All Posts</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.feedToggleBtn,
+                activeTab === 'mine' && styles.feedToggleBtnActive,
+              ]}
+              onPress={() => setActiveForumTab('mine')}
+            >
+              <FontAwesome5 icon={faUser} size={14} color={activeTab === 'mine' ? '#ffffff' : '#94a3b8'} />
+              <Text style={[styles.feedToggleText, activeTab === 'mine' && styles.feedToggleTextActive]}>My Posts</Text>
+              {myPosts.length > 0 && (
+                <View style={styles.feedToggleBadge}>
+                  <Text style={styles.feedToggleBadgeText}>{myPosts.length}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
       </View>
 
       {/* Main Content Area - Posts (70%) */}
@@ -481,33 +535,66 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
 
           {/* Posts Feed */}
           <View style={styles.postsContainer}>
-            <Text style={styles.sectionTitle}>Recent Discussions</Text>
+            <Text style={styles.sectionTitle}>
+              {activeTab === 'mine' ? 'My Posts' : 'Recent Discussions'}
+            </Text>
             
-            {loading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#10b981" />
-                <Text style={styles.loadingText}>Loading posts...</Text>
-              </View>
-            ) : filteredPosts.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <FontAwesome5 icon={faImage} size={48} color="#475569" />
-                <Text style={styles.emptyText}>No posts found</Text>
-                <Text style={styles.emptySubtext}>Be the first to start a discussion!</Text>
-                <TouchableOpacity 
-                  style={styles.emptyButton}
-                  onPress={() => setShowCreatePost(true)}
-                >
-                  <Text style={styles.emptyButtonText}>Create Post</Text>
-                </TouchableOpacity>
-              </View>
+            {activeTab === 'all' ? (
+              // ===== ALL POSTS TAB =====
+              loading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#10b981" />
+                  <Text style={styles.loadingText}>Loading posts...</Text>
+                </View>
+              ) : filteredPosts.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <FontAwesome5 icon={faImage} size={48} color="#475569" />
+                  <Text style={styles.emptyText}>No posts found</Text>
+                  <Text style={styles.emptySubtext}>Be the first to start a discussion!</Text>
+                  <TouchableOpacity 
+                    style={styles.emptyButton}
+                    onPress={() => setShowCreatePost(true)}
+                  >
+                    <Text style={styles.emptyButtonText}>Create Post</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <FlatList
+                  data={filteredPosts}
+                  renderItem={renderPost}
+                  keyExtractor={item => item.id}
+                  scrollEnabled={false}
+                  showsVerticalScrollIndicator={false}
+                />
+              )
             ) : (
-              <FlatList
-                data={filteredPosts}
-                renderItem={renderPost}
-                keyExtractor={item => item.id}
-                scrollEnabled={false}
-                showsVerticalScrollIndicator={false}
-              />
+              // ===== MY POSTS TAB =====
+              loadingMyPosts ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#10b981" />
+                  <Text style={styles.loadingText}>Loading your posts...</Text>
+                </View>
+              ) : myPosts.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <FontAwesome5 icon={faEdit} size={48} color="#475569" />
+                  <Text style={styles.emptyText}>You haven't posted yet</Text>
+                  <Text style={styles.emptySubtext}>Share your thoughts with the community!</Text>
+                  <TouchableOpacity 
+                    style={styles.emptyButton}
+                    onPress={() => setShowCreatePost(true)}
+                  >
+                    <Text style={styles.emptyButtonText}>Create Your First Post</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <FlatList
+                  data={myPosts}
+                  renderItem={renderPost}
+                  keyExtractor={item => item.id}
+                  scrollEnabled={false}
+                  showsVerticalScrollIndicator={false}
+                />
+              )
             )}
           </View>
         </ScrollView>
@@ -625,6 +712,48 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 14,
     fontWeight: '600',
+  },
+  feedToggle: {
+    marginTop: 20,
+    gap: 8,
+  },
+  feedToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    gap: 10,
+    backgroundColor: 'transparent',
+  },
+  feedToggleBtnActive: {
+    backgroundColor: '#10b98125',
+    borderWidth: 1,
+    borderColor: '#10b981',
+  },
+  feedToggleText: {
+    color: '#94a3b8',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  feedToggleTextActive: {
+    color: '#ffffff',
+    fontWeight: '600',
+  },
+  feedToggleBadge: {
+    backgroundColor: '#10b981',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    marginLeft: 'auto',
+  },
+  feedToggleBadgeText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '700',
   },
 
   // Main Content Styles (70%)
