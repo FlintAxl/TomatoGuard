@@ -28,6 +28,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import EditPostScreen from '../screens/EditPostScreen';
 
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
 interface PostDetailOverlayProps {
   visible: boolean;
   onClose: () => void;
@@ -180,10 +182,10 @@ const PostDetailOverlay: React.FC<PostDetailOverlayProps> = ({ visible, onClose,
                 style={styles.optionsButton}
                 onPress={() => setShowOptions(!showOptions)}
               >
-                <FontAwesome name="ellipsis-h" size={20} color="#ffffff" />
+                <FontAwesome name="ellipsis-h" size={SCREEN_WIDTH < 768 ? 18 : 20} color="#ffffff" />
               </TouchableOpacity>
               <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                <FontAwesome name="times" size={20} color="#ffffff" />
+                <FontAwesome name="times" size={SCREEN_WIDTH < 768 ? 18 : 20} color="#ffffff" />
               </TouchableOpacity>
             </View>
           </View>
@@ -264,7 +266,7 @@ const PostDetailOverlay: React.FC<PostDetailOverlayProps> = ({ visible, onClose,
                       showsHorizontalScrollIndicator={false}
                       onMomentumScrollEnd={(event) => {
                         const newIndex = Math.round(
-                          event.nativeEvent.contentOffset.x / (Dimensions.get('window').width * 0.7)
+                          event.nativeEvent.contentOffset.x / (SCREEN_WIDTH < 768 ? SCREEN_WIDTH * 0.85 : SCREEN_WIDTH * 0.7)
                         );
                         setActiveImageIndex(newIndex);
                       }}
@@ -296,7 +298,7 @@ const PostDetailOverlay: React.FC<PostDetailOverlayProps> = ({ visible, onClose,
                     )}
                     
                     <View style={styles.imageCountContainer}>
-                      <FontAwesome name="image" size={12} color="#ffffff" />
+                      <FontAwesome name="image" size={SCREEN_WIDTH < 768 ? 10 : 12} color="#ffffff" />
                       <Text style={styles.imageCountText}>
                         {images.length} {images.length === 1 ? 'image' : 'images'}
                       </Text>
@@ -310,11 +312,11 @@ const PostDetailOverlay: React.FC<PostDetailOverlayProps> = ({ visible, onClose,
                 {/* Stats */}
                 <View style={styles.postStats}>
                   <View style={styles.statsItem}>
-                    <FontAwesome name="thumbs-up" size={16} color="#10b981" />
+                    <FontAwesome name="thumbs-up" size={SCREEN_WIDTH < 768 ? 14 : 16} color="#10b981" />
                     <Text style={styles.statsText}>{currentPost.likes_count} Likes</Text>
                   </View>
                   <View style={styles.statsItem}>
-                    <FontAwesome name="comment" size={16} color="#3b82f6" />
+                    <FontAwesome name="comment" size={SCREEN_WIDTH < 768 ? 14 : 16} color="#3b82f6" />
                     <Text style={styles.statsText}>{currentPost.comments_count} Comments</Text>
                   </View>
                 </View>
@@ -327,30 +329,32 @@ const PostDetailOverlay: React.FC<PostDetailOverlayProps> = ({ visible, onClose,
                   >
                     <FontAwesome 
                       name="thumbs-up" 
-                      size={18} 
+                      size={SCREEN_WIDTH < 768 ? 16 : 18} 
                       color={currentPost.user_has_liked ? '#10b981' : '#94a3b8'} 
                     />
-                    <Text style={[
-                      styles.actionButtonText,
-                      currentPost.user_has_liked && styles.likedButtonText
-                    ]}>
-                      Like
-                    </Text>
+                    {SCREEN_WIDTH >= 768 && (
+                      <Text style={[
+                        styles.actionButtonText,
+                        currentPost.user_has_liked && styles.likedButtonText
+                      ]}>
+                        Like
+                      </Text>
+                    )}
                   </TouchableOpacity>
 
                   <TouchableOpacity style={styles.actionButton}>
-                    <FontAwesome name="comment" size={18} color="#94a3b8" />
-                    <Text style={styles.actionButtonText}>Comment</Text>
+                    <FontAwesome name="comment" size={SCREEN_WIDTH < 768 ? 16 : 18} color="#94a3b8" />
+                    {SCREEN_WIDTH >= 768 && <Text style={styles.actionButtonText}>Comment</Text>}
                   </TouchableOpacity>
 
                   <TouchableOpacity style={styles.actionButton}>
-                    <FontAwesome name="share" size={18} color="#94a3b8" />
-                    <Text style={styles.actionButtonText}>Share</Text>
+                    <FontAwesome name="share" size={SCREEN_WIDTH < 768 ? 16 : 18} color="#94a3b8" />
+                    {SCREEN_WIDTH >= 768 && <Text style={styles.actionButtonText}>Share</Text>}
                   </TouchableOpacity>
 
                   <TouchableOpacity style={styles.actionButton}>
-                    <FontAwesome name="bookmark" size={18} color="#94a3b8" />
-                    <Text style={styles.actionButtonText}>Save</Text>
+                    <FontAwesome name="bookmark" size={SCREEN_WIDTH < 768 ? 16 : 18} color="#94a3b8" />
+                    {SCREEN_WIDTH >= 768 && <Text style={styles.actionButtonText}>Save</Text>}
                   </TouchableOpacity>
                 </View>
               </View>
@@ -382,7 +386,7 @@ const PostDetailOverlay: React.FC<PostDetailOverlayProps> = ({ visible, onClose,
                       onPress={handleAddComment}
                       disabled={!newComment.trim()}
                     >
-                      <FontAwesome name="paper-plane" size={16} color="#ffffff" />
+                      <FontAwesome name="paper-plane" size={SCREEN_WIDTH < 768 ? 14 : 16} color="#ffffff" />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -390,7 +394,7 @@ const PostDetailOverlay: React.FC<PostDetailOverlayProps> = ({ visible, onClose,
                 {/* Comments List */}
                 {currentPost.comments?.length === 0 ? (
                   <View style={styles.noComments}>
-                    <FontAwesome name="comment" size={40} color="#475569" />
+                    <FontAwesome name="comment" size={SCREEN_WIDTH < 768 ? 36 : 40} color="#475569" />
                     <Text style={styles.noCommentsText}>No comments yet</Text>
                     <Text style={styles.noCommentsSubtext}>Be the first to share your thoughts!</Text>
                   </View>
@@ -443,30 +447,33 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    justifyContent: 'center',
+    justifyContent: SCREEN_WIDTH < 768 ? 'flex-end' : 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: SCREEN_WIDTH < 768 ? 0 : 20,
   },
   container: {
     width: '100%',
-    maxWidth: 900,
-    maxHeight: '90%',
+    maxWidth: SCREEN_WIDTH < 768 ? '100%' : 900,
+    height: SCREEN_WIDTH < 768 ? SCREEN_HEIGHT * 0.93 : undefined,
+    maxHeight: SCREEN_WIDTH >= 768 ? '90%' : undefined,
     backgroundColor: '#0f172a',
-    borderRadius: 16,
+    borderRadius: SCREEN_WIDTH < 768 ? 16 : 16,
+    borderBottomLeftRadius: SCREEN_WIDTH < 768 ? 0 : 16,
+    borderBottomRightRadius: SCREEN_WIDTH < 768 ? 0 : 16,
     overflow: 'hidden',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: SCREEN_WIDTH < 768 ? 16 : 20,
+    paddingVertical: SCREEN_WIDTH < 768 ? 12 : 16,
     backgroundColor: '#1e293b',
     borderBottomWidth: 1,
     borderBottomColor: '#334155',
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: SCREEN_WIDTH < 768 ? 16 : 18,
     fontWeight: '600',
     color: '#ffffff',
     fontFamily: 'serif',
@@ -475,39 +482,39 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: SCREEN_WIDTH < 768 ? 8 : 12,
   },
   optionsButton: {
-    padding: 8,
+    padding: SCREEN_WIDTH < 768 ? 6 : 8,
   },
   closeButton: {
-    padding: 8,
+    padding: SCREEN_WIDTH < 768 ? 6 : 8,
   },
   optionsMenu: {
     position: 'absolute',
-    top: 70,
-    right: 60,
+    top: SCREEN_WIDTH < 768 ? 55 : 70,
+    right: SCREEN_WIDTH < 768 ? 50 : 60,
     backgroundColor: '#1e293b',
-    borderRadius: 12,
-    padding: 8,
+    borderRadius: SCREEN_WIDTH < 768 ? 10 : 12,
+    padding: SCREEN_WIDTH < 768 ? 6 : 8,
     zIndex: 1000,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 8,
-    minWidth: 180,
+    minWidth: SCREEN_WIDTH < 768 ? 150 : 180,
   },
   optionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: SCREEN_WIDTH < 768 ? 10 : 12,
+    paddingHorizontal: SCREEN_WIDTH < 768 ? 12 : 16,
     gap: 12,
   },
   optionText: {
     color: '#cbd5e1',
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
     fontWeight: '500',
     flex: 1,
   },
@@ -522,22 +529,22 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 40,
+    padding: SCREEN_WIDTH < 768 ? 30 : 40,
   },
   loadingText: {
     color: '#64748b',
-    fontSize: 16,
+    fontSize: SCREEN_WIDTH < 768 ? 14 : 16,
     marginTop: 12,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 40,
+    padding: SCREEN_WIDTH < 768 ? 30 : 40,
   },
   errorText: {
     color: '#ef4444',
-    fontSize: 18,
+    fontSize: SCREEN_WIDTH < 768 ? 16 : 18,
     fontWeight: '600',
   },
   content: {
@@ -545,24 +552,24 @@ const styles = StyleSheet.create({
   },
   postCard: {
     backgroundColor: '#1e293b',
-    padding: 20,
+    padding: SCREEN_WIDTH < 768 ? 16 : 20,
   },
   authorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: SCREEN_WIDTH < 768 ? 12 : 16,
   },
   authorAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: SCREEN_WIDTH < 768 ? 40 : 48,
+    height: SCREEN_WIDTH < 768 ? 40 : 48,
+    borderRadius: SCREEN_WIDTH < 768 ? 20 : 24,
     backgroundColor: '#10b981',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   authorInitial: {
-    fontSize: 18,
+    fontSize: SCREEN_WIDTH < 768 ? 16 : 18,
     fontWeight: 'bold',
     color: '#ffffff',
   },
@@ -570,7 +577,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   authorName: {
-    fontSize: 16,
+    fontSize: SCREEN_WIDTH < 768 ? 14 : 16,
     fontWeight: '600',
     color: '#ffffff',
     marginBottom: 4,
@@ -581,40 +588,40 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   postTime: {
-    fontSize: 12,
+    fontSize: SCREEN_WIDTH < 768 ? 11 : 12,
     color: '#94a3b8',
   },
   categoryTag: {
     backgroundColor: '#334155',
-    paddingHorizontal: 8,
+    paddingHorizontal: SCREEN_WIDTH < 768 ? 6 : 8,
     paddingVertical: 2,
     borderRadius: 4,
   },
   categoryText: {
-    fontSize: 11,
+    fontSize: SCREEN_WIDTH < 768 ? 10 : 11,
     color: '#10b981',
     fontWeight: '500',
     textTransform: 'uppercase',
   },
   postTitle: {
-    fontSize: 24,
+    fontSize: SCREEN_WIDTH < 768 ? 20 : 24,
     fontWeight: 'bold',
     color: '#ffffff',
-    marginBottom: 16,
+    marginBottom: SCREEN_WIDTH < 768 ? 12 : 16,
     fontFamily: 'serif',
     fontStyle: 'italic',
-    lineHeight: 32,
+    lineHeight: SCREEN_WIDTH < 768 ? 26 : 32,
   },
   imagesContainer: {
-    marginBottom: 16,
+    marginBottom: SCREEN_WIDTH < 768 ? 12 : 16,
     position: 'relative',
   },
   imagesScrollView: {
-    height: 300,
+    height: SCREEN_WIDTH < 768 ? 250 : 300,
   },
   imageSlide: {
-    width: Dimensions.get('window').width * 0.7,
-    height: 300,
+    width: SCREEN_WIDTH < 768 ? SCREEN_WIDTH * 0.85 : SCREEN_WIDTH * 0.7,
+    height: SCREEN_WIDTH < 768 ? 250 : 300,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#000',
@@ -632,16 +639,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   paginationDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: SCREEN_WIDTH < 768 ? 6 : 8,
+    height: SCREEN_WIDTH < 768 ? 6 : 8,
+    borderRadius: SCREEN_WIDTH < 768 ? 3 : 4,
     backgroundColor: 'rgba(255, 255, 255, 0.5)',
     marginHorizontal: 4,
   },
   paginationDotActive: {
     backgroundColor: '#ffffff',
-    width: 10,
-    height: 10,
+    width: SCREEN_WIDTH < 768 ? 8 : 10,
+    height: SCREEN_WIDTH < 768 ? 8 : 10,
   },
   imageCountContainer: {
     position: 'absolute',
@@ -650,27 +657,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
+    paddingHorizontal: SCREEN_WIDTH < 768 ? 8 : 10,
+    paddingVertical: SCREEN_WIDTH < 768 ? 4 : 5,
+    borderRadius: SCREEN_WIDTH < 768 ? 10 : 12,
     gap: 6,
   },
   imageCountText: {
     color: '#ffffff',
-    fontSize: 12,
+    fontSize: SCREEN_WIDTH < 768 ? 11 : 12,
     fontWeight: '500',
   },
   postContent: {
-    fontSize: 16,
+    fontSize: SCREEN_WIDTH < 768 ? 14 : 16,
     color: '#cbd5e1',
-    lineHeight: 24,
-    marginBottom: 20,
+    lineHeight: SCREEN_WIDTH < 768 ? 20 : 24,
+    marginBottom: SCREEN_WIDTH < 768 ? 16 : 20,
   },
   postStats: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 24,
-    paddingVertical: 16,
+    gap: SCREEN_WIDTH < 768 ? 16 : 24,
+    paddingVertical: SCREEN_WIDTH < 768 ? 12 : 16,
     borderTopWidth: 1,
     borderTopColor: '#334155',
     borderBottomWidth: 1,
@@ -683,19 +690,19 @@ const styles = StyleSheet.create({
   },
   statsText: {
     color: '#94a3b8',
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
   },
   actionButtons: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 16,
+    paddingVertical: SCREEN_WIDTH < 768 ? 12 : 16,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    gap: SCREEN_WIDTH < 768 ? 4 : 8,
+    paddingVertical: SCREEN_WIDTH < 768 ? 6 : 8,
+    paddingHorizontal: SCREEN_WIDTH < 768 ? 12 : 16,
     borderRadius: 20,
   },
   likedButton: {
@@ -711,32 +718,32 @@ const styles = StyleSheet.create({
   },
   commentsContainer: {
     backgroundColor: '#1e293b',
-    padding: 20,
+    padding: SCREEN_WIDTH < 768 ? 16 : 20,
   },
   commentsTitle: {
-    fontSize: 20,
+    fontSize: SCREEN_WIDTH < 768 ? 18 : 20,
     fontWeight: 'bold',
     color: '#ffffff',
-    marginBottom: 20,
+    marginBottom: SCREEN_WIDTH < 768 ? 16 : 20,
     fontFamily: 'serif',
     fontStyle: 'italic',
   },
   addCommentContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 12,
-    marginBottom: 24,
+    gap: SCREEN_WIDTH < 768 ? 10 : 12,
+    marginBottom: SCREEN_WIDTH < 768 ? 20 : 24,
   },
   commentInputAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: SCREEN_WIDTH < 768 ? 32 : 36,
+    height: SCREEN_WIDTH < 768 ? 32 : 36,
+    borderRadius: SCREEN_WIDTH < 768 ? 16 : 18,
     backgroundColor: '#475569',
     justifyContent: 'center',
     alignItems: 'center',
   },
   commentInputInitial: {
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 768 ? 12 : 14,
     fontWeight: '600',
     color: '#ffffff',
   },
@@ -746,20 +753,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#334155',
     borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: SCREEN_WIDTH < 768 ? 14 : 16,
+    paddingVertical: SCREEN_WIDTH < 768 ? 6 : 8,
   },
   commentInput: {
     flex: 1,
     color: '#ffffff',
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
     maxHeight: 100,
     paddingVertical: 4,
   },
   sendButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: SCREEN_WIDTH < 768 ? 28 : 32,
+    height: SCREEN_WIDTH < 768 ? 28 : 32,
+    borderRadius: SCREEN_WIDTH < 768 ? 14 : 16,
     backgroundColor: '#10b981',
     justifyContent: 'center',
     alignItems: 'center',
@@ -771,36 +778,36 @@ const styles = StyleSheet.create({
   },
   noComments: {
     alignItems: 'center',
-    paddingVertical: 40,
+    paddingVertical: SCREEN_WIDTH < 768 ? 30 : 40,
   },
   noCommentsText: {
     color: '#64748b',
-    fontSize: 16,
+    fontSize: SCREEN_WIDTH < 768 ? 14 : 16,
     fontWeight: '600',
     marginTop: 12,
   },
   noCommentsSubtext: {
     color: '#94a3b8',
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
     marginTop: 4,
   },
   commentItem: {
     flexDirection: 'row',
-    gap: 12,
-    paddingVertical: 16,
+    gap: SCREEN_WIDTH < 768 ? 10 : 12,
+    paddingVertical: SCREEN_WIDTH < 768 ? 12 : 16,
     borderBottomWidth: 1,
     borderBottomColor: '#334155',
   },
   commentAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: SCREEN_WIDTH < 768 ? 28 : 32,
+    height: SCREEN_WIDTH < 768 ? 28 : 32,
+    borderRadius: SCREEN_WIDTH < 768 ? 14 : 16,
     backgroundColor: '#475569',
     justifyContent: 'center',
     alignItems: 'center',
   },
   commentAvatarInitial: {
-    fontSize: 12,
+    fontSize: SCREEN_WIDTH < 768 ? 11 : 12,
     fontWeight: '600',
     color: '#ffffff',
   },
@@ -815,17 +822,17 @@ const styles = StyleSheet.create({
   },
   commentAuthor: {
     color: '#ffffff',
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
     fontWeight: '600',
   },
   commentTime: {
     color: '#94a3b8',
-    fontSize: 11,
+    fontSize: SCREEN_WIDTH < 768 ? 10 : 11,
   },
   commentText: {
     color: '#cbd5e1',
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
+    lineHeight: SCREEN_WIDTH < 768 ? 18 : 20,
   },
 });
 

@@ -307,23 +307,24 @@ const RegisterScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   containerWrapper: {
     flex: 1,
-    margin: 50,
-    borderRadius: 24,
+    margin: SCREEN_WIDTH < 768 ? 0 : 50,
+    borderRadius: SCREEN_WIDTH < 768 ? 0 : 24,
     overflow: 'hidden',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   container: {
     flex: 1,
-    flexDirection: 'row',
-    minHeight: SCREEN_HEIGHT - 150,
+    flexDirection: SCREEN_WIDTH < 768 ? 'column' : 'row',
+    minHeight: SCREEN_WIDTH < 768 ? SCREEN_HEIGHT : SCREEN_HEIGHT - 150,
   },
 
-  // Form Section (Left)
+  // Form Section (Left on desktop, top on mobile)
   formSection: {
     flex: 1,
-    minWidth: '60%',
-    padding: 40,
+    minWidth: SCREEN_WIDTH < 768 ? '100%' : '60%',
+    padding: SCREEN_WIDTH < 768 ? 20 : 40,
     justifyContent: 'center',
+    order: SCREEN_WIDTH < 768 ? 2 : 1,
   },
   formContent: {
     maxWidth: 480,
@@ -331,10 +332,12 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
 
-  // Image Section (Right)
+  // Image Section (Right on desktop, bottom on mobile)
   imageSection: {
-    flex: 1,
-    minWidth: '40%',
+    flex: SCREEN_WIDTH < 768 ? 0 : 1,
+    minWidth: SCREEN_WIDTH < 768 ? '100%' : '40%',
+    height: SCREEN_WIDTH < 768 ? 200 : '100%',
+    order: SCREEN_WIDTH < 768 ? 1 : 2,
   },
   sideImage: {
     width: '100%',
@@ -344,10 +347,11 @@ const styles = StyleSheet.create({
   // Header
   authHeader: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: SCREEN_WIDTH < 768 ? 30 : 40,
+    marginTop: SCREEN_WIDTH < 768 ? 20 : 0,
   },
   authLogo: {
-    fontSize: 48,
+    fontSize: SCREEN_WIDTH < 768 ? 36 : 48,
     fontWeight: '700',
     fontStyle: 'italic',
     color: COLORS.textLight,
@@ -355,7 +359,7 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
   },
   authSubtitle: {
-    fontSize: 16,
+    fontSize: SCREEN_WIDTH < 768 ? 14 : 16,
     color: COLORS.muted,
     fontFamily: 'System',
   },
@@ -372,9 +376,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(233, 82, 58, 0.15)',
     borderWidth: 1,
     borderColor: COLORS.color2,
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 24,
+    borderRadius: SCREEN_WIDTH < 768 ? 8 : 12,
+    padding: SCREEN_WIDTH < 768 ? 12 : 14,
+    marginBottom: SCREEN_WIDTH < 768 ? 20 : 24,
     gap: 10,
   },
   errorIcon: {
@@ -383,7 +387,7 @@ const styles = StyleSheet.create({
   errorText: {
     flex: 1,
     color: COLORS.textLight,
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
     fontFamily: 'System',
   },
 
@@ -394,9 +398,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(45, 119, 54, 0.15)',
     borderWidth: 1,
     borderColor: COLORS.color3,
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 24,
+    borderRadius: SCREEN_WIDTH < 768 ? 8 : 12,
+    padding: SCREEN_WIDTH < 768 ? 12 : 14,
+    marginBottom: SCREEN_WIDTH < 768 ? 20 : 24,
     gap: 10,
   },
   successIcon: {
@@ -406,16 +410,16 @@ const styles = StyleSheet.create({
   successText: {
     flex: 1,
     color: COLORS.textLight,
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
     fontFamily: 'System',
   },
 
   // Input Container
   inputContainer: {
-    marginBottom: 24,
+    marginBottom: SCREEN_WIDTH < 768 ? 18 : 24,
   },
   inputLabel: {
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
     fontWeight: '600',
     color: COLORS.textLight,
     marginBottom: 8,
@@ -425,10 +429,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    fontSize: 15,
+    borderRadius: SCREEN_WIDTH < 768 ? 8 : 12,
+    paddingVertical: SCREEN_WIDTH < 768 ? 12 : 14,
+    paddingHorizontal: SCREEN_WIDTH < 768 ? 14 : 16,
+    fontSize: SCREEN_WIDTH < 768 ? 14 : 15,
     color: COLORS.textLight,
     fontFamily: 'System',
   },
@@ -440,12 +444,12 @@ const styles = StyleSheet.create({
   // Auth Button
   authButton: {
     backgroundColor: COLORS.color3,
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: SCREEN_WIDTH < 768 ? 14 : 16,
+    borderRadius: SCREEN_WIDTH < 768 ? 8 : 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 12,
-    marginBottom: 24,
+    marginTop: SCREEN_WIDTH < 768 ? 8 : 12,
+    marginBottom: SCREEN_WIDTH < 768 ? 20 : 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -457,7 +461,7 @@ const styles = StyleSheet.create({
   },
   authButtonText: {
     color: COLORS.textLight,
-    fontSize: 16,
+    fontSize: SCREEN_WIDTH < 768 ? 15 : 16,
     fontWeight: '600',
     fontFamily: 'System',
   },
@@ -468,15 +472,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 6,
+    paddingBottom: SCREEN_WIDTH < 768 ? 20 : 0,
   },
   authLinkText: {
     color: COLORS.muted,
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
     fontFamily: 'System',
   },
   authLink: {
     color: COLORS.color3,
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
     fontWeight: '600',
     fontFamily: 'System',
   },

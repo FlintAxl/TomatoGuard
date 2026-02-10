@@ -14,6 +14,8 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { BlurView } from 'expo-blur';
 
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
 interface MainLayoutProps {
   drawerOpen: boolean;
   drawerAnimation: Animated.Value;
@@ -44,7 +46,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
       <ImageBackground 
         source={require('./../../assets/section1-bg.png')}
         style={{ flex: 1 }}
-        resizeMode="cover" // Options: 'cover', 'contain', 'stretch', 'repeat', 'center'
+        resizeMode="cover"
       >
         {/* Header with Glass Effect */}
         <View style={styles.headerContainer}>
@@ -60,10 +62,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                   <Text style={styles.menuIcon}>☰</Text>
                 </TouchableOpacity>
                 
-                {/* Logo/Picture placeholder */}
-                <View style={styles.logoContainer}>
-                  <Image style={styles.logoPlaceholder} source={require('./../../assets/logo.png')} /> 
-                </View>
+                {/* Logo - Hidden on mobile to save space */}
+                {SCREEN_WIDTH >= 768 && (
+                  <View style={styles.logoContainer}>
+                    <Image style={styles.logoPlaceholder} source={require('./../../assets/logo.png')} /> 
+                  </View>
+                )}
               </View>
 
               {/* Center Section: Title */}
@@ -72,28 +76,30 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                   <Text style={styles.pageTitle}>
                     {pageTitle}
                   </Text>
-                  <Text style={styles.titleDash}>
-                    -
-                  </Text>
+                  {SCREEN_WIDTH >= 768 && (
+                    <Text style={styles.titleDash}>
+                      -
+                    </Text>
+                  )}
                   <Text style={styles.pageSubtitle}>
                     {pageSubtitle}
                   </Text>
                 </View>
               </View>
 
-              {/* Right Section: User Email - <Image 
-                source={require('./assets/logo.png')} 
-                style={{ width: 40, height: 40, borderRadius: 10 }}
-              /> */}
+              {/* Right Section: User Email */}
               {userEmail && (
                 <View style={styles.headerRight}>
-                  {/* User Avatar placeholder */}
+                  {/* User Avatar */}
                   <View style={styles.userAvatar}>
                     <Text style={styles.userAvatarPlaceholder}>👤</Text>
                   </View>
-                  <Text style={styles.userEmail}>
-                    {userEmail}
-                  </Text>
+                  {/* Email - Hidden on mobile */}
+                  {SCREEN_WIDTH >= 768 && (
+                    <Text style={styles.userEmail}>
+                      {userEmail}
+                    </Text>
+                  )}
                 </View>
               )}
             </View>
@@ -108,35 +114,36 @@ const MainLayout: React.FC<MainLayoutProps> = ({
 const styles = StyleSheet.create({
   // Header styles
   headerContainer: {
-    margin: 16,
-    borderRadius: 16,
+    margin: SCREEN_WIDTH < 768 ? 8 : 16,
+    borderRadius: SCREEN_WIDTH < 768 ? 12 : 16,
     overflow: 'hidden',
     backgroundColor: 'rgba(255, 255, 255, 0.18)',
   },
   headerBlur: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+    paddingVertical: SCREEN_WIDTH < 768 ? 12 : 16,
+    paddingHorizontal: SCREEN_WIDTH < 768 ? 12 : 20,
   },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: SCREEN_WIDTH < 768 ? 8 : 0,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: SCREEN_WIDTH < 768 ? 8 : 12,
   },
   menuButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+    width: SCREEN_WIDTH < 768 ? 36 : 40,
+    height: SCREEN_WIDTH < 768 ? 36 : 40,
+    borderRadius: SCREEN_WIDTH < 768 ? 8 : 10,
     backgroundColor: 'rgba(241, 245, 249, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   menuIcon: {
-    fontSize: 20,
+    fontSize: SCREEN_WIDTH < 768 ? 18 : 20,
     color: '#0f172a',
     fontWeight: '600',
   },
@@ -156,15 +163,16 @@ const styles = StyleSheet.create({
   },
   headerCenter: {
     flex: 1,
-    marginHorizontal: 16,
-    alignItems: 'center',
+    marginHorizontal: SCREEN_WIDTH < 768 ? 8 : 16,
+    alignItems: SCREEN_WIDTH < 768 ? 'flex-start' : 'center',
   },
   titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: SCREEN_WIDTH < 768 ? 'column' : 'row',
+    alignItems: SCREEN_WIDTH < 768 ? 'flex-start' : 'center',
+    gap: SCREEN_WIDTH < 768 ? 2 : 0,
   },
   pageTitle: {
-    fontSize: 18,
+    fontSize: SCREEN_WIDTH < 768 ? 14 : 18,
     fontWeight: '700',
     color: 'white',
     textTransform: 'uppercase',
@@ -175,24 +183,25 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
   },
   pageSubtitle: {
-    fontSize: 18,
+    fontSize: SCREEN_WIDTH < 768 ? 12 : 18,
     color: 'white',
+    fontWeight: SCREEN_WIDTH < 768 ? '400' : 'normal',
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: SCREEN_WIDTH < 768 ? 0 : 8,
   },
   userAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 16,
+    width: SCREEN_WIDTH < 768 ? 36 : 40,
+    height: SCREEN_WIDTH < 768 ? 36 : 40,
+    borderRadius: SCREEN_WIDTH < 768 ? 12 : 16,
     backgroundColor: '#2d7736',
     justifyContent: 'center',
     alignItems: 'center',
   },
   userAvatarPlaceholder: {
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 768 ? 12 : 14,
     color: '#ffffff',
   },
   userEmail: {

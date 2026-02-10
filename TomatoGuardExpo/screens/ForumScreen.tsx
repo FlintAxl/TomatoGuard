@@ -29,7 +29,7 @@ import {
 import CreatePostOverlay from '../components/CreatePost';
 import PostDetailOverlay from '../components/PostDetails';
 
-const { width } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface ForumScreenProps {
   setActiveTab: (tab: string) => void;
@@ -46,8 +46,6 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
   const [loadingMyPosts, setLoadingMyPosts] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
-  const [userData, setUserData] = useState<any>(null);
-  const [loadingProfile, setLoadingProfile] = useState(false);
   const [activeTab, setActiveForumTab] = useState<'all' | 'mine'>('all');
   
   // Overlay states
@@ -62,87 +60,6 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
     { id: 'general', label: 'General' },
     { id: 'questions', label: 'Questions' },
   ];
-
-  // Fetch user profile
-  const fetchUserProfile = async () => {
-    if (!authState.accessToken) return;
-    
-    // Use existing user data from authState if available
-    if (authState.user) {
-      setUserData(authState.user);
-      setLoadingProfile(false);
-      return;
-    }
-    
-    setLoadingProfile(true);
-    try {
-      let API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
-      
-      if (Platform.OS === 'web' && typeof window !== 'undefined') {
-        const currentOrigin = window.location.origin;
-        const isNgrok = currentOrigin.includes('.ngrok-free.dev') || 
-                        currentOrigin.includes('.exp.direct') || 
-                        currentOrigin.includes('.ngrok.io');
-        
-        if (isNgrok) {
-          API_BASE_URL = 'http://localhost:8000';
-        }
-      }
-      
-      const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${authState.accessToken}`,
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        // Add these options to help with CORS and ad blockers
-        mode: 'cors',
-        credentials: 'omit',
-      });
-
-      if (response.status === 401) {
-        console.log('Session expired, using cached user data');
-        // Use cached user data instead of logging out
-        if (authState.user) {
-          setUserData(authState.user);
-        }
-        return;
-      }
-
-      if (!response.ok) {
-        console.error('Profile fetch failed with status:', response.status);
-        // Fallback to cached user data
-        if (authState.user) {
-          setUserData(authState.user);
-        }
-        return;
-      }
-
-      const responseText = await response.text();
-      
-      try {
-        const data = JSON.parse(responseText);
-        setUserData(data);
-        updateUser(data);
-      } catch (parseError) {
-        console.error('Failed to parse response:', parseError);
-        // Fallback to cached user data
-        if (authState.user) {
-          setUserData(authState.user);
-        }
-      }
-      
-    } catch (error: any) {
-      console.error('Profile fetch error:', error);
-      // Fallback to cached user data instead of showing error
-      if (authState.user) {
-        setUserData(authState.user);
-      }
-    } finally {
-      setLoadingProfile(false);
-    }
-  };
 
   // Fetch posts from backend
   const fetchPosts = async () => {
@@ -181,9 +98,8 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
     }
   };
 
-  // Fetch posts and profile on component mount
+  // Fetch posts on component mount
   useEffect(() => {
-    fetchUserProfile();
     fetchPosts();
     fetchMyPosts();
   }, []);
@@ -397,104 +313,11 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
 
   return (
     <View style={styles.container}>
-      {/* Left Sidebar - User Profile (30%) */}
-      <View style={styles.sidebar}>
-          {/* User Profile Section */}
-          <View style={styles.profileSection}>
-            <View style={styles.profileHeader}>
-              <View style={styles.profileAvatar}>
-                <Text style={styles.profileInitial}>
-                  {userData?.full_name?.[0]?.toUpperCase() || userData?.email?.[0]?.toUpperCase() || 'U'}
-                </Text>
-              </View>
-              <Text style={styles.profileName}>
-                {userData?.full_name || 'User'}
-              </Text>
-              <Text style={styles.profileEmail}>
-                {userData?.email}
-              </Text>
-            </View>
-
-            {/* Account Info */}
-            <View style={styles.accountInfo}>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Full Name</Text>
-                <Text style={styles.infoValue}>{userData?.full_name || 'Not set'}</Text>
-              </View>
-              
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Email</Text>
-                <Text style={styles.infoValue} numberOfLines={1}>{userData?.email}</Text>
-              </View>
-              
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Status</Text>
-                <View style={styles.statusContainer}>
-                  <View style={[
-                    styles.statusDot,
-                    { backgroundColor: userData?.is_active ? '#10b981' : '#ef4444' }
-                  ]} />
-                  <Text style={styles.infoValue}>
-                    {userData?.is_active ? 'Active' : 'Inactive'}
-                  </Text>
-                </View>
-              </View>
-              
-              {userData?.created_at && (
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Member Since</Text>
-                  <Text style={styles.infoValue}>
-                    {new Date(userData.created_at).toLocaleDateString()}
-                  </Text>
-                </View>
-              )}
-            </View>
-          </View>
-
-          {/* Create Post Button */}
-          <TouchableOpacity
-            style={styles.createPostButton}
-            onPress={() => setShowCreatePost(true)}
-          >
-            <FontAwesome5 icon={faEdit} size={16} color="#ffffff" />
-            <Text style={styles.createPostButtonText}>Create New Post</Text>
-          </TouchableOpacity>
-
-          {/* Feed Toggle Tabs */}
-          <View style={styles.feedToggle}>
-            <TouchableOpacity
-              style={[
-                styles.feedToggleBtn,
-                activeTab === 'all' && styles.feedToggleBtnActive,
-              ]}
-              onPress={() => setActiveForumTab('all')}
-            >
-              <FontAwesome5 icon={faComment} size={14} color={activeTab === 'all' ? '#ffffff' : '#94a3b8'} />
-              <Text style={[styles.feedToggleText, activeTab === 'all' && styles.feedToggleTextActive]}>All Posts</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.feedToggleBtn,
-                activeTab === 'mine' && styles.feedToggleBtnActive,
-              ]}
-              onPress={() => setActiveForumTab('mine')}
-            >
-              <FontAwesome5 icon={faUser} size={14} color={activeTab === 'mine' ? '#ffffff' : '#94a3b8'} />
-              <Text style={[styles.feedToggleText, activeTab === 'mine' && styles.feedToggleTextActive]}>My Posts</Text>
-              {myPosts.length > 0 && (
-                <View style={styles.feedToggleBadge}>
-                  <Text style={styles.feedToggleBadgeText}>{myPosts.length}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
-      </View>
-
-      {/* Main Content Area - Posts (70%) */}
+      {/* Main Content Area - Full Width */}
       <View style={styles.mainContent}>
         <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Search Bar */}
-          <View style={styles.searchContainer}>
+          {/* Search Bar and Create Post Button */}
+          <View style={styles.topBar}>
             <View style={styles.searchInputContainer}>
               <FontAwesome5 icon={faSearch} size={18} color="#94a3b8" />
               <TextInput
@@ -508,29 +331,76 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
                 <FontAwesome5 icon={faFilter} size={18} color="#ffffff" />
               </TouchableOpacity>
             </View>
+
+            <TouchableOpacity
+              style={styles.createPostButton}
+              onPress={() => setShowCreatePost(true)}
+            >
+              <FontAwesome5 icon={faEdit} size={16} color="#ffffff" />
+              {SCREEN_WIDTH >= 768 && (
+                <Text style={styles.createPostButtonText}>Create Post</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Feed Toggle Tabs */}
+          <View style={styles.feedToggleContainer}>
+            <View style={styles.feedToggle}>
+              <TouchableOpacity
+                style={[
+                  styles.feedToggleBtn,
+                  activeTab === 'all' && styles.feedToggleBtnActive,
+                ]}
+                onPress={() => setActiveForumTab('all')}
+              >
+                <FontAwesome5 icon={faComment} size={14} color={activeTab === 'all' ? '#ffffff' : '#94a3b8'} />
+                <Text style={[styles.feedToggleText, activeTab === 'all' && styles.feedToggleTextActive]}>All Posts</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.feedToggleBtn,
+                  activeTab === 'mine' && styles.feedToggleBtnActive,
+                ]}
+                onPress={() => setActiveForumTab('mine')}
+              >
+                <FontAwesome5 icon={faUser} size={14} color={activeTab === 'mine' ? '#ffffff' : '#94a3b8'} />
+                <Text style={[styles.feedToggleText, activeTab === 'mine' && styles.feedToggleTextActive]}>My Posts</Text>
+                {myPosts.length > 0 && (
+                  <View style={styles.feedToggleBadge}>
+                    <Text style={styles.feedToggleBadgeText}>{myPosts.length}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Category Filter */}
           <View style={styles.categoryContainer}>
-            {categories.map(category => (
-              <TouchableOpacity
-                key={category.id}
-                style={[
-                  styles.categoryChip,
-                  filterCategory === category.id && styles.categoryChipActive,
-                ]}
-                onPress={() => setFilterCategory(category.id)}
-              >
-                <Text
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryScrollContent}
+            >
+              {categories.map(category => (
+                <TouchableOpacity
+                  key={category.id}
                   style={[
-                    styles.categoryText,
-                    filterCategory === category.id && styles.categoryTextActive,
+                    styles.categoryChip,
+                    filterCategory === category.id && styles.categoryChipActive,
                   ]}
+                  onPress={() => setFilterCategory(category.id)}
                 >
-                  {category.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={[
+                      styles.categoryText,
+                      filterCategory === category.id && styles.categoryTextActive,
+                    ]}
+                  >
+                    {category.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
 
           {/* Posts Feed */}
@@ -621,109 +491,80 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: 'row',
-    gap: 20,
   },
-  
-  // Sidebar Styles (30%)
-  sidebar: {
-    width: '30%',
-    backgroundColor: '#1e293b',
-    borderRightWidth: 1,
-    borderRightColor: '#334155',
-    borderRadius: 20,
-    padding: 20,
-    alignSelf: 'flex-start',
-    position: 'relative',
+
+  // Main Content Styles - Full Width
+  mainContent: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    borderRadius: SCREEN_WIDTH < 768 ? 0 : 20,
   },
-  profileSection: {
-    marginBottom: 24,
+
+  // Top Bar with Search and Create Post Button
+  topBar: {
+    flexDirection: SCREEN_WIDTH < 768 ? 'column' : 'row',
+    padding: SCREEN_WIDTH < 768 ? 16 : 20,
+    gap: SCREEN_WIDTH < 768 ? 12 : 16,
+    alignItems: SCREEN_WIDTH < 768 ? 'stretch' : 'center',
   },
-  profileHeader: {
-    alignItems: 'center',
-    marginBottom: 24,
-    paddingBottom: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: '#334155',
-  },
-  profileAvatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#10b981',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  profileInitial: {
-    fontSize: 32,
-    color: '#ffffff',
-    fontWeight: 'bold',
-  },
-  profileName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  profileEmail: {
-    fontSize: 14,
-    color: '#94a3b8',
-    textAlign: 'center',
-  },
-  accountInfo: {
-    gap: 16,
-  },
-  infoRow: {
-    gap: 4,
-  },
-  infoLabel: {
-    fontSize: 12,
-    color: '#94a3b8',
-    fontWeight: '500',
-    textTransform: 'uppercase',
-  },
-  infoValue: {
-    fontSize: 14,
-    color: '#ffffff',
-  },
-  statusContainer: {
+  searchInputContainer: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: SCREEN_WIDTH < 768 ? 12 : 16,
   },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  searchInput: {
+    flex: 1,
+    color: '#2d7736',
+    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
+    marginLeft: 12,
+  },
+  filterBtn: {
+    padding: 8,
+    backgroundColor: '#2d7736',
+    borderRadius: 8,
   },
   createPostButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#10b981',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingVertical: SCREEN_WIDTH < 768 ? 12 : 14,
+    paddingHorizontal: SCREEN_WIDTH < 768 ? 16 : 20,
+    borderRadius: 12,
     gap: 8,
+    minWidth: SCREEN_WIDTH < 768 ? undefined : 160,
   },
   createPostButtonText: {
     color: '#ffffff',
     fontSize: 14,
     fontWeight: '600',
   },
+
+  // Feed Toggle Container
+  feedToggleContainer: {
+    paddingHorizontal: SCREEN_WIDTH < 768 ? 16 : 20,
+    paddingVertical: 12,
+  },
   feedToggle: {
-    marginTop: 20,
-    gap: 8,
+    flexDirection: 'row',
+    backgroundColor: '#1e293b',
+    borderRadius: 12,
+    padding: 4,
+    gap: 4,
   },
   feedToggleBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    justifyContent: 'center',
+    paddingVertical: SCREEN_WIDTH < 768 ? 10 : 12,
+    paddingHorizontal: SCREEN_WIDTH < 768 ? 12 : 16,
     borderRadius: 10,
-    gap: 10,
+    gap: 8,
     backgroundColor: 'transparent',
   },
   feedToggleBtnActive: {
@@ -733,7 +574,7 @@ const styles = StyleSheet.create({
   },
   feedToggleText: {
     color: '#94a3b8',
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
     fontWeight: '500',
   },
   feedToggleTextActive: {
@@ -748,7 +589,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 6,
-    marginLeft: 'auto',
+    marginLeft: 4,
   },
   feedToggleBadgeText: {
     color: '#ffffff',
@@ -756,44 +597,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // Main Content Styles (70%)
-  mainContent: {
-    flex: 1,
-    backgroundColor: '#2d7736',
-    borderRadius: 20,
-  },
-  searchContainer: {
-    padding: 20,
-    borderRadius: 20,
-  },
-  searchInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  searchInput: {
-    flex: 1,
-    color: '#2d7736',
-    fontSize: 14,
-    marginLeft: 12,
-  },
-  filterBtn: {
-    padding: 8,
-    backgroundColor: '#2d7736',
-    borderRadius: 8,
-  },
+  // Category Filter
   categoryContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
     paddingVertical: 12,
-    gap: 8,  
+  },
+  categoryScrollContent: {
+    paddingHorizontal: SCREEN_WIDTH < 768 ? 16 : 20,
+    gap: 8,
   },
   categoryChip: {
-    flex: 1, 
-    paddingHorizontal: 16,
+    paddingHorizontal: SCREEN_WIDTH < 768 ? 14 : 16,
     paddingVertical: 8,
     backgroundColor: '#ffffff',
     borderRadius: 20,
@@ -805,17 +618,19 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     color: '#2d7736',
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
     fontWeight: '500',
   },
   categoryTextActive: {
     color: '#ffffff',
   },
+
+  // Posts Container
   postsContainer: {
-    padding: 20,
+    padding: SCREEN_WIDTH < 768 ? 16 : 20,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: SCREEN_WIDTH < 768 ? 18 : 20,
     fontWeight: 'bold',
     color: '#ffffff',
     marginBottom: 16,
@@ -830,7 +645,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     color: '#94a3b8',
-    fontSize: 16,
+    fontSize: SCREEN_WIDTH < 768 ? 14 : 16,
     marginTop: 12,
   },
   emptyContainer: {
@@ -839,14 +654,14 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     color: '#ffffff',
-    fontSize: 18,
+    fontSize: SCREEN_WIDTH < 768 ? 16 : 18,
     fontWeight: '600',
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubtext: {
     color: '#94a3b8',
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
     marginBottom: 20,
   },
   emptyButton: {
@@ -860,11 +675,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+
+  // Post Card
   postCard: {
     backgroundColor: '#1e293b',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: SCREEN_WIDTH < 768 ? 12 : 16,
+    padding: SCREEN_WIDTH < 768 ? 14 : 16,
+    marginBottom: SCREEN_WIDTH < 768 ? 12 : 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
@@ -884,32 +701,32 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   postAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: SCREEN_WIDTH < 768 ? 36 : 40,
+    height: SCREEN_WIDTH < 768 ? 36 : 40,
+    borderRadius: SCREEN_WIDTH < 768 ? 18 : 20,
     backgroundColor: '#475569',
     justifyContent: 'center',
     alignItems: 'center',
   },
   postAuthorName: {
     color: '#ffffff',
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
     fontWeight: '600',
   },
   postTime: {
     color: '#94a3b8',
-    fontSize: 12,
+    fontSize: SCREEN_WIDTH < 768 ? 11 : 12,
     marginTop: 2,
   },
   categoryBadge: {
-    paddingHorizontal: 12,
+    paddingHorizontal: SCREEN_WIDTH < 768 ? 10 : 12,
     paddingVertical: 4,
     borderRadius: 12,
     borderWidth: 1,
   },
   categoryBadgeText: {
     color: '#ffffff',
-    fontSize: 11,
+    fontSize: SCREEN_WIDTH < 768 ? 10 : 11,
     fontWeight: '600',
     textTransform: 'capitalize',
   },
@@ -918,7 +735,7 @@ const styles = StyleSheet.create({
   },
   postTitle: {
     color: '#ffffff',
-    fontSize: 18,
+    fontSize: SCREEN_WIDTH < 768 ? 16 : 18,
     fontWeight: '600',
     marginBottom: 8,
     fontFamily: 'serif',
@@ -926,8 +743,8 @@ const styles = StyleSheet.create({
   },
   postDescription: {
     color: '#cbd5e1',
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
+    lineHeight: SCREEN_WIDTH < 768 ? 18 : 20,
   },
   imageContainer: {
     marginVertical: 12,
@@ -935,8 +752,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   singleImage: {
-    width: 200,
-    height: 200,
+    width: SCREEN_WIDTH < 768 ? 160 : 200,
+    height: SCREEN_WIDTH < 768 ? 160 : 200,
     borderRadius: 12,
   },
   twoImagesContainer: {
@@ -946,7 +763,7 @@ const styles = StyleSheet.create({
   },
   halfImage: {
     flex: 1,
-    height: 200,
+    height: SCREEN_WIDTH < 768 ? 160 : 200,
     borderRadius: 8,
   },
   imageWrapper: {
@@ -966,12 +783,12 @@ const styles = StyleSheet.create({
   },
   moreImagesText: {
     color: '#ffffff',
-    fontSize: 24,
+    fontSize: SCREEN_WIDTH < 768 ? 20 : 24,
     fontWeight: 'bold',
   },
   postActions: {
     flexDirection: 'row',
-    gap: 12,
+    gap: SCREEN_WIDTH < 768 ? 8 : 12,
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: '#334155',
@@ -979,7 +796,7 @@ const styles = StyleSheet.create({
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: SCREEN_WIDTH < 768 ? 10 : 12,
     paddingVertical: 6,
     borderRadius: 8,
     gap: 6,
@@ -997,7 +814,7 @@ const styles = StyleSheet.create({
   },
   actionText: {
     color: '#ffffff',
-    fontSize: 13,
+    fontSize: SCREEN_WIDTH < 768 ? 12 : 13,
     fontWeight: '500',
   },
   actionTextActive: {

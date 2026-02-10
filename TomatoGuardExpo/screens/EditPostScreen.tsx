@@ -9,6 +9,7 @@ import {
   Alert,
   StyleSheet,
   SafeAreaView,
+  Dimensions,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { useForum } from '../hooks/useForum';
@@ -22,6 +23,8 @@ import {
   faSave,
   faTimes,
 } from '@fortawesome/free-solid-svg-icons';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface EditPostScreenProps {
   setActiveTab: (tab: string) => void;
@@ -40,7 +43,7 @@ const EditPostScreen: React.FC<EditPostScreenProps> = ({
   initialData 
 }) => {
   const { authState } = useAuth();
-  const { updatePost, fetchPost } = useForum(); // ✅ Added fetchPost
+  const { updatePost, fetchPost } = useForum();
 
   const [title, setTitle] = useState(initialData.title);
   const [content, setContent] = useState(initialData.description);
@@ -196,7 +199,7 @@ const EditPostScreen: React.FC<EditPostScreenProps> = ({
           style={styles.backButton}
           onPress={handleCancel}
         >
-          <FontAwesome5 icon={faArrowLeft} size={20} color="#ffffff" />
+          <FontAwesome5 icon={faArrowLeft} size={SCREEN_WIDTH < 768 ? 18 : 20} color="#ffffff" />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>Edit Post</Text>
@@ -206,8 +209,8 @@ const EditPostScreen: React.FC<EditPostScreenProps> = ({
           onPress={handleSave}
           disabled={loading}
         >
-          <FontAwesome5 icon={faSave} size={16} color="#ffffff" />
-          <Text style={styles.saveButtonText}>Save</Text>
+          <FontAwesome5 icon={faSave} size={SCREEN_WIDTH < 768 ? 14 : 16} color="#ffffff" />
+          {SCREEN_WIDTH >= 768 && <Text style={styles.saveButtonText}>Save</Text>}
         </TouchableOpacity>
       </View>
 
@@ -257,7 +260,7 @@ const EditPostScreen: React.FC<EditPostScreenProps> = ({
         {/* Category Selection */}
         <View style={styles.categoryContainer}>
           <View style={styles.categoryHeader}>
-            <FontAwesome5 icon={faTag} size={16} color="#94a3b8" />
+            <FontAwesome5 icon={faTag} size={SCREEN_WIDTH < 768 ? 14 : 16} color="#94a3b8" />
             <Text style={styles.categoryTitle}>Category</Text>
           </View>
 
@@ -292,7 +295,7 @@ const EditPostScreen: React.FC<EditPostScreenProps> = ({
         {/* Image Management */}
         <View style={styles.imageContainer}>
           <View style={styles.imageHeader}>
-            <FontAwesome5 icon={faImage} size={16} color="#94a3b8" />
+            <FontAwesome5 icon={faImage} size={SCREEN_WIDTH < 768 ? 14 : 16} color="#94a3b8" />
             <Text style={styles.imageTitle}>Manage Images</Text>
             {selectedImages.length > 0 && (
               <TouchableOpacity style={styles.clearAllButton} onPress={removeAllImages}>
@@ -312,13 +315,13 @@ const EditPostScreen: React.FC<EditPostScreenProps> = ({
                         style={styles.removeImageButton}
                         onPress={() => removeImage(index)}
                       >
-                        <FontAwesome5 icon={faTimes} size={12} color="#ffffff" />
+                        <FontAwesome5 icon={faTimes} size={SCREEN_WIDTH < 768 ? 10 : 12} color="#ffffff" />
                       </TouchableOpacity>
                     </View>
                   ))}
                   {selectedImages.length < 10 && (
                     <TouchableOpacity style={styles.addMoreButton} onPress={pickImages}>
-                      <FontAwesome5 icon={faImage} size={24} color="#94a3b8" />
+                      <FontAwesome5 icon={faImage} size={SCREEN_WIDTH < 768 ? 20 : 24} color="#94a3b8" />
                       <Text style={styles.addMoreText}>Add More</Text>
                     </TouchableOpacity>
                   )}
@@ -328,7 +331,7 @@ const EditPostScreen: React.FC<EditPostScreenProps> = ({
             </View>
           ) : (
             <TouchableOpacity style={styles.imageUploadButton} onPress={pickImages}>
-              <FontAwesome5 icon={faImage} size={32} color="#94a3b8" />
+              <FontAwesome5 icon={faImage} size={SCREEN_WIDTH < 768 ? 28 : 32} color="#94a3b8" />
               <Text style={styles.imageUploadText}>Tap to add images</Text>
               <Text style={styles.imageUploadSubtext}>JPG, PNG (max 10 images, 5MB each)</Text>
             </TouchableOpacity>
@@ -357,19 +360,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: SCREEN_WIDTH < 768 ? 16 : 20,
+    paddingVertical: SCREEN_WIDTH < 768 ? 12 : 16,
     backgroundColor: '#1e293b',
     borderBottomWidth: 1,
     borderBottomColor: '#334155',
   },
   backButton: {
-    padding: 12,
+    padding: SCREEN_WIDTH < 768 ? 10 : 12,
     backgroundColor: '#334155',
     borderRadius: 8,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: SCREEN_WIDTH < 768 ? 16 : 18,
     fontWeight: '600',
     color: '#ffffff',
     fontFamily: 'serif',
@@ -379,8 +382,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#10b981',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: SCREEN_WIDTH < 768 ? 12 : 16,
+    paddingVertical: SCREEN_WIDTH < 768 ? 6 : 8,
     borderRadius: 8,
     gap: 8,
   },
@@ -394,72 +397,72 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 20,
+    padding: SCREEN_WIDTH < 768 ? 16 : 20,
   },
   authorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
-    padding: 16,
+    marginBottom: SCREEN_WIDTH < 768 ? 16 : 20,
+    padding: SCREEN_WIDTH < 768 ? 14 : 16,
     backgroundColor: '#1e293b',
-    borderRadius: 12,
+    borderRadius: SCREEN_WIDTH < 768 ? 10 : 12,
   },
   authorAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: SCREEN_WIDTH < 768 ? 40 : 48,
+    height: SCREEN_WIDTH < 768 ? 40 : 48,
+    borderRadius: SCREEN_WIDTH < 768 ? 20 : 24,
     backgroundColor: '#334155',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   authorInitial: {
-    fontSize: 20,
+    fontSize: SCREEN_WIDTH < 768 ? 18 : 20,
     fontWeight: '700',
     color: '#ffffff',
   },
   authorName: {
-    fontSize: 16,
+    fontSize: SCREEN_WIDTH < 768 ? 14 : 16,
     fontWeight: '600',
     color: '#ffffff',
     marginBottom: 2,
   },
   authorEmail: {
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 768 ? 12 : 14,
     color: '#94a3b8',
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: SCREEN_WIDTH < 768 ? 16 : 20,
   },
   titleInput: {
     backgroundColor: '#1e293b',
     color: '#ffffff',
-    fontSize: 18,
+    fontSize: SCREEN_WIDTH < 768 ? 16 : 18,
     fontWeight: '600',
-    padding: 16,
-    borderRadius: 12,
+    padding: SCREEN_WIDTH < 768 ? 14 : 16,
+    borderRadius: SCREEN_WIDTH < 768 ? 10 : 12,
     borderWidth: 1,
     borderColor: '#334155',
     marginBottom: 8,
   },
   charCount: {
     color: '#94a3b8',
-    fontSize: 12,
+    fontSize: SCREEN_WIDTH < 768 ? 11 : 12,
     textAlign: 'right',
   },
   contentInput: {
     backgroundColor: '#1e293b',
     color: '#ffffff',
-    fontSize: 16,
-    padding: 16,
-    borderRadius: 12,
+    fontSize: SCREEN_WIDTH < 768 ? 14 : 16,
+    padding: SCREEN_WIDTH < 768 ? 14 : 16,
+    borderRadius: SCREEN_WIDTH < 768 ? 10 : 12,
     borderWidth: 1,
     borderColor: '#334155',
-    marginBottom: 20,
-    minHeight: 120,
+    marginBottom: SCREEN_WIDTH < 768 ? 16 : 20,
+    minHeight: SCREEN_WIDTH < 768 ? 100 : 120,
   },
   categoryContainer: {
-    marginBottom: 20,
+    marginBottom: SCREEN_WIDTH < 768 ? 16 : 20,
   },
   categoryHeader: {
     flexDirection: 'row',
@@ -469,7 +472,7 @@ const styles = StyleSheet.create({
   },
   categoryTitle: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: SCREEN_WIDTH < 768 ? 14 : 16,
     fontWeight: '600',
   },
   categoryList: {
@@ -477,22 +480,22 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   categoryChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: SCREEN_WIDTH < 768 ? 14 : 16,
+    paddingVertical: SCREEN_WIDTH < 768 ? 6 : 8,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: '#334155',
   },
   categoryChipText: {
     color: '#94a3b8',
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 768 ? 12 : 14,
     fontWeight: '500',
   },
   categoryChipTextActive: {
     color: '#ffffff',
   },
   imageContainer: {
-    marginBottom: 20,
+    marginBottom: SCREEN_WIDTH < 768 ? 16 : 20,
   },
   imageHeader: {
     flexDirection: 'row',
@@ -502,20 +505,20 @@ const styles = StyleSheet.create({
   },
   imageTitle: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: SCREEN_WIDTH < 768 ? 14 : 16,
     fontWeight: '600',
     flex: 1,
     marginLeft: 8,
   },
   clearAllButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: SCREEN_WIDTH < 768 ? 10 : 12,
+    paddingVertical: SCREEN_WIDTH < 768 ? 5 : 6,
     backgroundColor: '#ef4444',
     borderRadius: 6,
   },
   clearAllText: {
     color: '#ffffff',
-    fontSize: 12,
+    fontSize: SCREEN_WIDTH < 768 ? 11 : 12,
     fontWeight: '600',
   },
   imagePreviewContainer: {
@@ -527,25 +530,25 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   selectedImage: {
-    width: 150,
-    height: 150,
-    borderRadius: 12,
+    width: SCREEN_WIDTH < 768 ? 120 : 150,
+    height: SCREEN_WIDTH < 768 ? 120 : 150,
+    borderRadius: SCREEN_WIDTH < 768 ? 10 : 12,
   },
   removeImageButton: {
     position: 'absolute',
     top: 4,
     right: 4,
     backgroundColor: '#ef4444',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: SCREEN_WIDTH < 768 ? 20 : 24,
+    height: SCREEN_WIDTH < 768 ? 20 : 24,
+    borderRadius: SCREEN_WIDTH < 768 ? 10 : 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   addMoreButton: {
-    width: 150,
-    height: 150,
-    borderRadius: 12,
+    width: SCREEN_WIDTH < 768 ? 120 : 150,
+    height: SCREEN_WIDTH < 768 ? 120 : 150,
+    borderRadius: SCREEN_WIDTH < 768 ? 10 : 12,
     backgroundColor: '#334155',
     borderWidth: 2,
     borderColor: '#475569',
@@ -556,13 +559,13 @@ const styles = StyleSheet.create({
   },
   addMoreText: {
     color: '#94a3b8',
-    fontSize: 12,
+    fontSize: SCREEN_WIDTH < 768 ? 11 : 12,
     fontWeight: '500',
     marginTop: 4,
   },
   imageCount: {
     color: '#94a3b8',
-    fontSize: 12,
+    fontSize: SCREEN_WIDTH < 768 ? 11 : 12,
     marginTop: 8,
     textAlign: 'center',
   },
@@ -571,38 +574,38 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#334155',
     borderStyle: 'dashed',
-    borderRadius: 12,
-    padding: 32,
+    borderRadius: SCREEN_WIDTH < 768 ? 10 : 12,
+    padding: SCREEN_WIDTH < 768 ? 24 : 32,
     alignItems: 'center',
   },
   imageUploadText: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: SCREEN_WIDTH < 768 ? 14 : 16,
     fontWeight: '600',
     marginTop: 12,
   },
   imageUploadSubtext: {
     color: '#94a3b8',
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 768 ? 12 : 14,
     marginTop: 4,
   },
   tipsContainer: {
     backgroundColor: '#1e293b',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: SCREEN_WIDTH < 768 ? 10 : 12,
+    padding: SCREEN_WIDTH < 768 ? 14 : 16,
     marginTop: 8,
   },
   tipsTitle: {
     color: '#f59e0b',
-    fontSize: 16,
+    fontSize: SCREEN_WIDTH < 768 ? 14 : 16,
     fontWeight: '600',
     marginBottom: 8,
   },
   tip: {
     color: '#94a3b8',
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
     marginBottom: 4,
-    lineHeight: 20,
+    lineHeight: SCREEN_WIDTH < 768 ? 18 : 20,
   },
 });
 

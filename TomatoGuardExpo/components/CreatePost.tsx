@@ -11,6 +11,7 @@ import {
   StyleSheet,
   Modal,
   Platform,
+  Dimensions,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { useForum } from '../hooks/useForum';
@@ -22,6 +23,8 @@ import {
   faTag,
   faPaperPlane,
 } from '@fortawesome/free-solid-svg-icons';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface CreatePostOverlayProps {
   visible: boolean;
@@ -142,11 +145,11 @@ const CreatePostOverlay: React.FC<CreatePostOverlayProps> = ({ visible, onClose 
                 onPress={handleSubmit}
                 disabled={loading}
               >
-                <FontAwesome5 icon={faPaperPlane} size={16} color="#ffffff" />
-                <Text style={styles.postButtonText}>Post</Text>
+                <FontAwesome5 icon={faPaperPlane} size={SCREEN_WIDTH < 768 ? 14 : 16} color="#ffffff" />
+                {SCREEN_WIDTH >= 768 && <Text style={styles.postButtonText}>Post</Text>}
               </TouchableOpacity>
               <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                <FontAwesome5 icon={faTimes} size={20} color="#ffffff" />
+                <FontAwesome5 icon={faTimes} size={SCREEN_WIDTH < 768 ? 18 : 20} color="#ffffff" />
               </TouchableOpacity>
             </View>
           </View>
@@ -197,7 +200,7 @@ const CreatePostOverlay: React.FC<CreatePostOverlayProps> = ({ visible, onClose 
             {/* Category Selection */}
             <View style={styles.categoryContainer}>
               <View style={styles.categoryHeader}>
-                <FontAwesome5 icon={faTag} size={16} color="#94a3b8" />
+                <FontAwesome5 icon={faTag} size={SCREEN_WIDTH < 768 ? 14 : 16} color="#94a3b8" />
                 <Text style={styles.categoryTitle}>Category</Text>
               </View>
 
@@ -232,7 +235,7 @@ const CreatePostOverlay: React.FC<CreatePostOverlayProps> = ({ visible, onClose 
             {/* Image Upload */}
             <View style={styles.imageContainer}>
               <View style={styles.imageHeader}>
-                <FontAwesome5 icon={faImage} size={16} color="#94a3b8" />
+                <FontAwesome5 icon={faImage} size={SCREEN_WIDTH < 768 ? 14 : 16} color="#94a3b8" />
                 <Text style={styles.imageTitle}>Add Images (Optional)</Text>
                 {selectedImages.length > 0 && (
                   <TouchableOpacity style={styles.clearAllButton} onPress={removeAllImages}>
@@ -252,13 +255,13 @@ const CreatePostOverlay: React.FC<CreatePostOverlayProps> = ({ visible, onClose 
                             style={styles.removeImageButton}
                             onPress={() => removeImage(index)}
                           >
-                            <FontAwesome5 icon={faTimes} size={12} color="#ffffff" />
+                            <FontAwesome5 icon={faTimes} size={10} color="#ffffff" />
                           </TouchableOpacity>
                         </View>
                       ))}
                       {selectedImages.length < 10 && (
                         <TouchableOpacity style={styles.addMoreButton} onPress={pickImages}>
-                          <FontAwesome5 icon={faImage} size={24} color="#94a3b8" />
+                          <FontAwesome5 icon={faImage} size={SCREEN_WIDTH < 768 ? 20 : 24} color="#94a3b8" />
                           <Text style={styles.addMoreText}>Add More</Text>
                         </TouchableOpacity>
                       )}
@@ -268,7 +271,7 @@ const CreatePostOverlay: React.FC<CreatePostOverlayProps> = ({ visible, onClose 
                 </View>
               ) : (
                 <TouchableOpacity style={styles.imageUploadButton} onPress={pickImages}>
-                  <FontAwesome5 icon={faImage} size={32} color="#94a3b8" />
+                  <FontAwesome5 icon={faImage} size={SCREEN_WIDTH < 768 ? 28 : 32} color="#94a3b8" />
                   <Text style={styles.imageUploadText}>Tap to upload images</Text>
                   <Text style={styles.imageUploadSubtext}>JPG, PNG (max 10 images)</Text>
                 </TouchableOpacity>
@@ -287,28 +290,28 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: SCREEN_WIDTH < 768 ? 10 : 20,
   },
   container: {
     width: '100%',
-    maxWidth: 800,
+    maxWidth: SCREEN_WIDTH < 768 ? '100%' : 800,
     maxHeight: '90%',
     backgroundColor: '#0f172a',
-    borderRadius: 16,
+    borderRadius: SCREEN_WIDTH < 768 ? 12 : 16,
     overflow: 'hidden',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: SCREEN_WIDTH < 768 ? 16 : 20,
+    paddingVertical: SCREEN_WIDTH < 768 ? 12 : 16,
     backgroundColor: '#1e293b',
     borderBottomWidth: 1,
     borderBottomColor: '#334155',
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: SCREEN_WIDTH < 768 ? 16 : 18,
     fontWeight: '600',
     color: '#ffffff',
     fontFamily: 'serif',
@@ -317,14 +320,14 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: SCREEN_WIDTH < 768 ? 8 : 12,
   },
   postButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#10b981',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: SCREEN_WIDTH < 768 ? 12 : 16,
+    paddingVertical: SCREEN_WIDTH < 768 ? 6 : 8,
     borderRadius: 8,
     gap: 8,
   },
@@ -337,74 +340,74 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   closeButton: {
-    padding: 8,
+    padding: SCREEN_WIDTH < 768 ? 6 : 8,
   },
   content: {
     flex: 1,
-    padding: 20,
+    padding: SCREEN_WIDTH < 768 ? 16 : 20,
   },
   authorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
-    paddingBottom: 16,
+    marginBottom: SCREEN_WIDTH < 768 ? 20 : 24,
+    paddingBottom: SCREEN_WIDTH < 768 ? 12 : 16,
     borderBottomWidth: 1,
     borderBottomColor: '#334155',
   },
   authorAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: SCREEN_WIDTH < 768 ? 40 : 48,
+    height: SCREEN_WIDTH < 768 ? 40 : 48,
+    borderRadius: SCREEN_WIDTH < 768 ? 20 : 24,
     backgroundColor: '#10b981',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   authorInitial: {
-    fontSize: 20,
+    fontSize: SCREEN_WIDTH < 768 ? 18 : 20,
     fontWeight: 'bold',
     color: '#ffffff',
   },
   authorName: {
-    fontSize: 16,
+    fontSize: SCREEN_WIDTH < 768 ? 14 : 16,
     fontWeight: '600',
     color: '#ffffff',
     marginBottom: 2,
   },
   authorEmail: {
-    fontSize: 12,
+    fontSize: SCREEN_WIDTH < 768 ? 11 : 12,
     color: '#94a3b8',
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: SCREEN_WIDTH < 768 ? 16 : 20,
   },
   titleInput: {
     backgroundColor: '#334155',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: SCREEN_WIDTH < 768 ? 10 : 12,
+    padding: SCREEN_WIDTH < 768 ? 14 : 16,
     color: '#ffffff',
-    fontSize: 18,
+    fontSize: SCREEN_WIDTH < 768 ? 16 : 18,
     fontWeight: '600',
   },
   charCount: {
     textAlign: 'right',
     color: '#94a3b8',
-    fontSize: 12,
+    fontSize: SCREEN_WIDTH < 768 ? 11 : 12,
     marginTop: 4,
   },
   contentInput: {
     backgroundColor: '#334155',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: SCREEN_WIDTH < 768 ? 10 : 12,
+    padding: SCREEN_WIDTH < 768 ? 14 : 16,
     color: '#ffffff',
-    fontSize: 14,
-    minHeight: 200,
+    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
+    minHeight: SCREEN_WIDTH < 768 ? 150 : 200,
     textAlignVertical: 'top',
-    marginBottom: 20,
-    lineHeight: 20,
+    marginBottom: SCREEN_WIDTH < 768 ? 16 : 20,
+    lineHeight: SCREEN_WIDTH < 768 ? 18 : 20,
   },
   categoryContainer: {
-    marginBottom: 20,
+    marginBottom: SCREEN_WIDTH < 768 ? 16 : 20,
   },
   categoryHeader: {
     flexDirection: 'row',
@@ -414,7 +417,7 @@ const styles = StyleSheet.create({
   },
   categoryTitle: {
     color: '#94a3b8',
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
     fontWeight: '500',
   },
   categoryList: {
@@ -422,13 +425,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   categoryChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: SCREEN_WIDTH < 768 ? 14 : 16,
+    paddingVertical: SCREEN_WIDTH < 768 ? 6 : 8,
     borderRadius: 20,
   },
   categoryChipText: {
     color: '#94a3b8',
-    fontSize: 12,
+    fontSize: SCREEN_WIDTH < 768 ? 11 : 12,
     fontWeight: '500',
   },
   categoryChipTextActive: {
@@ -436,7 +439,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   imageContainer: {
-    marginBottom: 20,
+    marginBottom: SCREEN_WIDTH < 768 ? 16 : 20,
   },
   imageHeader: {
     flexDirection: 'row',
@@ -446,13 +449,13 @@ const styles = StyleSheet.create({
   },
   imageTitle: {
     color: '#94a3b8',
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
     fontWeight: '500',
   },
   imageUploadButton: {
     backgroundColor: '#334155',
-    borderRadius: 12,
-    padding: 32,
+    borderRadius: SCREEN_WIDTH < 768 ? 10 : 12,
+    padding: SCREEN_WIDTH < 768 ? 24 : 32,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
@@ -461,13 +464,13 @@ const styles = StyleSheet.create({
   },
   imageUploadText: {
     color: '#94a3b8',
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
     fontWeight: '500',
     marginTop: 12,
   },
   imageUploadSubtext: {
     color: '#64748b',
-    fontSize: 12,
+    fontSize: SCREEN_WIDTH < 768 ? 11 : 12,
     marginTop: 4,
   },
   imagePreviewContainer: {
@@ -476,9 +479,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   selectedImage: {
-    width: 150,
-    height: 150,
-    borderRadius: 12,
+    width: SCREEN_WIDTH < 768 ? 120 : 150,
+    height: SCREEN_WIDTH < 768 ? 120 : 150,
+    borderRadius: SCREEN_WIDTH < 768 ? 10 : 12,
     marginRight: 8,
   },
   imageWrapper: {
@@ -486,9 +489,9 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   addMoreButton: {
-    width: 150,
-    height: 150,
-    borderRadius: 12,
+    width: SCREEN_WIDTH < 768 ? 120 : 150,
+    height: SCREEN_WIDTH < 768 ? 120 : 150,
+    borderRadius: SCREEN_WIDTH < 768 ? 10 : 12,
     backgroundColor: '#334155',
     borderWidth: 2,
     borderColor: '#475569',
@@ -499,26 +502,26 @@ const styles = StyleSheet.create({
   },
   addMoreText: {
     color: '#94a3b8',
-    fontSize: 12,
+    fontSize: SCREEN_WIDTH < 768 ? 11 : 12,
     fontWeight: '500',
     marginTop: 4,
   },
   imageCount: {
     color: '#94a3b8',
-    fontSize: 12,
+    fontSize: SCREEN_WIDTH < 768 ? 11 : 12,
     marginTop: 8,
     textAlign: 'center',
   },
   clearAllButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: SCREEN_WIDTH < 768 ? 10 : 12,
+    paddingVertical: SCREEN_WIDTH < 768 ? 5 : 6,
     backgroundColor: '#ef4444',
     borderRadius: 6,
     marginLeft: 'auto',
   },
   clearAllText: {
     color: '#ffffff',
-    fontSize: 12,
+    fontSize: SCREEN_WIDTH < 768 ? 11 : 12,
     fontWeight: '600',
   },
   removeImageButton: {
@@ -526,9 +529,9 @@ const styles = StyleSheet.create({
     top: 4,
     right: 4,
     backgroundColor: '#ef4444',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: SCREEN_WIDTH < 768 ? 20 : 24,
+    height: SCREEN_WIDTH < 768 ? 20 : 24,
+    borderRadius: SCREEN_WIDTH < 768 ? 10 : 12,
     justifyContent: 'center',
     alignItems: 'center',
   },

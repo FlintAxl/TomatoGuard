@@ -1,4 +1,5 @@
 import { getApiClient } from './client';
+import { Platform } from 'react-native';
 
 // ========== TYPES ==========
 
@@ -164,7 +165,12 @@ export const forumService = {
       }
       
       try {
-        const response = await apiClient.post('/api/v1/forum/posts', formData);
+        const uploadConfig: any = {};
+        if (Platform.OS !== 'web') {
+          uploadConfig.headers = { 'Content-Type': 'multipart/form-data' };
+          uploadConfig.transformRequest = (data: any) => data;
+        }
+        const response = await apiClient.post('/api/v1/forum/posts', formData, uploadConfig);
         
         console.log('✅ Post created successfully with images');
         return response.data;
@@ -283,12 +289,15 @@ export const forumService = {
       }
     }
 
+    const uploadConfig: any = { timeout: 30000 };
+    if (Platform.OS !== 'web') {
+      uploadConfig.headers = { 'Content-Type': 'multipart/form-data' };
+      uploadConfig.transformRequest = (data: any) => data;
+    }
     const response = await apiClient.post(
       `/api/v1/forum/posts/${postId}/images`,
       formData,
-      {
-        timeout: 30000,
-      }
+      uploadConfig
     );
     
     return response.data.image_urls;
@@ -376,12 +385,15 @@ export const forumService = {
       
       // Upload new images
       try {
+        const uploadConfig: any = { timeout: 30000 };
+        if (Platform.OS !== 'web') {
+          uploadConfig.headers = { 'Content-Type': 'multipart/form-data' };
+          uploadConfig.transformRequest = (data: any) => data;
+        }
         const uploadResponse = await apiClient.post(
           `/api/v1/forum/posts/${postId}/images`,
           formData,
-          {
-            timeout: 30000,
-          }
+          uploadConfig
         );
         uploadedUrls = uploadResponse.data.image_urls;
         console.log(`✅ Uploaded ${uploadedUrls.length} new images`);
