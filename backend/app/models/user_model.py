@@ -25,6 +25,7 @@ class UserInDB(BaseModel):
     id: PyObjectId = Field(default_factory=ObjectId, alias="_id")
     email: EmailStr
     full_name: Optional[str] = None
+    profile_picture: Optional[str] = None
     hashed_password: str
     is_active: bool = True
     role: UserRole = UserRole.USER

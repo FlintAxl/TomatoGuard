@@ -79,6 +79,7 @@ async def login(login_data: UserLogin):
             "id": str(user.id),
             "email": user.email,
             "full_name": user.full_name,
+            "profile_picture": user.profile_picture,
             "role": user.role,
             "is_active": user.is_active,
             "created_at": user.created_at.isoformat() if user.created_at else None,
@@ -101,6 +102,58 @@ async def get_current_user_info(
     # Remove response_model=UserRead since we're returning a dict
     # Just return the dictionary directly
     return current_user
+
+
+@router.put("/me")
+async def update_profile(
+    current_user: Dict = Depends(get_current_active_user),
+    full_name: str = None,
+    email: str = None,
+    profile_picture: str = None,
+):
+    """
+    Update current user's profile
+    """
+    from app.schemas.user import UserUpdate
+    
+    update_data = {}
+    if full_name is not None:
+        update_data["full_name"] = full_name
+    if email is not None:
+        # Check if email is already taken by another user
+        existing = await user_service.get_user_by_email(email)
+        if existing and str(existing.id) != current_user.get("id"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already in use by another account"
+            )
+        update_data["email"] = email
+    if profile_picture is not None:
+        update_data["profile_picture"] = profile_picture
+    
+    if not update_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No fields to update"
+        )
+    
+    updated_user = await user_service.update_user(current_user.get("id"), update_data)
+    if not updated_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    return {
+        "id": str(updated_user.id),
+        "email": updated_user.email,
+        "full_name": updated_user.full_name,
+        "profile_picture": updated_user.profile_picture,
+        "role": updated_user.role,
+        "is_active": updated_user.is_active,
+        "created_at": updated_user.created_at.isoformat() if updated_user.created_at else None,
+    }
+
 
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh_token(refresh_data: TokenRefresh):

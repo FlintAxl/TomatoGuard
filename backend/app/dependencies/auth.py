@@ -51,6 +51,7 @@ async def get_current_user(
             "id": str(user.id) if user.id else "",
             "email": user.email if user.email else "",
             "full_name": user.full_name if user.full_name else "",
+            "profile_picture": user.profile_picture if hasattr(user, 'profile_picture') and user.profile_picture else None,
             "role": user.role if hasattr(user, 'role') else "user",
             "is_active": user.is_active if hasattr(user, 'is_active') else True,
             "created_at": user.created_at.isoformat() if user.created_at else datetime.utcnow().isoformat(),

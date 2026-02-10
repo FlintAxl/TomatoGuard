@@ -89,6 +89,7 @@ class UserService:
             id=str(user_doc["_id"]),
             email=user_doc["email"],
             full_name=user_doc.get("full_name"),
+            profile_picture=user_doc.get("profile_picture"),
             role=user_doc.get("role", UserRole.USER),
             is_active=user_doc.get("is_active", True)
         )
@@ -117,8 +118,10 @@ class UserService:
             id=str(user_doc["_id"]),
             email=user_doc["email"],
             full_name=user_doc.get("full_name"),
+            profile_picture=user_doc.get("profile_picture"),
             role=user_doc.get("role", UserRole.USER),
-            is_active=user_doc.get("is_active", True)
+            is_active=user_doc.get("is_active", True),
+            created_at=user_doc.get("created_at")
         )
     
     async def get_user_by_email(self, email: str) -> Optional[UserRead]:
@@ -140,8 +143,10 @@ class UserService:
             id=str(user_doc["_id"]),
             email=user_doc["email"],
             full_name=user_doc.get("full_name"),
+            profile_picture=user_doc.get("profile_picture"),
             role=user_doc.get("role", UserRole.USER),
-            is_active=user_doc.get("is_active", True)
+            is_active=user_doc.get("is_active", True),
+            created_at=user_doc.get("created_at")
         )
     
     async def update_user(
