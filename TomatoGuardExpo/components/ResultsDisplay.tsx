@@ -87,6 +87,72 @@ const ResultsDisplay = ({ results }: ResultsDisplayProps) => {
   console.log('🔍 Extracted recommendations:', !!recommendations);
   console.log('🔍 Extracted spotDetection:', !!spotDetection);
 
+  // ── Check if the image was rejected by the tomato validation gate ──
+  const isTomato = analysis?.is_tomato;
+  if (isTomato === false) {
+    const rejectionReason = analysis?.rejection_reason || 'The image does not appear to be a tomato plant.';
+    const suggestions: string[] = analysis?.recommendations?.suggestions || [];
+    const validationScores = analysis?.validation_scores || {};
+
+    return (
+      <ScrollView style={resultsStyles.container}>
+        {/* Rejection Banner */}
+        <View style={[resultsStyles.statusBadge, { backgroundColor: '#fef2f2' }]}>  
+          <Text style={resultsStyles.statusIcon}>🚫</Text>
+          <View style={resultsStyles.statusContent}>
+            <Text style={resultsStyles.statusTitle}>Not a Tomato Plant</Text>
+            <Text style={resultsStyles.statusText}>{rejectionReason}</Text>
+          </View>
+        </View>
+
+        {/* Suggestions Card */}
+        {suggestions.length > 0 && (
+          <View style={cardStyles.card}>
+            <Text style={cardStyles.cardTitle}>How to Get a Good Analysis</Text>
+            <View style={resultsStyles.bulletList}>
+              {suggestions.map((tip: string, idx: number) => (
+                <View key={idx} style={resultsStyles.bulletItem}>
+                  <View style={resultsStyles.bulletDot} />
+                  <Text style={resultsStyles.bulletText}>{tip}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Validation Scores (Debug Info) */}
+        <View style={cardStyles.card}>
+          <Text style={cardStyles.cardTitle}>Validation Details</Text>
+          {validationScores.plant_color_ratio !== undefined && (
+            <View style={resultsStyles.infoRow}>
+              <Text style={resultsStyles.infoLabel}>Plant Color Match</Text>
+              <Text style={resultsStyles.infoValue}>
+                {(validationScores.plant_color_ratio * 100).toFixed(1)}%
+              </Text>
+            </View>
+          )}
+          {validationScores.part_confidence !== undefined && (
+            <View style={resultsStyles.infoRow}>
+              <Text style={resultsStyles.infoLabel}>Part Classifier Confidence</Text>
+              <Text style={resultsStyles.infoValue}>
+                {(validationScores.part_confidence * 100).toFixed(1)}%
+              </Text>
+            </View>
+          )}
+          {validationScores.texture_score !== undefined && (
+            <View style={[resultsStyles.infoRow, { borderBottomWidth: 0 }]}>
+              <Text style={resultsStyles.infoLabel}>Texture Score</Text>
+              <Text style={resultsStyles.infoValue}>
+                {(validationScores.texture_score * 100).toFixed(1)}%
+              </Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    );
+  }
+  // ── End rejection check ────────────────────────────────────────────
+
   // Safe extraction with defaults
   const part = analysis?.part_detection?.part || 'Unknown';
   const disease = analysis?.disease_detection?.disease || 'No disease detected';

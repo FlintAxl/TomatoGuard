@@ -20,11 +20,13 @@ export const analyzeImage = async (imageData: string, token?: string) => {
     } as any);
   }
 
-  const response = await apiClient.post('/api/analyze/upload', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+  const uploadConfig: any = {};
+  if (Platform.OS !== 'web') {
+    uploadConfig.headers = { 'Content-Type': 'multipart/form-data' };
+    uploadConfig.transformRequest = (data: any) => data;
+  }
+
+  const response = await apiClient.post('/api/analyze/upload', formData, uploadConfig);
 
   return response.data;
 };
@@ -51,11 +53,13 @@ export const analyzeBatchImages = async (files: Array<{ uri: string; name: strin
     });
   }
 
-  const response = await apiClient.post('/api/analyze/batch', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+  const batchConfig: any = {};
+  if (Platform.OS !== 'web') {
+    batchConfig.headers = { 'Content-Type': 'multipart/form-data' };
+    batchConfig.transformRequest = (data: any) => data;
+  }
+
+  const response = await apiClient.post('/api/analyze/batch', formData, batchConfig);
 
   return response.data;
 };
