@@ -133,3 +133,12 @@ export const fetchAnalysisDetail = async (
   const response = await client.get(`/api/v1/analytics/analysis-detail/${analysisId}`);
   return response.data.data;
 };
+
+export const deleteAnalysis = async (
+  token?: string,
+  analysisId?: string
+): Promise<{ status: string; message: string }> => {
+  const client = getApiClient(token);
+  const response = await client.delete(`/api/v1/analytics/analysis/${analysisId}`);
+  return response.data;
+};

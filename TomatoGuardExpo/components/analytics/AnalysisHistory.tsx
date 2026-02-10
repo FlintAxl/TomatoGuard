@@ -6,10 +6,12 @@ import {
   Image,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   fetchAnalysisHistory,
+  deleteAnalysis,
   AnalysisHistoryItem,
 } from '../../services/api/analyticsService';
 
@@ -55,6 +57,31 @@ const AnalysisHistory: React.FC<Props> = ({ onSelectAnalysis }) => {
     if (page < totalPages && !loadingMore) {
       loadPage(page + 1, true);
     }
+  };
+
+  const handleDelete = (id: string, disease: string) => {
+    Alert.alert(
+      'Delete Analysis',
+      `Are you sure you want to delete this "${disease}" analysis?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteAnalysis(authState.accessToken || undefined, id);
+              // Remove from local state
+              setAnalyses((prev) => prev.filter((a) => a.id !== id));
+              setTotal((prev) => prev - 1);
+            } catch (err) {
+              console.error('Failed to delete analysis:', err);
+              Alert.alert('Error', 'Failed to delete analysis. Please try again.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (loading) {
@@ -148,6 +175,15 @@ const AnalysisHistory: React.FC<Props> = ({ onSelectAnalysis }) => {
 
               <Text style={s.date}>{dateStr}</Text>
             </View>
+
+            {/* Delete Button */}
+            <TouchableOpacity
+              style={s.deleteBtn}
+              onPress={() => handleDelete(item.id, item.disease || 'Unknown')}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={s.deleteBtnText}>🗑️</Text>
+            </TouchableOpacity>
 
             {/* Chevron */}
             <Text style={s.chevron}>›</Text>
@@ -289,6 +325,13 @@ const s = StyleSheet.create({
     color: '#475569',
     fontWeight: '300',
     marginLeft: 8,
+  },
+  deleteBtn: {
+    padding: 8,
+    marginLeft: 4,
+  },
+  deleteBtnText: {
+    fontSize: 16,
   },
   loadMoreBtn: {
     backgroundColor: '#334155',
