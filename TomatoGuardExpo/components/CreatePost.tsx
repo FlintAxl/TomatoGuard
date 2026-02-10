@@ -24,7 +24,7 @@ import {
   faPaperPlane,
 } from '@fortawesome/free-solid-svg-icons';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface CreatePostOverlayProps {
   visible: boolean;
@@ -288,16 +288,19 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    justifyContent: 'center',
+    justifyContent: SCREEN_WIDTH < 768 ? 'flex-end' : 'center',
     alignItems: 'center',
-    padding: SCREEN_WIDTH < 768 ? 10 : 20,
+    padding: SCREEN_WIDTH < 768 ? 0 : 20,
   },
   container: {
     width: '100%',
     maxWidth: SCREEN_WIDTH < 768 ? '100%' : 800,
-    maxHeight: '90%',
+    height: SCREEN_WIDTH < 768 ? SCREEN_HEIGHT * 0.93 : undefined,
+    maxHeight: SCREEN_WIDTH >= 768 ? '90%' : undefined,
     backgroundColor: '#0f172a',
-    borderRadius: SCREEN_WIDTH < 768 ? 12 : 16,
+    borderRadius: SCREEN_WIDTH < 768 ? 16 : 16,
+    borderBottomLeftRadius: SCREEN_WIDTH < 768 ? 0 : 16,
+    borderBottomRightRadius: SCREEN_WIDTH < 768 ? 0 : 16,
     overflow: 'hidden',
   },
   header: {
