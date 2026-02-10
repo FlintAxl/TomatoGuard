@@ -169,6 +169,138 @@ class DiseaseSpotDetector:
         img_str = base64.b64encode(buffered.getvalue()).decode()
         return f"data:image/jpeg;base64,{img_str}"
 
+class TomatoValidator:
+    """
+    Validates whether an uploaded image is actually a tomato plant part
+    before running through the disease detection pipeline.
+    
+    Uses a combination of:
+    1. Color profile analysis (green foliage / red fruit tones)
+    2. Part classifier confidence thresholding
+    3. Texture analysis (plant-like vs artificial surfaces)
+    """
+
+    # HSV ranges for tomato-plant-relevant colors
+    PLANT_COLOR_RANGES = [
+        # Green foliage (leaves, stems, unripe fruit)
+        {'lower': np.array([25, 30, 30]),  'upper': np.array([95, 255, 255]),  'label': 'green'},
+        # Red / ripe fruit tones
+        {'lower': np.array([0, 50, 50]),   'upper': np.array([10, 255, 255]),  'label': 'red_low'},
+        {'lower': np.array([170, 50, 50]), 'upper': np.array([180, 255, 255]), 'label': 'red_high'},
+        # Yellow-orange (ripening, disease spots)
+        {'lower': np.array([10, 50, 50]),  'upper': np.array([25, 255, 255]),  'label': 'yellow_orange'},
+        # Brown (disease, stem bark)
+        {'lower': np.array([10, 30, 20]),  'upper': np.array([20, 200, 150]),  'label': 'brown'},
+    ]
+
+    # Minimum thresholds
+    MIN_PLANT_COLOR_RATIO = 0.15          # ≥15 % of pixels must be plant-like colors
+    MIN_PART_CLASSIFIER_CONFIDENCE = 0.55  # Part classifier must be ≥55 % sure
+    MIN_TEXTURE_SCORE = 0.10              # Minimum edge/texture complexity
+
+    def validate(self, image_bytes: bytes, part_prediction: dict) -> dict:
+        """
+        Run full validation.  Returns a dict with:
+          is_valid        – bool, True means "proceed with disease detection"
+          rejection_reason – str or None
+          scores          – dict of individual check scores
+        """
+        scores: Dict[str, Any] = {}
+
+        # --- 1. Color profile check ---
+        color_ratio = self._compute_plant_color_ratio(image_bytes)
+        scores['plant_color_ratio'] = round(color_ratio, 3)
+        
+        # --- 2. Part classifier confidence ---
+        part_confidence = part_prediction.get('confidence', 0)
+        scores['part_confidence'] = round(part_confidence, 3)
+
+        # --- 3. Texture / edge complexity ---
+        texture_score = self._compute_texture_score(image_bytes)
+        scores['texture_score'] = round(texture_score, 3)
+
+        # --- Decision logic ---
+        rejection_reasons = []
+
+        if color_ratio < self.MIN_PLANT_COLOR_RATIO:
+            rejection_reasons.append(
+                f"Image color profile does not match tomato plant (plant colors: {color_ratio:.0%}, need ≥{self.MIN_PLANT_COLOR_RATIO:.0%})"
+            )
+
+        if part_confidence < self.MIN_PART_CLASSIFIER_CONFIDENCE:
+            rejection_reasons.append(
+                f"Part classifier confidence too low ({part_confidence:.0%}, need ≥{self.MIN_PART_CLASSIFIER_CONFIDENCE:.0%})"
+            )
+
+        if texture_score < self.MIN_TEXTURE_SCORE:
+            rejection_reasons.append(
+                f"Image texture does not resemble a plant surface (score: {texture_score:.2f})"
+            )
+
+        is_valid = len(rejection_reasons) == 0
+        # Allow through if at least 2 of 3 checks pass (soft gate)
+        if not is_valid:
+            passing = sum([
+                color_ratio >= self.MIN_PLANT_COLOR_RATIO,
+                part_confidence >= self.MIN_PART_CLASSIFIER_CONFIDENCE,
+                texture_score >= self.MIN_TEXTURE_SCORE,
+            ])
+            if passing >= 2:
+                is_valid = True
+                scores['soft_pass'] = True
+
+        return {
+            'is_valid': is_valid,
+            'rejection_reason': '; '.join(rejection_reasons) if not is_valid else None,
+            'scores': scores,
+        }
+
+    # ------------------------------------------------------------------ #
+    #  Internal helpers                                                    #
+    # ------------------------------------------------------------------ #
+
+    def _compute_plant_color_ratio(self, image_bytes: bytes) -> float:
+        """Fraction of pixels that fall into plant-relevant HSV ranges."""
+        try:
+            nparr = np.frombuffer(image_bytes, np.uint8)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            if img is None:
+                return 0.0
+
+            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+            total_pixels = hsv.shape[0] * hsv.shape[1]
+            combined_mask = np.zeros(hsv.shape[:2], dtype=np.uint8)
+
+            for cr in self.PLANT_COLOR_RANGES:
+                mask = cv2.inRange(hsv, cr['lower'], cr['upper'])
+                combined_mask = cv2.bitwise_or(combined_mask, mask)
+
+            plant_pixels = int(np.count_nonzero(combined_mask))
+            return plant_pixels / total_pixels if total_pixels > 0 else 0.0
+        except Exception:
+            return 0.0
+
+    def _compute_texture_score(self, image_bytes: bytes) -> float:
+        """
+        Measure edge density via Canny.  Plant surfaces are textured;
+        solid-color walls / screens are not.
+        """
+        try:
+            nparr = np.frombuffer(image_bytes, np.uint8)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            if img is None:
+                return 0.0
+
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            # Slight blur to suppress noise
+            gray = cv2.GaussianBlur(gray, (5, 5), 0)
+            edges = cv2.Canny(gray, 50, 150)
+            edge_ratio = float(np.count_nonzero(edges)) / (gray.shape[0] * gray.shape[1])
+            return edge_ratio
+        except Exception:
+            return 0.0
+
+
 class TomatoImagePreprocessor:
     """Preprocess user-uploaded images to match training data characteristics"""
     def __init__(self):
@@ -252,6 +384,7 @@ class MLService:
         self.loaded_models_info = []  # Track loaded models
         self.preprocessor = TomatoImagePreprocessor()  # NEW: Add preprocessor
         self.spot_detector = DiseaseSpotDetector()
+        self.validator = TomatoValidator()  # NEW: Add tomato validator
         # Updated class names to match your evaluation results
         self.class_names = {
             'part': ['fruit', 'leaf', 'stem'],
@@ -375,14 +508,46 @@ class MLService:
         except Exception as e:
             raise Exception(f"Image preprocessing failed: {str(e)}")
     
-    def predict_with_tta(self, image_array, model_name, n_augmentations=3):
-        """Test-Time Augmentation for more robust predictions"""
+    def predict_with_tta(self, image_array, model_name, n_augmentations=1):
+        """
+        Test-Time Augmentation for more robust predictions.
+        Default n_augmentations=1 (no TTA) for speed. Increase to 3 for accuracy.
+        """
         if model_name not in self.models:
             raise ValueError(f"Model {model_name} not loaded")
         
         model = self.models[model_name]
         
-        # Create multiple predictions with different augmentations
+        # Fast path: single prediction when n_augmentations=1
+        if n_augmentations <= 1:
+            pred = model.predict(image_array, verbose=0)[0]
+            predicted_idx = np.argmax(pred)
+            confidence = float(pred[predicted_idx])
+            
+            if confidence < 0.6:
+                top_indices = np.argsort(pred)[-2:][::-1]
+                return {
+                    'primary': {
+                        'disease': self.class_names[model_name][top_indices[0]],
+                        'confidence': float(pred[top_indices[0]])
+                    },
+                    'secondary': {
+                        'disease': self.class_names[model_name][top_indices[1]],
+                        'confidence': float(pred[top_indices[1]])
+                    },
+                    'is_low_confidence': True,
+                    'tta_used': False,
+                    'num_augmentations': 1
+                }
+            return {
+                'disease': self.class_names[model_name][predicted_idx],
+                'confidence': confidence,
+                'is_low_confidence': False,
+                'tta_used': False,
+                'num_augmentations': 1
+            }
+        
+        # Full TTA path (when n_augmentations > 1)
         predictions = []
         
         # Original prediction
@@ -470,86 +635,122 @@ class MLService:
             'top_predictions': top_predictions
         }
     
-    def predict_disease(self, image_array, part, use_tta=True):
-        """Predict disease for specific plant part - ENHANCED"""
+    def predict_disease(self, image_array, part, use_tta=False):
+        """
+        Predict disease for specific plant part.
+        Optimized: single inference by default, TTA only on low confidence.
+        """
         if part not in self.models:
             raise ValueError(f"No model available for part: {part}. Available: {list(self.models.keys())}")
         
-        if use_tta:
-            # Use Test-Time Augmentation for better accuracy
+        # Fast single-pass prediction
+        result = self.predict_with_tta(image_array, part, n_augmentations=1)
+        
+        # If low confidence AND use_tta requested, retry with full TTA
+        if result.get('is_low_confidence') and use_tta:
             result = self.predict_with_tta(image_array, part, n_augmentations=3)
-            
-            if 'primary' in result:
-                # Low confidence case
-                return {
-                    'disease': result['primary']['disease'],
-                    'confidence': result['primary']['confidence'],
-                    'alternative_disease': result['secondary']['disease'],
-                    'alternative_confidence': result['secondary']['confidence'],
-                    'is_low_confidence': True,
-                    'warning': f"Low confidence ({result['primary']['confidence']:.1%}). Could also be: {result['secondary']['disease']}",
-                    'tta_used': True
-                }
-            else:
-                # Normal confidence case
-                return {
-                    'disease': result['disease'],
-                    'confidence': result['confidence'],
-                    'is_low_confidence': False,
-                    'tta_used': True
-                }
-        else:
-            # Original prediction method
-            predictions = self.models[part].predict(image_array, verbose=0)[0]
-            disease_idx = np.argmax(predictions)
-            confidence = float(predictions[disease_idx])
-            disease_name = self.class_names[part][disease_idx]
-            
-            # Get top 3 predictions
-            top_indices = np.argsort(predictions)[-3:][::-1]
-            top_predictions = [
-                {
-                    'disease': self.class_names[part][idx],
-                    'confidence': float(predictions[idx])
-                }
-                for idx in top_indices
-            ]
-            
+        
+        if 'primary' in result:
+            # Low confidence case
             return {
-                'disease': disease_name,
-                'confidence': confidence,
-                'all_predictions': predictions.tolist(),
-                'top_predictions': top_predictions,
-                'tta_used': False
+                'disease': result['primary']['disease'],
+                'confidence': result['primary']['confidence'],
+                'alternative_disease': result['secondary']['disease'],
+                'alternative_confidence': result['secondary']['confidence'],
+                'is_low_confidence': True,
+                'warning': f"Low confidence ({result['primary']['confidence']:.1%}). Could also be: {result['secondary']['disease']}",
+                'tta_used': result.get('tta_used', False)
+            }
+        else:
+            # Normal confidence case
+            return {
+                'disease': result['disease'],
+                'confidence': result['confidence'],
+                'is_low_confidence': False,
+                'tta_used': result.get('tta_used', False)
             }
     
     def analyze_image(self, image_bytes, use_enhanced_preprocessing=True) -> Dict[str, Any]:
-        """Complete analysis pipeline with bounding boxes - ENHANCED with better preprocessing"""
+        """
+        Complete analysis pipeline with validation gate and bounding boxes.
+        OPTIMIZED: parallel-friendly, reduced TTA, timing instrumentation.
+        """
+        import time as _time
+        timings = {}
+        pipeline_start = _time.perf_counter()
+
         # Get loaded models info for debug
         loaded_models = [info['name'] for info in self.loaded_models_info]
         
-        # Preprocess image with enhanced preprocessing
+        # ── Preprocessing ──
+        t0 = _time.perf_counter()
         img_array, image_info = self.preprocess_image(
             image_bytes, 
             use_enhanced=use_enhanced_preprocessing
         )
+        timings['preprocessing'] = round(_time.perf_counter() - t0, 3)
         
         # Add preprocessing method to info
         image_info['enhanced_preprocessing'] = use_enhanced_preprocessing
         
-        # Step 1: Predict plant part
+        # ── Step 1: Predict plant part ──
+        t0 = _time.perf_counter()
         part_result = self.predict_part(img_array)
+        timings['part_classification'] = round(_time.perf_counter() - t0, 3)
         part = part_result['part']
+
+        # ── Step 1.5: TOMATO VALIDATION GATE ──
+        t0 = _time.perf_counter()
+        validation = self.validator.validate(image_bytes, part_result)
+        timings['validation'] = round(_time.perf_counter() - t0, 3)
+
+        if not validation['is_valid']:
+            timings['total'] = round(_time.perf_counter() - pipeline_start, 3)
+            # Rejected — return early with clear feedback
+            return {
+                'is_tomato': False,
+                'rejection_reason': validation['rejection_reason'],
+                'validation_scores': validation['scores'],
+                'part_detection': part_result,
+                'disease_detection': None,
+                'spot_detection': None,
+                'recommendations': {
+                    'message': 'The uploaded image does not appear to be a tomato plant part.',
+                    'suggestions': [
+                        'Make sure the photo clearly shows a tomato leaf, fruit, or stem',
+                        'Avoid photos with too much background or non-plant objects',
+                        'Ensure good lighting so plant colors are visible',
+                        'Try cropping the image to focus on the plant part',
+                    ],
+                },
+                'image_info': image_info,
+                'model_info': {
+                    'loaded_models': loaded_models,
+                    'total_models': len(self.loaded_models_info),
+                    'analysis_timestamp': datetime.now().isoformat(),
+                    'preprocessing_method': 'enhanced' if use_enhanced_preprocessing else 'original',
+                    'validation_gate': 'rejected',
+                },
+                'performance': timings,
+            }
+        # ── End validation gate ──
         
-        # Step 2: Predict disease for that part (use TTA for better accuracy)
-        disease_result = self.predict_disease(img_array, part, use_tta=True)
+        # ── Step 2: Predict disease (fast single-pass, TTA only if low confidence) ──
+        t0 = _time.perf_counter()
+        disease_result = self.predict_disease(img_array, part, use_tta=False)
+        timings['disease_classification'] = round(_time.perf_counter() - t0, 3)
         disease_name = disease_result['disease']
         
-        # Step 3: Detect disease spots with bounding boxes (only if disease is detected)
+        # ── Step 3: Spot detection (SKIP for healthy or low-confidence) ──
         spot_detection = None
-        if disease_name and disease_name != 'Healthy' and disease_name != 'Healthy ':
+        is_diseased = disease_name and disease_name != 'Healthy' and disease_name != 'Healthy '
+        confidence_ok = disease_result.get('confidence', 0) >= 0.5
+
+        if is_diseased and confidence_ok:
+            t0 = _time.perf_counter()
             try:
                 spot_detection = self.spot_detector.detect_disease_spots(image_bytes, disease_name)
+                timings['spot_detection'] = round(_time.perf_counter() - t0, 3)
                 
                 # Add additional info to spot detection
                 if spot_detection and 'error' not in spot_detection:
@@ -587,32 +788,32 @@ class MLService:
                                 'description': f"Severity calculation failed: {str(e)}"
                             }
             except Exception as e:
+                timings['spot_detection'] = round(_time.perf_counter() - t0, 3)
                 spot_detection = {
                     "error": f"Disease spot detection failed: {str(e)}",
                     "disease_name": disease_name
                 }
         else:
-            # If healthy, provide a clean spot detection result
+            # If healthy or low confidence, skip heavy OpenCV spot detection but still return image
+            t0 = _time.perf_counter()
             try:
                 nparr = np.frombuffer(image_bytes, np.uint8)
                 image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                if image is not None:
-                    original_base64 = self.spot_detector.image_to_base64(image)
-                else:
-                    original_base64 = None
+                original_base64 = self.spot_detector.image_to_base64(image) if image is not None else None
             except:
                 original_base64 = None
-                
+            timings['spot_detection'] = round(_time.perf_counter() - t0, 3)
+            
             spot_detection = {
-                "status": "healthy",
-                "message": "No disease spots detected - plant appears healthy",
+                "status": "healthy" if not is_diseased else "skipped_low_confidence",
+                "message": "No disease spots detected - plant appears healthy" if not is_diseased else "Spot detection skipped due to low confidence",
                 "disease_name": disease_name,
                 "total_spots": 0,
                 "total_area": 0,
                 "original_image": original_base64
             }
         
-                              # Step 4: Get recommendations
+        # ── Step 4: Get recommendations ──
         try:
             import recommendations
             recommendations = recommendations.get_recommendations(
@@ -659,7 +860,11 @@ class MLService:
             }
         
         # Step 5: Prepare final result
+        timings['total'] = round(_time.perf_counter() - pipeline_start, 3)
+        
         result = {
+            'is_tomato': True,
+            'validation_scores': validation.get('scores', {}),
             'part_detection': part_result,
             'disease_detection': disease_result,
             'spot_detection': spot_detection,
@@ -670,16 +875,16 @@ class MLService:
                 'total_models': len(self.loaded_models_info),
                 'analysis_timestamp': datetime.now().isoformat(),
                 'preprocessing_method': 'enhanced' if use_enhanced_preprocessing else 'original',
-                'bounding_boxes_enabled': spot_detection is not None and 'error' not in spot_detection
+                'bounding_boxes_enabled': spot_detection is not None and 'error' not in spot_detection,
+                'validation_gate': 'passed',
             }
         }
         
-        # Add processing performance info
+        # Add processing performance info (in seconds)
         result['performance'] = {
-            'preprocessing_time': image_info.get('preprocessing_time', 'N/A'),
-            'model_inference_time': image_info.get('inference_time', 'N/A'),
-            'spot_detection_time': image_info.get('spot_detection_time', 'N/A'),
-            'total_processing_time': 'N/A'
+            'timings': timings,  # All detailed timings
+            'total_seconds': timings.get('total', 0),
+            'summary': f"Total: {timings.get('total', 0)}s (validation: {timings.get('validation', 0)}s, part: {timings.get('part_classification', 0)}s, disease: {timings.get('disease_classification', 0)}s, spots: {timings.get('spot_detection', 0)}s)"
         }
         
         return result
