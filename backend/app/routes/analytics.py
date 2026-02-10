@@ -100,3 +100,17 @@ async def analysis_detail(
     if not detail:
         raise HTTPException(status_code=404, detail="Analysis not found")
     return {"status": "success", "data": detail}
+
+
+@router.delete("/analysis/{analysis_id}")
+async def delete_analysis(
+    analysis_id: str,
+    current_user: dict = Depends(get_current_admin_user),
+):
+    """Delete a single analysis record."""
+    from fastapi import HTTPException
+    svc = _get_service()
+    deleted = await svc.delete_analysis(analysis_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+    return {"status": "success", "message": "Analysis deleted successfully"}

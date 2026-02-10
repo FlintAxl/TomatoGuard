@@ -441,6 +441,19 @@ class AnalyticsService:
             logger.error(f"❌ analysis history failed: {e}")
             raise
 
+    async def delete_analysis(self, analysis_id: str) -> bool:
+        """Delete a single analysis record by ID."""
+        try:
+            from bson import ObjectId
+            result = await self.analyses.delete_one({"_id": ObjectId(analysis_id)})
+            if result.deleted_count > 0:
+                logger.info(f"✅ Deleted analysis {analysis_id}")
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"❌ delete analysis failed: {e}")
+            return False
+
     async def get_analysis_detail(self, analysis_id: str) -> Dict[str, Any]:
         """Get full analysis detail by ID, including spot detection images."""
         try:
