@@ -1,5 +1,21 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { exportAnalyticsPDF, ExportData } from '../../utils/pdfExport';
+
+interface DiseaseStatItem {
+  disease: string;
+  count: number;
+  percentage: number;
+  avg_confidence: number;
+}
+
+interface AnalysisItem {
+  id: string;
+  disease: string;
+  confidence: number;
+  plant_part: string;
+  created_at: string;
+}
 
 interface Props {
   data: {
@@ -10,17 +26,68 @@ interface Props {
       count: number;
     }>;
   };
+  partDistribution?: Array<{
+    part: string;
+    count: number;
+    percentage: number;
+  }>;
+  diseaseStats?: {
+    total: number;
+    by_part: Record<string, DiseaseStatItem[]>;
+  };
+  analyses?: AnalysisItem[];
 }
 
 const BUCKET_COLORS = ['#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e', '#10b981'];
 
-const ConfidenceDistribution: React.FC<Props> = ({ data }) => {
+const ConfidenceDistribution: React.FC<Props> = ({ data, partDistribution, diseaseStats, analyses }) => {
+  const [exporting, setExporting] = useState(false);
   const maxBucket = Math.max(...data.buckets.map((b) => b.count), 1);
   const totalBucket = data.buckets.reduce((s, b) => s + b.count, 0);
 
+  const handleExportPDF = async () => {
+    if (!partDistribution || !diseaseStats) {
+      Alert.alert('Export Error', 'Missing data for export. Please try again.');
+      return;
+    }
+
+    setExporting(true);
+    try {
+      const exportData: ExportData = {
+        partDistribution,
+        diseaseConfidence: data.per_disease,
+        confidenceBuckets: data.buckets,
+        diseaseStats,
+        analyses: analyses || [],
+        generatedAt: new Date().toLocaleString(),
+      };
+      await exportAnalyticsPDF(exportData);
+    } catch (error: any) {
+      Alert.alert('Export Failed', error.message || 'Failed to export PDF');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <View style={s.container}>
-      <Text style={s.sectionTitle}>Confidence Distribution</Text>
+      <View style={s.headerRow}>
+        <Text style={s.sectionTitle}>Confidence Distribution</Text>
+        <TouchableOpacity
+          style={[s.exportBtn, exporting && s.exportBtnDisabled]}
+          onPress={handleExportPDF}
+          disabled={exporting || !partDistribution || !diseaseStats}
+        >
+          {exporting ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <>
+              <Text style={s.exportIcon}>📄</Text>
+              <Text style={s.exportText}>Export PDF</Text>
+            </>
+          )}
+        </TouchableOpacity>
+      </View>
 
       {/* Bucket histogram */}
       <View style={s.card}>
@@ -75,12 +142,37 @@ const ConfidenceDistribution: React.FC<Props> = ({ data }) => {
 
 const s = StyleSheet.create({
   container: { marginBottom: 24 },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: '#f1f5f9',
-    marginBottom: 12,
     letterSpacing: 0.5,
+  },
+  exportBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#3b82f6',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 6,
+  },
+  exportBtnDisabled: {
+    backgroundColor: '#475569',
+  },
+  exportIcon: {
+    fontSize: 14,
+  },
+  exportText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   card: {
     backgroundColor: '#1e293b',

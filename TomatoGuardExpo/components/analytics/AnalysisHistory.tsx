@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -60,28 +61,43 @@ const AnalysisHistory: React.FC<Props> = ({ onSelectAnalysis }) => {
   };
 
   const handleDelete = (id: string, disease: string) => {
-    Alert.alert(
-      'Delete Analysis',
-      `Are you sure you want to delete this "${disease}" analysis?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteAnalysis(authState.accessToken || undefined, id);
-              // Remove from local state
-              setAnalyses((prev) => prev.filter((a) => a.id !== id));
-              setTotal((prev) => prev - 1);
-            } catch (err) {
-              console.error('Failed to delete analysis:', err);
-              Alert.alert('Error', 'Failed to delete analysis. Please try again.');
-            }
+    const doDelete = async () => {
+      try {
+        await deleteAnalysis(authState.accessToken || undefined, id);
+        // Remove from local state
+        setAnalyses((prev) => prev.filter((a) => a.id !== id));
+        setTotal((prev) => prev - 1);
+      } catch (err) {
+        console.error('Failed to delete analysis:', err);
+        if (Platform.OS === 'web') {
+          window.alert('Failed to delete analysis. Please try again.');
+        } else {
+          Alert.alert('Error', 'Failed to delete analysis. Please try again.');
+        }
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      // Use window.confirm for web
+      const confirmed = window.confirm(`Are you sure you want to delete this "${disease}" analysis?`);
+      if (confirmed) {
+        doDelete();
+      }
+    } else {
+      // Use Alert.alert for native
+      Alert.alert(
+        'Delete Analysis',
+        `Are you sure you want to delete this "${disease}" analysis?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: doDelete,
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
   if (loading) {

@@ -46,7 +46,11 @@ const ProfileScreen = ({ navigation }: any) => {
     } catch (error: any) {
       console.error('Profile fetch error:', error);
       if (error.response?.status === 401) {
-        Alert.alert('Session Expired', 'Please login again');
+        if (Platform.OS === 'web') {
+          window.alert('Session Expired. Please login again.');
+        } else {
+          Alert.alert('Session Expired', 'Please login again');
+        }
         logout();
       }
     } finally {
@@ -74,7 +78,11 @@ const ProfileScreen = ({ navigation }: any) => {
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission Required', 'Please allow access to your photo library.');
+      if (Platform.OS === 'web') {
+        window.alert('Permission Required: Please allow access to your photo library.');
+      } else {
+        Alert.alert('Permission Required', 'Please allow access to your photo library.');
+      }
       return;
     }
 
@@ -97,11 +105,19 @@ const ProfileScreen = ({ navigation }: any) => {
       const match = /\.(\w+)$/.exec(filename);
       const type = match ? `image/${match[1]}` : 'image/jpeg';
 
-      formData.append('file', {
-        uri,
-        name: filename,
-        type,
-      } as any);
+      if (Platform.OS === 'web') {
+        // On web, fetch the blob from the URI and append it properly
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        formData.append('file', blob, filename);
+      } else {
+        // On native, use the URI object format
+        formData.append('file', {
+          uri,
+          name: filename,
+          type,
+        } as any);
+      }
 
       const client = getApiClient(authState.accessToken || undefined);
       const response = await client.post('/api/v1/upload/image', formData, {
@@ -122,11 +138,19 @@ const ProfileScreen = ({ navigation }: any) => {
 
   const handleSaveProfile = async () => {
     if (!editName.trim()) {
-      Alert.alert('Error', 'Name is required');
+      if (Platform.OS === 'web') {
+        window.alert('Name is required');
+      } else {
+        Alert.alert('Error', 'Name is required');
+      }
       return;
     }
     if (!editEmail.trim()) {
-      Alert.alert('Error', 'Email is required');
+      if (Platform.OS === 'web') {
+        window.alert('Email is required');
+      } else {
+        Alert.alert('Error', 'Email is required');
+      }
       return;
     }
 
@@ -140,7 +164,11 @@ const ProfileScreen = ({ navigation }: any) => {
         if (uploadedUrl) {
           profilePictureUrl = uploadedUrl;
         } else {
-          Alert.alert('Warning', 'Failed to upload image. Profile will be updated without new picture.');
+          if (Platform.OS === 'web') {
+            window.alert('Failed to upload image. Profile will be updated without new picture.');
+          } else {
+            Alert.alert('Warning', 'Failed to upload image. Profile will be updated without new picture.');
+          }
         }
       }
 
@@ -158,35 +186,52 @@ const ProfileScreen = ({ navigation }: any) => {
       setUserData(updatedUser);
       updateUser(updatedUser);
       setEditModalVisible(false);
-      Alert.alert('Success', 'Profile updated successfully!');
+      if (Platform.OS === 'web') {
+        window.alert('Profile updated successfully!');
+      } else {
+        Alert.alert('Success', 'Profile updated successfully!');
+      }
     } catch (error: any) {
       console.error('Update profile error:', error);
       const message = error.response?.data?.detail || 'Failed to update profile';
-      Alert.alert('Error', message);
+      if (Platform.OS === 'web') {
+        window.alert(message);
+      } else {
+        Alert.alert('Error', message);
+      }
     } finally {
       setEditLoading(false);
     }
   };
 
   const handleLogout = async () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Login' }],
-            });
+    const doLogout = async () => {
+      await logout();
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    };
+
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('Are you sure you want to logout?');
+      if (confirmed) {
+        doLogout();
+      }
+    } else {
+      Alert.alert(
+        'Logout',
+        'Are you sure you want to logout?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Logout',
+            style: 'destructive',
+            onPress: doLogout,
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
   if (loading && !userData) {

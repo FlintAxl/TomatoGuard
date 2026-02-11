@@ -141,7 +141,12 @@ const AdminDashboardScreen = () => {
         <ModelAccuracyScatterPlot data={analytics.scatter_plot_data || []} />
 
         {/* 6. Confidence Distribution (buckets + per-disease avg) */}
-        <ConfidenceDistribution data={analytics.confidence_distribution} />
+        <ConfidenceDistribution 
+          data={analytics.confidence_distribution}
+          partDistribution={analytics.part_distribution}
+          diseaseStats={analytics.disease_stats}
+          analyses={analytics.scatter_plot_data || []}
+        />
 
         {/* 7. Plant Part Distribution */}
         <PlantPartDistribution data={analytics.part_distribution} />
