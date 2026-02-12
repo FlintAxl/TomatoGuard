@@ -15,6 +15,9 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { MainStackNavigationProp, RootStackNavigationProp } from '../navigation/types';
 import { useAuth } from '../contexts/AuthContext';
+import { useDrawer } from '../hooks/useDrawer';
+import { useImageAnalysis } from '../hooks/useImageAnalysis';
+import { appStyles } from '../styles';
 import CameraCapture from '../components/CameraCapture';
 import ImageUpload from '../components/ImageUpload';
 import ResultsDisplay from '../components/ResultsDisplay';
@@ -23,9 +26,6 @@ import AboutScreen from './AboutScreen';
 import ProfileScreen from './ProfileScreen';
 import CreatePostScreen from './CreatePostScreen';
 import PostDetailScreen from './PostDetailScreen';
-import { useDrawer } from '../hooks/useDrawer';
-import { useImageAnalysis } from '../hooks/useImageAnalysis';
-import { appStyles } from '../styles';
 import Drawer from '../components/Layout/Drawer';
 import MainLayout from '../components/Layout/MainLayout';
 import ForumScreen from './ForumScreen';
@@ -34,6 +34,7 @@ import BlogsList from './BlogsListScreen';
 import BlogOne from './blogs/BlogOne';
 import BlogTwo from './blogs/BlogTwo';
 import BlogThree from './blogs/BlogThree';
+import AboutPageScreen from './AboutPageScreen';
 
 const MainAppScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
@@ -123,9 +124,15 @@ const MainAppScreen = () => {
     closeDrawer();
     return;
   }
+  if (itemId === 'about') {
+    setActiveTab('about');
+    closeDrawer();
+    return;
+  }
     setActiveTab(itemId);
     closeDrawer();
   };
+  
 
   const getPageSubtitle = () => {
     switch (activeTab) {
@@ -196,6 +203,12 @@ const MainAppScreen = () => {
         return (
           <View style={styles.contentPadding}>
             <ProfileScreen />
+          </View>
+        );
+      case 'about':
+        return (
+          <View style={styles.contentPadding}>
+            <AboutPageScreen />
           </View>
         );
         case 'blogs':

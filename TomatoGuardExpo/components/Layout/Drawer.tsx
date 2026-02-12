@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigation } from '@react-navigation/native';
+import { RootStackNavigationProp } from '../../navigation/types';
 
 interface DrawerProps {
   activeTab: string;
@@ -27,6 +29,7 @@ const Drawer: React.FC<DrawerProps> = ({
   onClose 
 }) => {
   const { authState } = useAuth();
+  const navigation = useNavigation<RootStackNavigationProp>();
   
   const baseNavItems = [
     { id: 'forums', label: 'Forums', icon: 'comments' },

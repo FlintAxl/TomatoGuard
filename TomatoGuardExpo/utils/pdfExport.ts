@@ -1,6 +1,8 @@
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
+import * as XLSX from 'xlsx';
+import { Paths, File } from 'expo-file-system';
 
 export interface PartDistributionItem {
   part: string;
@@ -545,6 +547,82 @@ export const exportAnalyticsPDF = async (data: ExportData): Promise<void> => {
     }
   } catch (error) {
     console.error('Error exporting PDF:', error);
+    throw error;
+  }
+};
+
+// Excel Export Function
+export const exportAnalysesExcel = async (analyses: AnalysisItem[]): Promise<void> => {
+  try {
+    // Create a proper filename with timestamp
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const fileName = `TomatoGuard_Analyses_${timestamp}.xlsx`;
+
+    // Prepare data for Excel
+    const excelData = analyses.map((a, index) => {
+      const date = new Date(a.created_at);
+      const formattedDate = date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+      return {
+        '#': index + 1,
+        'Disease': a.disease,
+        'Plant Part': a.plant_part.charAt(0).toUpperCase() + a.plant_part.slice(1),
+        'Confidence (%)': (a.confidence * 100).toFixed(1),
+        'Date': formattedDate,
+      };
+    });
+
+    // Create worksheet and workbook
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    
+    // Set column widths
+    worksheet['!cols'] = [
+      { wch: 5 },   // #
+      { wch: 25 },  // Disease
+      { wch: 12 },  // Plant Part
+      { wch: 15 },  // Confidence
+      { wch: 22 },  // Date
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Analyses');
+
+    if (Platform.OS === 'web') {
+      // Web: Direct download
+      XLSX.writeFile(workbook, fileName);
+    } else {
+      // Mobile: Write to file and share
+      const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
+      
+      // Create file in cache directory
+      const file = new File(Paths.cache, fileName);
+      
+      // Convert base64 to Uint8Array and write
+      const binaryString = atob(wbout);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      await file.write(bytes);
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(file.uri, {
+          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          dialogTitle: 'Save Analyses Excel',
+          UTI: 'org.openxmlformats.spreadsheetml.sheet',
+        });
+      } else {
+        throw new Error('File sharing is not available on this device.');
+      }
+    }
+  } catch (error) {
+    console.error('Error exporting Excel:', error);
     throw error;
   }
 };

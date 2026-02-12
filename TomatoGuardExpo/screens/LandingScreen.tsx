@@ -36,21 +36,26 @@ const COLORS = {
   muted: '#d6e4dd',
 };
 
-// Disease data
+// Combined disease data from Cloudinary links
 const DISEASES = [
-  { id: 0, name: 'Early Blight', image: require('./../assets/diseases/anthracnose.png') },
-  { id: 1, name: 'Anthracnose', image: require('./../assets/diseases/anthracnose.png') },
-  { id: 2, name: 'Fusarium', image: require('./../assets/diseases/fusarium.png') },
-  { id: 3, name: 'Powdery Mildew', image: require('./../assets/diseases/fusarium.png') },
-  { id: 4, name: 'Septoria Leaf Spot', image: require('./../assets/diseases/septorialeafspot.png') },
-  { id: 5, name: 'Botrytis Gray Mold', image: require('./../assets/diseases/anthracnose.png') },
-  { id: 6, name: 'Bacterial Speck', image: require('./../assets/diseases/anthracnose.png') },
-  { id: 7, name: 'Blossom End Root', image: require('./../assets/diseases/blossomendrot.png') },
-  { id: 8, name: 'Buckeye Rot', image: require('./../assets/diseases/buckeyerot.png') },
-  { id: 9, name: 'Tomato Pith Necrosis', image: require('./../assets/diseases/buckeyerot.png') },
-  { id: 10, name: 'Damping Off', image: require('./../assets/diseases/dampingoff.png') },
-  { id: 11, name: 'Sunscald', image: require('./../assets/diseases/sunscald.png') },
-  { id: 12, name: 'Bacterial Spot', image: require('./../assets/diseases/buckeyerot.png') },
+  // Fruit Diseases
+  { id: 1, name: 'Anthracnose', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889106/anthracnose_kbwcut.png' },
+  { id: 2, name: 'Botrytis Gray Mold', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889113/botrytisgraymold_gkwjvy.png' },
+  { id: 3, name: 'Blossom End Rot', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889116/blossomendrot_uym7do.png' },
+  { id: 4, name: 'Buckeye Rot', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889109/buckeyerot_heup6g.png' },
+  { id: 5, name: 'Sunscald', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889435/sunscald_pfudlf.png' },
+  { id: 6, name: 'Healthy Fruit', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770890142/healthyfruit_gz98qz.jpg' },
+  // Leaf Diseases
+  { id: 7, name: 'Septoria Leaf Spot', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889435/septorialeafspot_rjjgbw.png' },
+  { id: 8, name: 'Bacterial Spot', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889110/bacterialspot_svwbyu.png' },
+  { id: 9, name: 'Early Blight', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889113/earlyblight_fzng93.png' },
+  { id: 10, name: 'Late Blight', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770890160/lateblightleaf_m6ov1l.jpg' },
+  { id: 11, name: 'Yellow Leaf Curl', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889116/fusarium_gdkaek.png' },
+  { id: 12, name: 'Healthy Leaf', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770890144/healthystem_kwwg6j.jpg' },
+  // Stem Diseases
+  { id: 13, name: 'Blight', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889112/dampingoff_i3hxbj.png' },
+  { id: 14, name: 'Healthy Stem', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770890396/cea78e54-9eec-4f00-b086-83736756a7c1.png' },
+  { id: 15, name: 'Wilt', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889134/pithnecrosis_xce3ih.png' },
 ];
 
 // Tech stack data
@@ -61,6 +66,30 @@ const TECH_STACK = [
   { name: 'NPM', icon: 'cube' },
   { name: 'Node.js', icon: 'logo-nodejs' },
   { name: 'MongoDB', icon: 'server' },
+];
+
+const BLOGS = [
+  {
+    id: 'blogone',
+    title: 'How to Identify, Treat, and Prevent Tomato Diseases',
+    description: 'A comprehensive guide to recognizing common tomato diseases and implementing effective prevention strategies.',
+    image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770819835/Gemini_Generated_Image_3xk5433xk5433xk5_qmc8ap.png',
+    category: 'Disease Management',
+  },
+  {
+    id: 'blogtwo',
+    title: 'Tomatoes: Nutrition Facts and Health Benefits',
+    description: 'Discover the nutritional powerhouse that tomatoes are, including their vitamins, minerals, and antioxidants.',
+    image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770819835/Gemini_Generated_Image_xe9pbpxe9pbpxe9p_yaemwf.png',
+    category: 'Nutrition',
+  },
+  {
+    id: 'blogthree',
+    title: 'Health Benefits of Tomatoes: What You Need to Know',
+    description: 'Explore the incredible health benefits of tomatoes, from heart health to cancer prevention.',
+    image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770819835/Gemini_Generated_Image_ijcjf1ijcjf1ijcj_srnwqq.png',
+    category: 'Health & Wellness',
+  },
 ];
 
 const ITEM_WIDTH = isSmallDevice ? SCREEN_WIDTH * 0.75 : 240;
@@ -121,6 +150,16 @@ const LandingScreen = () => {
     // navigation.navigate('About');
     console.log('Navigate to about');
   };
+  
+  const handleBlogPress = (blogId: string) => {
+    // Navigate to login first, then to the specific blog
+    navigation.navigate('Auth', { screen: 'Login' });
+  };
+  
+  const handleViewAllBlogs = () => {
+    // Navigate to login first
+    navigation.navigate('Auth', { screen: 'Login' });
+  };
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const scrollPosition = event.nativeEvent.contentOffset.x;
@@ -135,7 +174,7 @@ const LandingScreen = () => {
         styles.carouselItem, 
         isActive ? styles.carouselItemActive : null
       ].filter(Boolean)}>
-        <Image source={item.image} style={styles.carouselImage} />
+        <Image source={{ uri: item.image }} style={styles.carouselImage} />
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.9)']}
           style={styles.carouselGradient}
@@ -159,7 +198,7 @@ const LandingScreen = () => {
           <View style={styles.container}>
             {/* Section One - Hero */}
             <ImageBackground
-              source={require('./../assets/section1-bg.png')}
+              source={{ uri: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770891055/section1-bg_fe4mif.png' }}
               style={styles.sectionOne}
               resizeMode="cover"
             >
@@ -168,6 +207,11 @@ const LandingScreen = () => {
                 style={styles.heroGradient}
               />
               <View style={styles.heroContent}>
+                <Image
+                  source={{ uri: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770891117/SIA_ML_-_LOGO___TRADEMARK-removebg-preview_ilaacc.png' }}
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                />
                 <Text style={styles.heroTitle}>
                   Helping Farmers Grow Healthier Tomatoes
                 </Text>
@@ -205,7 +249,7 @@ const LandingScreen = () => {
                 </View>
                 <View style={styles.testimonialRight}>
                   <Image
-                    source={require('./../assets/tomato.png')}
+                    source={{ uri: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770892841/tomato_wdfqx5.png' }}
                     style={styles.tomatoImage}
                     resizeMode="contain"
                   />
@@ -219,7 +263,7 @@ const LandingScreen = () => {
                 <View style={styles.visualArea}>
                   <View style={styles.imageCard}>
                     <Image
-                      source={require('./../assets/section1-bg.png')}
+                      source={{ uri: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770891066/tomatofarmers_e4ay2v.png' }}
                       style={styles.farmersImage}
                       resizeMode="cover"
                     />
@@ -274,6 +318,56 @@ const LandingScreen = () => {
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
               />
+            </View>
+
+            <View style={styles.sectionBlogs}>
+              <Text style={styles.sectionTitle}>Latest Articles & Insights</Text>
+              <Text style={styles.sectionSubtitle}>
+                Expert advice on tomato cultivation, disease management, and health benefits
+              </Text>
+              
+              <View style={styles.blogsContainer}>
+                {BLOGS.map((blog) => (
+                  <TouchableOpacity
+                    key={blog.id}
+                    style={styles.blogCard}
+                    onPress={() => handleBlogPress(blog.id)}
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.blogImageWrapper}>
+                      <Image
+                        source={{ uri: blog.image }}
+                        style={styles.blogCardImage}
+                        resizeMode="cover"
+                      />
+                      <LinearGradient
+                        colors={['transparent', 'rgba(8, 22, 0, 0.95)']}
+                        style={styles.blogCardGradient}
+                      />
+                      <View style={styles.blogCategoryBadge}>
+                        <Text style={styles.blogCategoryText}>{blog.category}</Text>
+                      </View>
+                    </View>
+                    <View style={styles.blogCardContent}>
+                      <Text style={styles.blogCardTitle} numberOfLines={2}>
+                        {blog.title}
+                      </Text>
+                      <Text style={styles.blogCardDescription} numberOfLines={3}>
+                        {blog.description}
+                      </Text>
+                      <View style={styles.blogReadMore}>
+                        <Text style={styles.blogReadMoreText}>Read Article</Text>
+                        <Ionicons name="arrow-forward" size={14} color={COLORS.color2} />
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <TouchableOpacity style={styles.viewAllBtn} onPress={handleViewAllBlogs}>
+                <Text style={styles.viewAllBtnText}>View All Articles</Text>
+                <Ionicons name="arrow-forward" size={16} color={COLORS.textLight} />
+              </TouchableOpacity>
             </View>
 
             {/* Section Five - Tech Stack */}
@@ -333,6 +427,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: isSmallDevice ? 16 : 20,
     marginBottom: isSmallDevice ? 20 : 30,
+  },
+  logoImage: {
+    width: isSmallDevice ? 150 : 800,
+    height: isSmallDevice ? 80 : 300,
+    marginBottom: isSmallDevice ? 8 : 12,
   },
   heroTitle: {
     fontFamily: 'System',
@@ -606,6 +705,111 @@ const styles = StyleSheet.create({
     fontSize: isSmallDevice ? 13 : 14,
     fontWeight: '600',
     color: COLORS.textLight,
+  },
+  // Section Blogs
+  sectionBlogs: {
+    paddingVertical: isSmallDevice ? 40 : 60,
+    paddingHorizontal: isSmallDevice ? 16 : 20,
+    backgroundColor: COLORS.color4,
+    alignItems: 'center',
+  },
+  blogsContainer: {
+    flexDirection: isSmallDevice ? 'column' : 'row',
+    flexWrap: 'wrap',
+    gap: isSmallDevice ? 20 : 24,
+    justifyContent: 'center',
+    marginBottom: isSmallDevice ? 30 : 40,
+    maxWidth: isSmallDevice ? '100%' : 1200,
+  },
+  blogCard: {
+    width: isSmallDevice ? '100%' : 360,
+    backgroundColor: COLORS.color5,
+    borderRadius: isSmallDevice ? 16 : 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  blogImageWrapper: {
+    width: '100%',
+    height: isSmallDevice ? 180 : 220,
+    position: 'relative',
+  },
+  blogCardImage: {
+    width: '100%',
+    height: '100%',
+  },
+  blogCardGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 100,
+  },
+  blogCategoryBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: COLORS.color2,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 16,
+  },
+  blogCategoryText: {
+    color: COLORS.textLight,
+    fontSize: 10,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    fontFamily: 'System',
+  },
+  blogCardContent: {
+    padding: isSmallDevice ? 16 : 20,
+  },
+  blogCardTitle: {
+    fontFamily: 'System',
+    fontSize: isSmallDevice ? 16 : 18,
+    fontWeight: '700',
+    color: COLORS.textLight,
+    marginBottom: 10,
+    lineHeight: isSmallDevice ? 22 : 24,
+  },
+  blogCardDescription: {
+    fontFamily: 'System',
+    fontSize: isSmallDevice ? 13 : 14,
+    color: COLORS.muted,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  blogReadMore: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  blogReadMoreText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.color2,
+    fontFamily: 'System',
+  },
+  viewAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: COLORS.color2,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 999,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  viewAllBtnText: {
+    color: COLORS.textLight,
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: 'System',
   },
 });
 

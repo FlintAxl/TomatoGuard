@@ -42,7 +42,7 @@ const BlogOne: React.FC<BlogOneProps> = ({ setActiveTab }) => {
         {/* Hero Section */}
         <View style={styles.heroContainer}>
           <Image
-            source={{ uri: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1769081501/typeventure/profile%20pictures/rgefoc4y0iu5uxq91oic.jpg' }}
+            source={{ uri: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770819835/Gemini_Generated_Image_3xk5433xk5433xk5_qmc8ap.png' }}
             style={styles.heroImage}
             resizeMode="cover"
           />

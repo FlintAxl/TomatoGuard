@@ -34,7 +34,7 @@ const BLOGS = [
     id: 'blogone',
     title: 'How to Identify, Treat, and Prevent Tomato Diseases',
     description: 'A comprehensive guide to recognizing common tomato diseases, understanding their causes, and implementing effective treatment and prevention strategies.',
-    image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1769081501/typeventure/profile%20pictures/rgefoc4y0iu5uxq91oic.jpg',
+    image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770819835/Gemini_Generated_Image_3xk5433xk5433xk5_qmc8ap.png',
     date: 'January 15, 2025',
     readTime: '8 min read',
     category: 'Disease Management',
@@ -43,7 +43,7 @@ const BLOGS = [
     id: 'blogtwo',
     title: 'Tomatoes: Nutrition Facts and Health Benefits',
     description: 'Discover the nutritional powerhouse that tomatoes are, including their vitamins, minerals, and powerful antioxidants that contribute to overall health.',
-    image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1769081501/typeventure/profile%20pictures/rgefoc4y0iu5uxq91oic.jpg',
+    image: 'hhttps://res.cloudinary.com/dxnb2ozgw/image/upload/v1770819835/Gemini_Generated_Image_xe9pbpxe9pbpxe9p_yaemwf.png',
     date: 'January 20, 2025',
     readTime: '6 min read',
     category: 'Nutrition',
@@ -52,7 +52,7 @@ const BLOGS = [
     id: 'blogthree',
     title: 'Health Benefits of Tomatoes: What You Need to Know',
     description: 'Explore the incredible health benefits of tomatoes, from heart health to cancer prevention, and learn why this fruit deserves a place in your daily diet.',
-    image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1769081501/typeventure/profile%20pictures/rgefoc4y0iu5uxq91oic.jpg',
+    image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770819835/Gemini_Generated_Image_ijcjf1ijcjf1ijcj_srnwqq.png',
     date: 'January 25, 2025',
     readTime: '7 min read',
     category: 'Health & Wellness',
@@ -157,7 +157,7 @@ const BlogsList: React.FC<BlogsListProps> = ({ setActiveTab, navigateToBlog }) =
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.color4,
+    backgroundColor: 'transparent',
   },
   headerGradient: {
     paddingTop: isSmallDevice ? 20 : 30,
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   blogCard: {
-    backgroundColor: 'rgba(30, 41, 59, 0.5)',
+    backgroundColor: COLORS.color4,
     borderRadius: isSmallDevice ? 16 : 20,
     marginBottom: 24,
     overflow: 'hidden',

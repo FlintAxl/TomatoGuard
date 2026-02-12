@@ -42,7 +42,7 @@ const BlogTwo: React.FC<BlogTwoProps> = ({ setActiveTab }) => {
         {/* Hero Section */}
         <View style={styles.heroContainer}>
           <Image
-            source={{ uri: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1769081501/typeventure/profile%20pictures/rgefoc4y0iu5uxq91oic.jpg' }}
+            source={{ uri: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770819835/Gemini_Generated_Image_xe9pbpxe9pbpxe9p_yaemwf.png' }}
             style={styles.heroImage}
             resizeMode="cover"
           />

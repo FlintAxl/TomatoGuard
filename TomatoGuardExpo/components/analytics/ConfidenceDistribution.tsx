@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-import { exportAnalyticsPDF, ExportData } from '../../utils/pdfExport';
+import { exportAnalyticsPDF, exportAnalysesExcel, ExportData } from '../../utils/pdfExport';
 
 interface DiseaseStatItem {
   disease: string;
@@ -42,6 +42,7 @@ const BUCKET_COLORS = ['#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#
 
 const ConfidenceDistribution: React.FC<Props> = ({ data, partDistribution, diseaseStats, analyses }) => {
   const [exporting, setExporting] = useState(false);
+  const [exportingExcel, setExportingExcel] = useState(false);
   const maxBucket = Math.max(...data.buckets.map((b) => b.count), 1);
   const totalBucket = data.buckets.reduce((s, b) => s + b.count, 0);
 
@@ -69,24 +70,56 @@ const ConfidenceDistribution: React.FC<Props> = ({ data, partDistribution, disea
     }
   };
 
+  const handleExportExcel = async () => {
+    if (!analyses || analyses.length === 0) {
+      Alert.alert('Export Error', 'No analyses data to export.');
+      return;
+    }
+
+    setExportingExcel(true);
+    try {
+      await exportAnalysesExcel(analyses);
+    } catch (error: any) {
+      Alert.alert('Export Failed', error.message || 'Failed to export Excel');
+    } finally {
+      setExportingExcel(false);
+    }
+  };
+
   return (
     <View style={s.container}>
       <View style={s.headerRow}>
         <Text style={s.sectionTitle}>Confidence Distribution</Text>
-        <TouchableOpacity
-          style={[s.exportBtn, exporting && s.exportBtnDisabled]}
-          onPress={handleExportPDF}
-          disabled={exporting || !partDistribution || !diseaseStats}
-        >
-          {exporting ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <>
-              <Text style={s.exportIcon}>📄</Text>
-              <Text style={s.exportText}>Export PDF</Text>
-            </>
-          )}
-        </TouchableOpacity>
+        <View style={s.exportButtons}>
+          <TouchableOpacity
+            style={[s.exportBtn, s.excelBtn, exportingExcel && s.exportBtnDisabled]}
+            onPress={handleExportExcel}
+            disabled={exportingExcel || !analyses || analyses.length === 0}
+          >
+            {exportingExcel ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <Text style={s.exportIcon}>📊</Text>
+                <Text style={s.exportText}>Excel</Text>
+              </>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[s.exportBtn, exporting && s.exportBtnDisabled]}
+            onPress={handleExportPDF}
+            disabled={exporting || !partDistribution || !diseaseStats}
+          >
+            {exporting ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <Text style={s.exportIcon}>📄</Text>
+                <Text style={s.exportText}>PDF</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Bucket histogram */}
@@ -154,6 +187,10 @@ const s = StyleSheet.create({
     color: '#f1f5f9',
     letterSpacing: 0.5,
   },
+  exportButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
   exportBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -162,6 +199,9 @@ const s = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
     gap: 6,
+  },
+  excelBtn: {
+    backgroundColor: '#22c55e',
   },
   exportBtnDisabled: {
     backgroundColor: '#475569',
