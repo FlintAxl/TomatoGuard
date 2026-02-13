@@ -7,7 +7,7 @@ export type AuthStackParamList = {
 };
 
 export type MainStackParamList = {
-  MainApp: undefined;
+  MainApp: { initialTab?: string } | undefined;
   Profile: undefined;
   AdminDashboard: undefined;
   Forum: undefined;

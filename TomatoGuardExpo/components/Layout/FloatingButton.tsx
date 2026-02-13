@@ -5,6 +5,7 @@ import { FAB } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { RootStackNavigationProp } from '../../navigation/types';
 import Chatbot from '../Chatbot';
+import UserAnalysisHistory from '../UserAnalysisHistory';
 
 interface FloatingActionButtonProps {
   onItemPress: (itemId: string) => void;
@@ -13,6 +14,7 @@ interface FloatingActionButtonProps {
 const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({ onItemPress }) => {
   const [open, setOpen] = useState(false);
   const [chatbotVisible, setChatbotVisible] = useState(false);
+  const [historyVisible, setHistoryVisible] = useState(false);
   const navigation = useNavigation<RootStackNavigationProp>();
 
   const handleNavigation = (tab: string) => {
@@ -26,6 +28,11 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({ onItemPress
   const handleOpenChatbot = () => {
     setOpen(false);
     setChatbotVisible(true);
+  };
+
+  const handleOpenHistory = () => {
+    setOpen(false);
+    setHistoryVisible(true);
   };
 
   return (
@@ -61,6 +68,14 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({ onItemPress
             labelStyle: styles.actionLabel,
           },
           {
+            icon: 'history',
+            label: 'Analysis History',
+            onPress: handleOpenHistory,
+            color: '#ffffff',
+            style: styles.actionButton,
+            labelStyle: styles.actionLabel,
+          },
+          {
             icon: 'robot',
             label: 'Ask TomaBot',
             onPress: handleOpenChatbot,
@@ -79,6 +94,12 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({ onItemPress
       <Chatbot 
         visible={chatbotVisible} 
         onClose={() => setChatbotVisible(false)} 
+      />
+
+      {/* User Analysis History Modal */}
+      <UserAnalysisHistory
+        visible={historyVisible}
+        onClose={() => setHistoryVisible(false)}
       />
     </>
   );

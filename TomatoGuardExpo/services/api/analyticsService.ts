@@ -142,3 +142,84 @@ export const deleteAnalysis = async (
   const response = await client.delete(`/api/v1/analytics/analysis/${analysisId}`);
   return response.data;
 };
+
+// ========== USER ANALYSIS HISTORY FUNCTIONS ==========
+
+export interface UserAnalysisHistoryItem {
+  id: string;
+  image_url: string;
+  disease: string;
+  confidence: number;
+  created_at: string;
+  is_favorite: boolean;
+}
+
+export const fetchUserAnalysisHistory = async (
+  token?: string,
+  limit: number = 50,
+  offset: number = 0
+): Promise<UserAnalysisHistoryItem[]> => {
+  const client = getApiClient(token);
+  const response = await client.get(`/api/analysis/history?limit=${limit}&offset=${offset}`);
+  return response.data;
+};
+
+export interface UserAnalysisDetail {
+  id: string;
+  user_id: string;
+  image_url: string;
+  cloudinary_public_id: string;
+  created_at: string;
+  analysis_result: {
+    analysis?: {
+      disease_detection?: {
+        disease: string;
+        confidence: number;
+        alternative_predictions?: Array<{ disease: string; confidence: number }>;
+      };
+      part_detection?: {
+        part: string;
+        confidence: number;
+        alternative_parts?: Array<{ part: string; confidence: number }>;
+      };
+      spot_detection?: {
+        total_spots: number;
+        bounding_boxes?: Array<{ x: number; y: number; w: number; h: number; area: number }>;
+        annotated_image?: string;
+      };
+    };
+    disease_detection?: {
+      disease: string;
+      confidence: number;
+      alternative_predictions?: Array<{ disease: string; confidence: number }>;
+    };
+    part_detection?: {
+      part: string;
+      confidence: number;
+      alternative_parts?: Array<{ part: string; confidence: number }>;
+    };
+    spot_detection?: {
+      total_spots: number;
+      bounding_boxes?: Array<{ x: number; y: number; w: number; h: number; area: number }>;
+      annotated_image?: string;
+    };
+  };
+}
+
+export const fetchUserAnalysisDetail = async (
+  token?: string,
+  analysisId?: string
+): Promise<UserAnalysisDetail> => {
+  const client = getApiClient(token);
+  const response = await client.get(`/api/analysis/${analysisId}`);
+  return response.data;
+};
+
+export const deleteUserAnalysis = async (
+  token?: string,
+  analysisId?: string
+): Promise<{ message: string }> => {
+  const client = getApiClient(token);
+  const response = await client.delete(`/api/analysis/${analysisId}`);
+  return response.data;
+};

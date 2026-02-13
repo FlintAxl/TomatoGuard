@@ -211,31 +211,72 @@ async def get_analysis_history(
     current_user: dict = Depends(get_current_active_user)
 ):
     """Get user's analysis history (simple)"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
         from app.services.database import get_database
         db = get_database()
-        analysis_service = AnalysisService(db)
         
-        # Simple query - just get user's analyses
-        analyses = await db.analyses.find(
-            {"user_id": current_user["id"]}
-        ).sort("created_at", -1).skip(offset).limit(limit).to_list(length=limit)
+        user_id = current_user["id"]
+        logger.info(f"Fetching analysis history for user: {user_id}")
         
-        # Convert to simple response
+        # Use aggregation pipeline with projection BEFORE sort to reduce memory
+        # This is required for MongoDB Atlas free tier which doesn't support allowDiskUse
+        pipeline = [
+            {"$match": {"user_id": user_id}},
+            # Project only needed fields BEFORE sorting to reduce memory usage
+            {"$project": {
+                "_id": 1,
+                "image_url": 1,
+                "created_at": 1,
+                "is_favorite": 1,
+                # Handle both storage formats for disease detection
+                "disease": {
+                    "$ifNull": [
+                        "$analysis_result.analysis.disease_detection.disease",
+                        {"$ifNull": ["$analysis_result.disease_detection.disease", "Unknown"]}
+                    ]
+                },
+                "confidence": {
+                    "$ifNull": [
+                        "$analysis_result.analysis.disease_detection.confidence",
+                        {"$ifNull": ["$analysis_result.disease_detection.confidence", 0]}
+                    ]
+                }
+            }},
+            {"$sort": {"created_at": -1}},
+            {"$skip": offset},
+            {"$limit": limit}
+        ]
+        
+        analyses = await db.analyses.aggregate(pipeline).to_list(length=limit)
+        
+        logger.info(f"Found {len(analyses)} analyses for user {user_id}")
+        
+        # Convert to response format
         result = []
         for analysis in analyses:
+            # Handle datetime serialization
+            created_at = analysis.get("created_at")
+            if created_at and hasattr(created_at, 'isoformat'):
+                created_at = created_at.isoformat()
+            
             result.append({
                 "id": str(analysis["_id"]),
                 "image_url": analysis.get("image_url", ""),
-                "disease": analysis.get("analysis_result", {}).get("disease_detection", {}).get("disease", "Unknown"),
-                "confidence": analysis.get("analysis_result", {}).get("disease_detection", {}).get("confidence", 0),
-                "created_at": analysis.get("created_at"),
+                "disease": analysis.get("disease", "Unknown"),
+                "confidence": analysis.get("confidence", 0),
+                "created_at": created_at,
                 "is_favorite": analysis.get("is_favorite", False)
             })
         
         return result
         
     except Exception as e:
+        import traceback
+        logger.error(f"Error fetching analysis history: {e}")
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/api/analysis/{analysis_id}")
