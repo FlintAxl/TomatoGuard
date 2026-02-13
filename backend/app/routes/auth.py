@@ -268,3 +268,141 @@ async def logout_all(current_user: Dict = Depends(get_current_active_user)):
             "note": "In production, this would invalidate all refresh tokens"
         }
     )
+
+
+# ---- Admin-only endpoints ----
+
+@router.get("/users")
+async def get_all_users(current_user: Dict = Depends(get_current_active_user)):
+    """
+    Get all users (admin only)
+    
+    Returns:
+        List of all users
+    """
+    # Check if user is admin
+    if current_user.get("role") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+    
+    users = await user_service.get_all_users()
+    return [
+        {
+            "id": str(user.id),
+            "email": user.email,
+            "full_name": user.full_name,
+            "profile_picture": user.profile_picture,
+            "role": user.role,
+            "is_active": user.is_active,
+            "created_at": user.created_at.isoformat() if user.created_at else None,
+        }
+        for user in users
+    ]
+
+
+@router.put("/users/{user_id}/role")
+async def update_user_role(
+    user_id: str,
+    role: str,
+    current_user: Dict = Depends(get_current_active_user)
+):
+    """
+    Update a user's role (admin only)
+    
+    Args:
+        user_id: Target user's ID
+        role: New role ("user" or "admin")
+    
+    Returns:
+        Updated user information
+    """
+    # Check if user is admin
+    if current_user.get("role") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+    
+    # Validate role
+    from app.models.user_model import UserRole
+    try:
+        new_role = UserRole(role)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid role. Must be 'user' or 'admin'"
+        )
+    
+    # Prevent admin from changing their own role
+    if current_user.get("id") == user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot change your own role"
+        )
+    
+    updated_user = await user_service.update_user_role(user_id, new_role)
+    if not updated_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    return {
+        "id": str(updated_user.id),
+        "email": updated_user.email,
+        "full_name": updated_user.full_name,
+        "profile_picture": updated_user.profile_picture,
+        "role": updated_user.role,
+        "is_active": updated_user.is_active,
+        "created_at": updated_user.created_at.isoformat() if updated_user.created_at else None,
+    }
+
+
+@router.put("/users/{user_id}/status")
+async def update_user_status(
+    user_id: str,
+    is_active: bool,
+    current_user: Dict = Depends(get_current_active_user)
+):
+    """
+    Activate or deactivate a user (admin only)
+    
+    Args:
+        user_id: Target user's ID
+        is_active: New active status
+    
+    Returns:
+        Updated user information
+    """
+    # Check if user is admin
+    if current_user.get("role") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+    
+    # Prevent admin from deactivating themselves
+    if current_user.get("id") == user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot change your own status"
+        )
+    
+    updated_user = await user_service.update_user_status(user_id, is_active)
+    if not updated_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    return {
+        "id": str(updated_user.id),
+        "email": updated_user.email,
+        "full_name": updated_user.full_name,
+        "profile_picture": updated_user.profile_picture,
+        "role": updated_user.role,
+        "is_active": updated_user.is_active,
+        "created_at": updated_user.created_at.isoformat() if updated_user.created_at else None,
+    }

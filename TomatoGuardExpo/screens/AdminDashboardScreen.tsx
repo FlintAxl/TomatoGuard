@@ -25,6 +25,7 @@ import ConfidenceDistribution from '../components/analytics/ConfidenceDistributi
 import PlantPartDistribution from '../components/analytics/PlantPartDistribution';
 import AnalysisHistory from '../components/analytics/AnalysisHistory';
 import AnalysisDetailModal from '../components/analytics/AnalysisDetailModal';
+import UserManagement from '../components/analytics/UserManagement';
 import { fetchMLAnalytics, MLAnalyticsData } from '../services/api/analyticsService';
 
 const AdminDashboardScreen = () => {
@@ -37,7 +38,7 @@ const AdminDashboardScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'analytics' | 'history'>('analytics');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'history' | 'users'>('analytics');
   const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
 
@@ -114,7 +115,15 @@ const AdminDashboardScreen = () => {
         onPress={() => setActiveTab('history')}
       >
         <Text style={[s.tabText, activeTab === 'history' && s.activeTabText]}>
-          Analysis History
+          History
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[s.tab, activeTab === 'users' && s.activeTab]}
+        onPress={() => setActiveTab('users')}
+      >
+        <Text style={[s.tabText, activeTab === 'users' && s.activeTabText]}>
+          User Analytics
         </Text>
       </TouchableOpacity>
     </View>
@@ -160,6 +169,12 @@ const AdminDashboardScreen = () => {
     );
   };
 
+  const renderUsersTab = () => {
+    return (
+      <UserManagement />
+    );
+  };
+
   const renderDashboard = () => {
     if (!analytics) return null;
     return (
@@ -174,7 +189,9 @@ const AdminDashboardScreen = () => {
 
         {renderTabs()}
         <View style={s.tabContent}>
-          {activeTab === 'analytics' ? renderAnalyticsTab() : renderHistoryTab()}
+          {activeTab === 'analytics' && renderAnalyticsTab()}
+          {activeTab === 'history' && renderHistoryTab()}
+          {activeTab === 'users' && renderUsersTab()}
         </View>
       </>
     );

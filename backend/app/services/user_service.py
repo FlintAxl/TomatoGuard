@@ -208,6 +208,69 @@ class UserService:
         user_doc = await self.users_collection.find_one({"email": email})
         return user_doc is not None
 
+    async def get_all_users(self) -> list:
+        """
+        Get all users (admin only)
+        
+        Returns:
+            List of all users
+        """
+        users = []
+        cursor = self.users_collection.find({})
+        async for user_doc in cursor:
+            users.append(UserRead(
+                id=str(user_doc["_id"]),
+                email=user_doc["email"],
+                full_name=user_doc.get("full_name"),
+                profile_picture=user_doc.get("profile_picture"),
+                role=user_doc.get("role", UserRole.USER),
+                is_active=user_doc.get("is_active", True),
+                created_at=user_doc.get("created_at")
+            ))
+        return users
+
+    async def update_user_role(self, user_id: str, new_role: UserRole) -> Optional[UserRead]:
+        """
+        Update user role (admin only)
+        
+        Args:
+            user_id: User's MongoDB ID
+            new_role: New role to assign
+            
+        Returns:
+            Updated user if successful, None otherwise
+        """
+        result = await self.users_collection.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"role": new_role}}
+        )
+        
+        if result.modified_count == 0:
+            return None
+        
+        return await self.get_user_by_id(user_id)
+
+    async def update_user_status(self, user_id: str, is_active: bool) -> Optional[UserRead]:
+        """
+        Activate or deactivate a user (admin only)
+        
+        Args:
+            user_id: User's MongoDB ID
+            is_active: New active status
+            
+        Returns:
+            Updated user if successful, None otherwise
+        """
+        result = await self.users_collection.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"is_active": is_active}}
+        )
+        
+        if result.modified_count == 0:
+            return None
+        
+        return await self.get_user_by_id(user_id)
+
 
 # Create singleton instance - this will NOT initialize the database connection immediately
 user_service = UserService()
