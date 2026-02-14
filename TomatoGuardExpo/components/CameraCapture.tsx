@@ -9,6 +9,7 @@ import {
   Image,
 } from 'react-native';
 import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { cameraCaptureStyles, cardStyles, buttonStyles } from '../styles';
 import Slider from '@react-native-community/slider';
 
@@ -67,7 +68,7 @@ const CameraCapture = ({ onCapture}: CameraCaptureProps) => {
         
         // Show preview for 1 second before auto-analyzing
         setTimeout(() => {
-          handleUsePhoto();
+          processAndSendImage(photo.uri);
         }, 1000);
         
       } else {
@@ -81,13 +82,37 @@ const CameraCapture = ({ onCapture}: CameraCaptureProps) => {
     }
   };
 
-  const handleUsePhoto = () => {
+  const compressImage = async (uri: string): Promise<string> => {
+    try {
+      const result = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width: 1200 } }], // Resize to max 1200px width, maintains aspect ratio
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+      );
+      console.log('Image compressed successfully');
+      return result.uri;
+    } catch (error) {
+      console.error('Image compression failed:', error);
+      return uri; // Fallback to original if compression fails
+    }
+  };
+
+  const processAndSendImage = async (uri: string) => {
+    setIsLoading(true);
+    try {
+      const compressedUri = await compressImage(uri);
+      onCapture(compressedUri);
+    } catch (error) {
+      console.error('Error processing image:', error);
+      onCapture(uri); // Fallback to original
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUsePhoto = async () => {
     if (capturedImage) {
-      setIsLoading(true);
-      setTimeout(() => {
-        onCapture(capturedImage);
-        setIsLoading(false);
-      }, 500);
+      await processAndSendImage(capturedImage);
     }
   };
 

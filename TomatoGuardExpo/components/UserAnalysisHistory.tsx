@@ -13,6 +13,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotification } from '../contexts/NotificationContext';
 import {
   fetchUserAnalysisHistory,
   fetchUserAnalysisDetail,
@@ -30,6 +31,7 @@ interface Props {
 
 const UserAnalysisHistory: React.FC<Props> = ({ visible, onClose }) => {
   const { authState } = useAuth();
+  const { markAsSeen } = useNotification();
   const [analyses, setAnalyses] = useState<UserAnalysisHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -79,6 +81,8 @@ const UserAnalysisHistory: React.FC<Props> = ({ visible, onClose }) => {
   useEffect(() => {
     if (visible) {
       loadAnalyses(0, false);
+      // Clear notification badge when history is opened
+      markAsSeen();
     }
     return () => {
       setAnalyses([]);
@@ -86,7 +90,7 @@ const UserAnalysisHistory: React.FC<Props> = ({ visible, onClose }) => {
       setHasMore(true);
       setLoading(true);
     };
-  }, [visible, loadAnalyses]);
+  }, [visible, loadAnalyses, markAsSeen]);
 
   const handleLoadMore = () => {
     if (hasMore && !loadingMore) {

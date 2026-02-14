@@ -1,18 +1,22 @@
 import { useState } from 'react';
 import { Alert, Platform } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotification } from '../contexts/NotificationContext';
 import { analyzeImage } from '../services/api/analyzeService';
 
 export const useImageAnalysis = (onTabChange?: (tab: string) => void) => {
   const [results, setResults] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const { logout, authState } = useAuth();
+  const { triggerNotification } = useNotification();
 
   const handleCameraCapture = async (imageData: string) => {
     setLoading(true);
     try {
       const data = await analyzeImage(imageData, authState.accessToken || undefined);
       setResults(data);
+      // Trigger notification for analysis history
+      triggerNotification();
       // Auto-switch to results tab after camera analysis
       onTabChange?.('results');
       return data;
@@ -31,6 +35,8 @@ export const useImageAnalysis = (onTabChange?: (tab: string) => void) => {
 
   const handleUploadComplete = (data: any) => {
     setResults(data);
+    // Trigger notification for analysis history
+    triggerNotification();
     // Auto-switch to results tab after upload analysis
     onTabChange?.('results');
   };

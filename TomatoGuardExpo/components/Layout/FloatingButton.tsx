@@ -1,9 +1,10 @@
 // src/components/common/Layout/FloatingButton.tsx
 import React, { useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View, Text } from 'react-native';
 import { FAB } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { RootStackNavigationProp } from '../../navigation/types';
+import { useNotification } from '../../contexts/NotificationContext';
 import Chatbot from '../Chatbot';
 import UserAnalysisHistory from '../UserAnalysisHistory';
 
@@ -16,6 +17,7 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({ onItemPress
   const [chatbotVisible, setChatbotVisible] = useState(false);
   const [historyVisible, setHistoryVisible] = useState(false);
   const navigation = useNavigation<RootStackNavigationProp>();
+  const { hasNewAnalysis, newAnalysisCount } = useNotification();
 
   const handleNavigation = (tab: string) => {
     setOpen(false);
@@ -35,13 +37,31 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({ onItemPress
     setHistoryVisible(true);
   };
 
+  // Determine the FAB icon: bell when notifications exist, plus otherwise
+  const getFabIcon = () => {
+    if (open) return 'close';
+    if (hasNewAnalysis) return 'bell';
+    return 'plus';
+  };
+
   return (
     <>
+      {/* Notification Badge on FAB */}
+      {hasNewAnalysis && !open && (
+        <View style={styles.badgeContainer}>
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>
+              {newAnalysisCount > 99 ? '99+' : newAnalysisCount}
+            </Text>
+          </View>
+        </View>
+      )}
+
       <FAB.Group
         open={open}
         visible
         backdropColor='transparent'
-        icon={open ? 'close' : 'plus'}
+        icon={getFabIcon()}
         actions={[
           {
             icon: 'camera',
@@ -69,11 +89,11 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({ onItemPress
           },
           {
             icon: 'history',
-            label: 'Analysis History',
+            label: hasNewAnalysis ? `Analysis History (${newAnalysisCount})` : 'Analysis History',
             onPress: handleOpenHistory,
             color: '#ffffff',
-            style: styles.actionButton,
-            labelStyle: styles.actionLabel,
+            style: hasNewAnalysis ? styles.actionButtonWithBadge : styles.actionButton,
+            labelStyle: hasNewAnalysis ? styles.actionLabelWithBadge : styles.actionLabel,
           },
           {
             icon: 'robot',
@@ -85,7 +105,7 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({ onItemPress
           },
         ]}
         onStateChange={({ open }) => setOpen(open)}
-        fabStyle={styles.fab}
+        fabStyle={hasNewAnalysis && !open ? styles.fabWithNotification : styles.fab}
         color="#ffffff"
         style={styles.fabGroup}
       />
@@ -121,6 +141,42 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
+  fabWithNotification: {
+    backgroundColor: '#dc2626',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  badgeContainer: {
+    position: 'absolute',
+    bottom: 60,
+    right: 16,
+    zIndex: 1002,
+    alignItems: 'flex-end',
+  },
+  badge: {
+    backgroundColor: '#fbbf24',
+    borderRadius: 12,
+    minWidth: 24,
+    height: 24,
+    paddingHorizontal: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  badgeText: {
+    color: '#000000',
+    fontSize: 12,
+    fontWeight: '800',
+  },
   actionButton: {
     backgroundColor: '#2d7736',
     shadowColor: '#000',
@@ -132,6 +188,19 @@ const styles = StyleSheet.create({
   actionLabel: {
     color: '#ffffff',
     fontWeight: '600',
+    fontSize: 14,
+  },
+  actionButtonWithBadge: {
+    backgroundColor: '#dc2626',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  actionLabelWithBadge: {
+    color: '#ffffff',
+    fontWeight: '700',
     fontSize: 14,
   },
 });

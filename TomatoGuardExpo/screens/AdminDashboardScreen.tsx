@@ -115,7 +115,7 @@ const AdminDashboardScreen = () => {
         onPress={() => setActiveTab('history')}
       >
         <Text style={[s.tabText, activeTab === 'history' && s.activeTabText]}>
-          History
+          Analysis History
         </Text>
       </TouchableOpacity>
       <TouchableOpacity
