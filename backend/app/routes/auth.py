@@ -1,8 +1,9 @@
 from datetime import datetime
-from typing import Dict
+from typing import Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 from app.schemas.user import UserCreate, UserLogin, UserRead
 from app.schemas.token import TokenResponse, TokenRefresh
@@ -85,6 +86,101 @@ async def login(login_data: UserLogin):
             "created_at": user.created_at.isoformat() if user.created_at else None,
         }
     }
+
+
+# Firebase Authentication Schema
+class FirebaseLoginRequest(BaseModel):
+    firebase_token: str
+    full_name: Optional[str] = None
+
+
+@router.post("/firebase-login")
+async def firebase_login(request: FirebaseLoginRequest):
+    """
+    Authenticate user with Firebase token.
+    Creates user in database if not exists, or links existing user.
+    
+    Args:
+        request: Contains firebase_token from client
+        
+    Returns:
+        JWT tokens and user info (same format as regular login)
+    """
+    from app.services.firebase_service import firebase_service
+    from app.config import get_settings
+    
+    try:
+        # Verify Firebase token
+        decoded_token = firebase_service.verify_id_token(request.firebase_token)
+        
+        firebase_uid = decoded_token.get("uid")
+        email = decoded_token.get("email")
+        name = decoded_token.get("name") or request.full_name
+        picture = decoded_token.get("picture")
+        
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email not provided in Firebase token"
+            )
+        
+        # Get or create user in our database
+        user = await user_service.get_or_create_firebase_user(
+            firebase_uid=firebase_uid,
+            email=email,
+            full_name=name,
+            profile_picture=picture
+        )
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create or retrieve user"
+            )
+        
+        # Check if user is active
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Inactive user account",
+            )
+        
+        # Create our own JWT tokens (same as regular login)
+        tokens = auth_service.create_tokens(str(user.id), user.email, user.role)
+        
+        settings = get_settings()
+        expires_in = settings.access_token_expire_minutes * 60
+        
+        # Return same format as regular login
+        return {
+            "access_token": tokens["access_token"],
+            "refresh_token": tokens["refresh_token"],
+            "token_type": tokens["token_type"],
+            "expires_in": expires_in,
+            "user": {
+                "id": str(user.id),
+                "email": user.email,
+                "full_name": user.full_name,
+                "profile_picture": user.profile_picture,
+                "role": user.role,
+                "is_active": user.is_active,
+                "created_at": user.created_at.isoformat() if user.created_at else None,
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Firebase authentication failed: {str(e)}"
+        )
+
 
 @router.get("/me")
 async def get_current_user_info(

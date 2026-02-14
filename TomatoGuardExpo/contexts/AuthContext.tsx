@@ -2,6 +2,14 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  User as FirebaseUser
+} from 'firebase/auth';
+import { auth } from '../config/firebase';
 
 interface User {
   id: string;
@@ -91,118 +99,138 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 const login = async (data: LoginData) => {
   try {
-    console.log('=== LOGIN DEBUG ===');
-    console.log('API URL:', API_BASE_URL);
-    console.log('Request data:', data);
+    console.log('=== FIREBASE LOGIN ===');
+    console.log('Email:', data.email);
     
-    const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
+    // Step 1: Sign in with Firebase
+    const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
+    const firebaseUser = userCredential.user;
+    
+    console.log('Firebase sign-in successful, UID:', firebaseUser.uid);
+    
+    // Step 2: Get Firebase ID token
+    const firebaseToken = await firebaseUser.getIdToken();
+    console.log('Got Firebase token');
+    
+    // Step 3: Send token to our backend
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/firebase-login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ firebase_token: firebaseToken }),
     });
 
-    console.log('Response status:', response.status);
-    console.log('Response OK:', response.ok);
+    console.log('Backend response status:', response.status);
     
-    // Check content type
-    const contentType = response.headers.get('content-type');
-    console.log('Content-Type:', contentType);
-    
-    // Read response as text first to see what we get
     const responseText = await response.text();
-    console.log('Response text (first 500 chars):', responseText.substring(0, 500));
     
     if (!response.ok) {
-      console.error('Response not OK, full text:', responseText);
-      // Try to parse as JSON if possible
+      const contentType = response.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
         const errorData = JSON.parse(responseText);
         throw new Error(errorData.detail || errorData.message || 'Login failed');
       } else {
-        // It's HTML or some other format
-        throw new Error(`Server returned ${response.status}: ${responseText.substring(0, 100)}`);
+        throw new Error(`Server returned ${response.status}`);
       }
     }
 
-    // Parse successful response
-    let result;
-    try {
-      result = JSON.parse(responseText);
-      console.log('Parsed JSON result:', result);
-    } catch (parseError) {
-      console.error('Failed to parse JSON:', parseError);
-      throw new Error('Invalid JSON response from server');
+    const result = JSON.parse(responseText);
+    console.log('Backend login successful');
+
+    // Store tokens
+    const accessToken = result.access_token || result.accessToken;
+    const refreshToken = result.refresh_token || result.refreshToken;
+    const userData = result.user;
+
+    if (!accessToken || !refreshToken || !userData) {
+      throw new Error('Missing data in response');
     }
-    
 
-    // DEBUG: Check token field names
-console.log('Available fields in result:', Object.keys(result));
+    await Promise.all([
+      AsyncStorage.setItem('accessToken', accessToken),
+      AsyncStorage.setItem('refreshToken', refreshToken),
+      AsyncStorage.setItem('userData', JSON.stringify(userData)),
+    ]);
 
-// Store tokens - check for different field names
-const accessToken = result.access_token || result.accessToken;
-const refreshToken = result.refresh_token || result.refreshToken;
-const tokenType = result.token_type || result.tokenType;
-const userData = result.user; // Get user from response
+    setAuthState({
+      user: userData,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      isLoading: false,
+    });
 
-console.log('Found accessToken:', accessToken ? 'Yes' : 'No');
-console.log('Found refreshToken:', refreshToken ? 'Yes' : 'No');
-console.log('Found tokenType:', tokenType);
-console.log('Found userData:', userData ? 'Yes' : 'No');
-
-if (!accessToken || !refreshToken || !userData) {
-  throw new Error('Missing data in response');
-}
-
-// Store tokens and user data
-await Promise.all([
-  AsyncStorage.setItem('accessToken', accessToken),
-  AsyncStorage.setItem('refreshToken', refreshToken),
-  AsyncStorage.setItem('userData', JSON.stringify(userData)),
-]);
-
-setAuthState({
-  user: userData,
-  accessToken: accessToken,
-  refreshToken: refreshToken,
-  isLoading: false,
-});
-
-console.log('=== LOGIN SUCCESSFUL ===');
+    console.log('=== LOGIN SUCCESSFUL ===');
   } catch (error: any) {
     console.error('=== LOGIN ERROR ===', error);
-    Alert.alert('Login Error', error.message || 'An error occurred during login');
-    throw error;
+    
+    // Handle Firebase-specific errors
+    let errorMessage = 'An error occurred during login';
+    if (error.code) {
+      switch (error.code) {
+        case 'auth/invalid-email':
+          errorMessage = 'Invalid email address';
+          break;
+        case 'auth/user-disabled':
+          errorMessage = 'This account has been disabled';
+          break;
+        case 'auth/user-not-found':
+          errorMessage = 'No account found with this email';
+          break;
+        case 'auth/wrong-password':
+          errorMessage = 'Incorrect password';
+          break;
+        case 'auth/invalid-credential':
+          errorMessage = 'Invalid email or password';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Too many failed attempts. Please try again later.';
+          break;
+        default:
+          errorMessage = error.message || errorMessage;
+      }
+    } else {
+      errorMessage = error.message || errorMessage;
+    }
+    
+    Alert.alert('Login Error', errorMessage);
+    throw new Error(errorMessage);
   }
 };
 
   const register = async (data: RegisterData) => {
   try {
-    console.log('=== REGISTER DEBUG ===');
-    console.log('API URL:', API_BASE_URL);
-    console.log('Request data:', { ...data, password: '[HIDDEN]' });
+    console.log('=== FIREBASE REGISTER ===');
+    console.log('Email:', data.email);
     
-    const response = await fetch(`${API_BASE_URL}/api/v1/auth/register`, {
+    // Step 1: Create user in Firebase
+    const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+    const firebaseUser = userCredential.user;
+    
+    console.log('Firebase user created, UID:', firebaseUser.uid);
+    
+    // Step 2: Get Firebase ID token
+    const firebaseToken = await firebaseUser.getIdToken();
+    console.log('Got Firebase token');
+    
+    // Step 3: Send token to our backend to create user in our database
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/firebase-login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ 
+        firebase_token: firebaseToken,
+        full_name: data.full_name 
+      }),
     });
 
-    console.log('Response status:', response.status);
+    console.log('Backend response status:', response.status);
     
-    // Check content type
-    const contentType = response.headers.get('content-type');
-    console.log('Content-Type:', contentType);
-    
-    // Read as text first
     const responseText = await response.text();
-    console.log('Response text:', responseText.substring(0, 500));
     
     if (!response.ok) {
-      console.error('Registration failed, full response:', responseText);
+      const contentType = response.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
         const errorData = JSON.parse(responseText);
         throw new Error(errorData.detail || errorData.message || 'Registration failed');
@@ -211,24 +239,74 @@ console.log('=== LOGIN SUCCESSFUL ===');
       }
     }
 
-    console.log('Registration successful, attempting auto-login...');
-    
-    // Auto-login after successful registration
-    await login({
-      email: data.email,
-      password: data.password,
+    const result = JSON.parse(responseText);
+    console.log('Backend registration successful');
+
+    // Store tokens
+    const accessToken = result.access_token || result.accessToken;
+    const refreshToken = result.refresh_token || result.refreshToken;
+    const userData = result.user;
+
+    if (!accessToken || !refreshToken || !userData) {
+      throw new Error('Missing data in response');
+    }
+
+    await Promise.all([
+      AsyncStorage.setItem('accessToken', accessToken),
+      AsyncStorage.setItem('refreshToken', refreshToken),
+      AsyncStorage.setItem('userData', JSON.stringify(userData)),
+    ]);
+
+    setAuthState({
+      user: userData,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      isLoading: false,
     });
-    
+
+    console.log('=== REGISTRATION SUCCESSFUL ===');
   } catch (error: any) {
     console.error('=== REGISTER ERROR ===', error);
-    Alert.alert('Registration Error', error.message || 'An error occurred during registration');
-    throw error;
+    
+    // Handle Firebase-specific errors
+    let errorMessage = 'An error occurred during registration';
+    if (error.code) {
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          errorMessage = 'An account with this email already exists';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Invalid email address';
+          break;
+        case 'auth/operation-not-allowed':
+          errorMessage = 'Email/password accounts are not enabled';
+          break;
+        case 'auth/weak-password':
+          errorMessage = 'Password is too weak. Use at least 6 characters.';
+          break;
+        default:
+          errorMessage = error.message || errorMessage;
+      }
+    } else {
+      errorMessage = error.message || errorMessage;
+    }
+    
+    Alert.alert('Registration Error', errorMessage);
+    throw new Error(errorMessage);
   }
 };
 
 // In AuthContext.tsx - Update the logout function
 const logout = async () => {
   try {
+    // Sign out from Firebase
+    try {
+      await signOut(auth);
+      console.log('Firebase sign-out successful');
+    } catch (firebaseError) {
+      console.log('Firebase sign-out failed (may already be signed out):', firebaseError);
+    }
+    
     // Call logout endpoint if token exists
     if (authState.accessToken) {
       try {

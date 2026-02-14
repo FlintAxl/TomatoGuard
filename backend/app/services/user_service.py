@@ -271,6 +271,112 @@ class UserService:
         
         return await self.get_user_by_id(user_id)
 
+    async def get_or_create_firebase_user(
+        self,
+        firebase_uid: str,
+        email: str,
+        full_name: Optional[str] = None,
+        profile_picture: Optional[str] = None
+    ) -> Optional[UserRead]:
+        """
+        Get existing user by firebase_uid or email, or create a new one.
+        Links existing users to their Firebase account if found by email.
+        
+        Args:
+            firebase_uid: Firebase user ID
+            email: User email from Firebase
+            full_name: Display name from Firebase (optional)
+            profile_picture: Photo URL from Firebase (optional)
+            
+        Returns:
+            User record
+        """
+        from datetime import datetime
+        
+        # First, try to find by firebase_uid
+        user_doc = await self.users_collection.find_one({"firebase_uid": firebase_uid})
+        
+        if user_doc:
+            # User already linked to Firebase
+            return UserRead(
+                id=str(user_doc["_id"]),
+                email=user_doc["email"],
+                full_name=user_doc.get("full_name"),
+                profile_picture=user_doc.get("profile_picture"),
+                role=user_doc.get("role", UserRole.USER),
+                is_active=user_doc.get("is_active", True),
+                created_at=user_doc.get("created_at")
+            )
+        
+        # Try to find existing user by email (to link existing accounts)
+        user_doc = await self.users_collection.find_one({"email": email})
+        
+        if user_doc:
+            # Link existing user to Firebase
+            await self.users_collection.update_one(
+                {"_id": user_doc["_id"]},
+                {"$set": {"firebase_uid": firebase_uid}}
+            )
+            
+            return UserRead(
+                id=str(user_doc["_id"]),
+                email=user_doc["email"],
+                full_name=user_doc.get("full_name"),
+                profile_picture=user_doc.get("profile_picture"),
+                role=user_doc.get("role", UserRole.USER),
+                is_active=user_doc.get("is_active", True),
+                created_at=user_doc.get("created_at")
+            )
+        
+        # Create new user (no password since Firebase handles auth)
+        new_user = {
+            "email": email,
+            "full_name": full_name,
+            "profile_picture": profile_picture,
+            "firebase_uid": firebase_uid,
+            "hashed_password": None,
+            "is_active": True,
+            "role": UserRole.USER,
+            "created_at": datetime.utcnow()
+        }
+        
+        result = await self.users_collection.insert_one(new_user)
+        
+        return UserRead(
+            id=str(result.inserted_id),
+            email=email,
+            full_name=full_name,
+            profile_picture=profile_picture,
+            role=UserRole.USER,
+            is_active=True,
+            created_at=new_user["created_at"]
+        )
+
+    async def get_user_by_firebase_uid(self, firebase_uid: str) -> Optional[UserRead]:
+        """
+        Get user by Firebase UID
+        
+        Args:
+            firebase_uid: Firebase user ID
+            
+        Returns:
+            User if found, None otherwise
+        """
+        user_doc = await self.users_collection.find_one({"firebase_uid": firebase_uid})
+        
+        if not user_doc:
+            return None
+        
+        return UserRead(
+            id=str(user_doc["_id"]),
+            email=user_doc["email"],
+            full_name=user_doc.get("full_name"),
+            profile_picture=user_doc.get("profile_picture"),
+            role=user_doc.get("role", UserRole.USER),
+            is_active=user_doc.get("is_active", True),
+            created_at=user_doc.get("created_at")
+        )
+
 
 # Create singleton instance - this will NOT initialize the database connection immediately
 user_service = UserService()

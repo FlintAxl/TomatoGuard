@@ -26,7 +26,8 @@ class UserInDB(BaseModel):
     email: EmailStr
     full_name: Optional[str] = None
     profile_picture: Optional[str] = None
-    hashed_password: str
+    hashed_password: Optional[str] = None  # Optional for Firebase users
+    firebase_uid: Optional[str] = None  # Firebase user ID
     is_active: bool = True
     role: UserRole = UserRole.USER
     created_at: datetime = Field(default_factory=datetime.utcnow)
