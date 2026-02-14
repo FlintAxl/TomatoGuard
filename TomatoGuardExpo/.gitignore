@@ -3,6 +3,11 @@
 # dependencies
 node_modules/
 
+# Sensitive and large folders/files
+backend/firebase-service-account.json
+ml/
+venv/
+
 # Expo
 .expo/
 dist/
