@@ -291,7 +291,7 @@ const MainAppScreen = () => {
 const localStyles = StyleSheet.create({
   container: {
     flex: 1,
-    position: 'relative', // Important: allows drawer and FAB to overlay
+    position: 'absolute', // Important: allows drawer and FAB to overlay
   },
 });
 

@@ -6,6 +6,9 @@ import { useAuth } from '../contexts/AuthContext';
 import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
 import LandingScreen from '../screens/LandingScreen';
+import BlogOne from '../screens/blogs/BlogOne';
+import BlogTwo from '../screens/blogs/BlogTwo';
+import BlogThree from '../screens/blogs/BlogThree';
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
@@ -31,6 +34,9 @@ const AppNavigator = () => {
     <>
       <Stack.Screen name="Landing" component={LandingScreen} />
       <Stack.Screen name="Auth" component={AuthNavigator} />
+      <Stack.Screen name="BlogOne" component={BlogOne} />
+      <Stack.Screen name="BlogTwo" component={BlogTwo} />
+      <Stack.Screen name="BlogThree" component={BlogThree} />
     </>
   )}
 </Stack.Navigator>

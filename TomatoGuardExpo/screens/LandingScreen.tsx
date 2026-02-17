@@ -34,31 +34,36 @@ const COLORS = {
   color5: '#1b4e00',
   textLight: '#ffffff',
   muted: '#d6e4dd',
+  // New design system colors
+  bgCream: '#f0ede6',
+  bgLight: '#e8e4db',
+  darkGreen: '#1a3a2a',
+  medGreen: '#2d5a3d',
+  accentGreen: '#3d7a52',
+  textDark: '#0d1f14',
+  textMuted: '#5a7a65',
+  cardBg: '#1e3d2a',
+  navBg: '#0d2018',
 };
 
-// Combined disease data from Cloudinary links
 const DISEASES = [
-  // Fruit Diseases
   { id: 1, name: 'Anthracnose', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889106/anthracnose_kbwcut.png' },
   { id: 2, name: 'Botrytis Gray Mold', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889113/botrytisgraymold_gkwjvy.png' },
   { id: 3, name: 'Blossom End Rot', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889116/blossomendrot_uym7do.png' },
   { id: 4, name: 'Buckeye Rot', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889109/buckeyerot_heup6g.png' },
   { id: 5, name: 'Sunscald', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889435/sunscald_pfudlf.png' },
   { id: 6, name: 'Healthy Fruit', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770890142/healthyfruit_gz98qz.jpg' },
-  // Leaf Diseases
   { id: 7, name: 'Septoria Leaf Spot', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889435/septorialeafspot_rjjgbw.png' },
   { id: 8, name: 'Bacterial Spot', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889110/bacterialspot_svwbyu.png' },
   { id: 9, name: 'Early Blight', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889113/earlyblight_fzng93.png' },
   { id: 10, name: 'Late Blight', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770890160/lateblightleaf_m6ov1l.jpg' },
   { id: 11, name: 'Yellow Leaf Curl', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889116/fusarium_gdkaek.png' },
   { id: 12, name: 'Healthy Leaf', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770890144/healthystem_kwwg6j.jpg' },
-  // Stem Diseases
   { id: 13, name: 'Blight', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889112/dampingoff_i3hxbj.png' },
   { id: 14, name: 'Healthy Stem', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770890396/cea78e54-9eec-4f00-b086-83736756a7c1.png' },
   { id: 15, name: 'Wilt', image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889134/pithnecrosis_xce3ih.png' },
 ];
 
-// Tech stack data
 const TECH_STACK = [
   { name: 'React', icon: 'logo-react' },
   { name: 'CSS', icon: 'logo-css3' },
@@ -92,6 +97,31 @@ const BLOGS = [
   },
 ];
 
+// Disease category grid cards (matching the Indoor Collection grid in reference)
+const DISEASE_CATEGORIES = [
+  {
+    id: 'fruit',
+    label: 'Fruit Diseases',
+    desc: 'Anthracnose, Blossom End Rot, Buckeye Rot and more affect the fruit directly — detect early.',
+    image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889106/anthracnose_kbwcut.png',
+  },
+  {
+    id: 'leaf',
+    label: 'Leaf Diseases',
+    image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889110/bacterialspot_svwbyu.png',
+  },
+  {
+    id: 'stem',
+    label: 'Stem Diseases',
+    image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889112/dampingoff_i3hxbj.png',
+  },
+  {
+    id: 'healthy',
+    label: 'Healthy Plants',
+    image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770890142/healthyfruit_gz98qz.jpg',
+  },
+];
+
 const ITEM_WIDTH = isSmallDevice ? SCREEN_WIDTH * 0.75 : 240;
 const ITEM_SPACING = isSmallDevice ? 15 : 20;
 
@@ -120,12 +150,10 @@ const LandingScreen = () => {
 
   const handleNavItemPress = (itemId: string) => {
     if (itemId === 'logout') {
-      // Handle logout
       console.log('Logout');
       return;
     }
     if (itemId === 'camera' || itemId === 'upload' || itemId === 'results' || itemId === 'forum' || itemId === 'profile') {
-      // Navigate to main app
       navigation.navigate('Auth', { screen: 'Login' });
       return;
     }
@@ -141,23 +169,30 @@ const LandingScreen = () => {
   };
 
   const handleCheckNow = () => {
-    // Navigate to Auth screen (Login)
     navigation.navigate('Auth', { screen: 'Login' });
   };
 
   const handleLearnMore = () => {
-    // Navigate to about screen
-    // navigation.navigate('About');
     console.log('Navigate to about');
   };
-  
+
   const handleBlogPress = (blogId: string) => {
-    // Navigate to login first, then to the specific blog
-    navigation.navigate('Auth', { screen: 'Login' });
+    switch (blogId) {
+      case 'blogone':
+        navigation.navigate('BlogOne');
+        break;
+      case 'blogtwo':
+        navigation.navigate('BlogTwo');
+        break;
+      case 'blogthree':
+        navigation.navigate('BlogThree');
+        break;
+      default:
+        console.log('Unknown blog ID');
+    }
   };
-  
+
   const handleViewAllBlogs = () => {
-    // Navigate to login first
     navigation.navigate('Auth', { screen: 'Login' });
   };
 
@@ -170,16 +205,18 @@ const LandingScreen = () => {
   const renderDiseaseItem = ({ item, index }: { item: any; index: number }) => {
     const isActive = index === activeSlide;
     return (
-      <View style={[
-        styles.carouselItem, 
-        isActive ? styles.carouselItemActive : null
-      ].filter(Boolean)}>
+      <View style={[styles.carouselItem, isActive && styles.carouselItemActive]}>
         <Image source={{ uri: item.image }} style={styles.carouselImage} />
         <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.9)']}
+          colors={['transparent', 'rgba(0,0,0,0.85)']}
           style={styles.carouselGradient}
         />
         <Text style={styles.carouselText}>{item.name}</Text>
+        {isActive && (
+          <TouchableOpacity style={styles.carouselArrow} onPress={handleCheckNow}>
+            <Ionicons name="arrow-forward" size={16} color={COLORS.textDark} />
+          </TouchableOpacity>
+        )}
       </View>
     );
   };
@@ -196,115 +233,165 @@ const LandingScreen = () => {
       >
         <ScrollView showsVerticalScrollIndicator={false}>
           <View style={styles.container}>
-            {/* Section One - Hero */}
-            <ImageBackground
-              source={{ uri: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770891055/section1-bg_fe4mif.png' }}
-              style={styles.sectionOne}
-              resizeMode="cover"
-            >
-              <LinearGradient
-                colors={['transparent', COLORS.color4]}
-                style={styles.heroGradient}
-              />
-              <View style={styles.heroContent}>
-                <Image
-                  source={{ uri: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770891117/SIA_ML_-_LOGO___TRADEMARK-removebg-preview_ilaacc.png' }}
-                  style={styles.logoImage}
-                  resizeMode="contain"
-                />
-                <Text style={styles.heroTitle}>
-                  Helping Farmers Grow Healthier Tomatoes
-                </Text>
-                <Text style={styles.heroSubtitle}>
-                  An immersive forum for Tomato Growers, along with a function for taking care of our crops!
-                </Text>
-              </View>
-              <View style={styles.contacts}>
-                <TouchableOpacity style={styles.contactButton} onPress={handleEmail}>
-                  <Ionicons name="mail-outline" size={16} color={COLORS.textLight} />
-                  <Text style={styles.contactText}>tomatoguard@gmail.com</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.contactButton} onPress={handlePhone}>
-                  <Ionicons name="call-outline" size={16} color={COLORS.textLight} />
-                  <Text style={styles.contactText}>+63 123456789</Text>
-                </TouchableOpacity>
-              </View>
-            </ImageBackground>
 
-            {/* Section Two - Testimonial Card */}
-            <View style={styles.sectionTwo}>
-              <LinearGradient
-                colors={[COLORS.color5, COLORS.color4]}
-                style={styles.testimonialCard}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <View style={styles.testimonialLeft}>
-                  <Text style={styles.testimonialText}>
-                    Detect Diseases of your Tomatoes, in Real Time.
-                  </Text>
-                  <TouchableOpacity style={styles.learnMoreBtn} onPress={handleCheckNow}>
-                    <Text style={styles.learnMoreBtnText}>Get Started</Text>
-                  </TouchableOpacity>
-                </View>
-                <View style={styles.testimonialRight}>
-                  <Image
-                    source={{ uri: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770892841/tomato_wdfqx5.png' }}
-                    style={styles.tomatoImage}
-                    resizeMode="contain"
-                  />
-                </View>
-              </LinearGradient>
-            </View>
+            {/* ─── HERO SECTION ─── */}
+            <View style={styles.heroSection}>
+              {/* Left teal/green sidebar accent */}
+              <View style={styles.heroAccentBar} />
 
-            {/* Section Three - About */}
-            <View style={styles.sectionThree}>
-              <View style={styles.sectionThreeWrapper}>
-                <View style={styles.visualArea}>
-                  <View style={styles.imageCard}>
-                    <Image
-                      source={{ uri: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770891066/tomatofarmers_e4ay2v.png' }}
-                      style={styles.farmersImage}
-                      resizeMode="cover"
-                    />
+              {/* Hero inner rounded card — dark green, like the reference */}
+              <View style={styles.heroCard}>
+                <ImageBackground
+                  source={{ uri: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1771333800/Screen_Shot_2026-02-17_at_9.09.39_PM_o8nvq8.png' }}
+                  style={styles.heroCardBg}
+                  resizeMode="cover"
+                  imageStyle={{ borderRadius: isSmallDevice ? 20 : 28 }}
+                >
+                  {/* Hero body */}
+                  <View style={styles.heroBody}>
+                    {/* Stats badge */}
+                    <View style={styles.heroStatsBadge}>
+                      <View style={styles.heroStatsLeft}>
+                        <Text style={styles.heroStatsNumber}>15+</Text>
+                        <Text style={styles.heroStatsLabel}>
+                          Diseases{'\n'}Detected
+                        </Text>
+                      </View>
+                      <Image
+                        source={{ uri: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770890142/healthyfruit_gz98qz.jpg' }}
+                        style={styles.heroStatsImage}
+                      />
+                    </View>
+
+                    <TouchableOpacity style={styles.heroShopBtn} onPress={handleCheckNow}>
+                      <Text style={styles.heroShopBtnText}>Scan tomatoes</Text>
+                    </TouchableOpacity>
                   </View>
-                  <LinearGradient
-                    colors={[COLORS.color5, COLORS.color3]}
-                    style={styles.experienceCard}
+                </ImageBackground>
+              </View>
+            </View>
+
+            {/* ─── "NEW PLANTS" → "NEW DETECTIONS" SECTION ─── */}
+            <View style={styles.newPlantsSection}>
+              <View style={styles.newPlantsHeader}>
+                <Text style={styles.newPlantsTitle}>New Detections</Text>
+                <Text style={styles.newPlantsDesc}>
+                  Identify and treat the latest tomato diseases affecting crops, including fruit,
+                  leaf, and stem conditions — all in real time.
+                </Text>
+              </View>
+
+              {/* 3-card row */}
+              <View style={styles.newPlantsCards}>
+                {DISEASES.slice(0, 3).map((disease) => (
+                  <View key={disease.id} style={styles.newPlantCard}>
+                    <View style={styles.newPlantCardImageWrap}>
+                      <Image source={{ uri: disease.image }} style={styles.newPlantCardImage} resizeMode="cover" />
+                      <TouchableOpacity style={styles.heartBtn}>
+                        <Ionicons name="heart-outline" size={14} color={COLORS.textDark} />
+                      </TouchableOpacity>
+                    </View>
+                    <Text style={styles.newPlantCardName}>{disease.name}</Text>
+                    <Text style={styles.newPlantCardMeta}>Fungal · Contagious</Text>
+                    <View style={styles.newPlantCardBottom}>
+                      <Text style={styles.newPlantCardAction}>View Details</Text>
+                      <TouchableOpacity style={styles.newPlantCardArrow} onPress={handleCheckNow}>
+                        <Ionicons name="arrow-forward" size={14} color={COLORS.textLight} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))}
+              </View>
+
+              {/* Pagination dots */}
+              <View style={styles.paginationDots}>
+                {[0, 1, 2].map((i) => (
+                  <View key={i} style={[styles.paginationDot, i === 2 && styles.paginationDotActive]} />
+                ))}
+              </View>
+            </View>
+
+            {/* ─── VIDEO / INDOOR COLLECTION → DISEASE CATEGORY GRID ─── */}
+            <View style={styles.categorySection}>
+              <View style={styles.categoryHeader}>
+                <Text style={styles.categoryHeaderLeft}>
+                  Check out our detection tools including AI-powered diagnostics where you can learn more about your tomato crops.
+                </Text>
+                <Text style={styles.categoryHeaderTitle}>Disease{'\n'}Collection</Text>
+              </View>
+
+              {/* 2×2 grid of category cards */}
+              <View style={styles.categoryGrid}>
+                {DISEASE_CATEGORIES.map((cat, idx) => (
+                  <TouchableOpacity
+                    key={cat.id}
+                    style={[
+                      styles.categoryCard,
+                      idx === 0 && styles.categoryCardTall,
+                    ]}
+                    onPress={handleCheckNow}
+                    activeOpacity={0.85}
                   >
-                    <Text style={styles.experienceNumber}>10+</Text>
-                    <Text style={styles.experienceText}>
-                      Diseases Detected{'\n'}& Prevented
-                    </Text>
-                  </LinearGradient>
-                </View>
-                <View style={styles.contentArea}>
-                  <Text style={styles.contentTitle}>
-                    Where Plants Find{'\n'}Their People.
-                  </Text>
-                  <Text style={styles.contentText}>
-                    This system is an AI-powered web application designed to help tomato
-                    farmers detect fruit and leaf diseases early using image-based machine
-                    learning. By analyzing images captured from multiple angles, the system
-                    identifies possible diseases, suggests appropriate counteractive measures,
-                    and provides timely email and in-app alerts. Through smart
-                    technology and collaboration, the system aims to improve crop health,
-                    reduce losses, and promote sustainable tomato farming.
-                  </Text>
-                  <TouchableOpacity style={styles.learnMoreBtn} onPress={handleLearnMore}>
-                    <Text style={styles.learnMoreBtnText}>Learn More</Text>
+                    <Image source={{ uri: cat.image }} style={styles.categoryCardImage} resizeMode="cover" />
+                    <LinearGradient
+                      colors={['transparent', 'rgba(10,26,16,0.88)']}
+                      style={styles.categoryCardGradient}
+                    />
+                    <View style={styles.categoryCardContent}>
+                      {idx === 0 && cat.desc ? (
+                        <Text style={styles.categoryCardDesc}>{cat.desc}</Text>
+                      ) : null}
+                      <Text style={styles.categoryCardLabel}>{cat.label}</Text>
+                    </View>
+                    <View style={styles.categoryCardArrow}>
+                      <Ionicons name="arrow-forward" size={16} color={COLORS.textDark} />
+                    </View>
                   </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* ─── QUALITY PLANTS → ABOUT SECTION ─── */}
+            <View style={styles.qualitySection}>
+              <Text style={styles.qualityTitle}>
+                Smart Tomato{'\n'}Health, Powered by AI.
+              </Text>
+              <Text style={styles.qualityDesc}>
+                We offer a carefully curated set of AI detection tools for fruit and leaf diseases,
+                real-time alerts, and a grower community — all designed to protect your harvest.
+              </Text>
+
+              {/* Video-style hero image */}
+              <View style={styles.qualityImageWrap}>
+                <Image
+                  source={{ uri: 'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771334724/tomato_gif_cb8hxx.gif' }}
+                  style={styles.qualityImage}
+                  resizeMode="cover"
+                />
+                <View style={styles.qualityPlayBtn}>
+                  <Ionicons name="play" size={28} color={COLORS.textDark} />
                 </View>
               </View>
             </View>
 
-            {/* Section Four - Diseases Carousel */}
-            <View style={styles.sectionFour}>
-              <Text style={styles.sectionTitle}>Detect These Diseases</Text>
-              <Text style={styles.sectionSubtitle}>
-                The following diseases can severely affect your crops and overall harvest.
-                Detect and prevent them early on.
-              </Text>
+            {/* ─── FILTER TABS + DISEASE TYPES (replaces plain carousel) ─── */}
+            <View style={styles.filterSection}>
+              <View style={styles.filterTabs}>
+                {['All Diseases', 'Fruit', 'Leaf', 'Stem'].map((tab, i) => (
+                  <TouchableOpacity
+                    key={tab}
+                    style={[styles.filterTab, i === 0 && styles.filterTabActive]}
+                  >
+                    <Text style={[styles.filterTabText, i === 0 && styles.filterTabTextActive]}>
+                      {tab}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+                <TouchableOpacity style={styles.seeAllBtn} onPress={handleCheckNow}>
+                  <Text style={styles.seeAllBtnText}>See All</Text>
+                </TouchableOpacity>
+              </View>
+
               <FlatList
                 ref={flatListRef}
                 data={DISEASES}
@@ -320,12 +407,67 @@ const LandingScreen = () => {
               />
             </View>
 
-            <View style={styles.sectionBlogs}>
-              <Text style={styles.sectionTitle}>Latest Articles & Insights</Text>
-              <Text style={styles.sectionSubtitle}>
+            {/* ─── PET FRIENDLY / CATEGORY CARDS → HIGHLIGHT CARDS ─── */}
+            <View style={styles.highlightSection}>
+              {/* Large card */}
+              <TouchableOpacity style={styles.highlightCardLarge} onPress={handleCheckNow} activeOpacity={0.85}>
+                <Image
+                  source={{ uri: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889106/anthracnose_kbwcut.png' }}
+                  style={styles.highlightCardImage}
+                  resizeMode="cover"
+                />
+                <LinearGradient
+                  colors={['transparent', 'rgba(8,22,0,0.92)']}
+                  style={styles.highlightCardGradient}
+                />
+                <View style={styles.highlightCardBody}>
+                  <Text style={styles.highlightCardTitle}>Fruit Diseases</Text>
+                  <Text style={styles.highlightCardDesc}>
+                    There are many tomato fruit diseases that can devastate your harvest.
+                    Learn to detect and treat them early using our AI scanner.
+                  </Text>
+                </View>
+                <View style={styles.highlightCardArrow}>
+                  <Ionicons name="arrow-forward" size={18} color={COLORS.textDark} />
+                </View>
+                <View style={styles.highlightCardBadge}>
+                  <View style={styles.badgeDot} />
+                  <Text style={styles.badgeText}>Fungal</Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Two small cards */}
+              <View style={styles.highlightSmallRow}>
+                {[
+                  { label: 'Leaf\nDiseases', img: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889110/bacterialspot_svwbyu.png', badge: 'Bacterial' },
+                  { label: 'Stem\nDiseases', img: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889112/dampingoff_i3hxbj.png', badge: 'Fungal' },
+                ].map((item) => (
+                  <TouchableOpacity key={item.label} style={styles.highlightCardSmall} onPress={handleCheckNow} activeOpacity={0.85}>
+                    <Image source={{ uri: item.img }} style={styles.highlightCardImage} resizeMode="cover" />
+                    <LinearGradient
+                      colors={['transparent', 'rgba(8,22,0,0.88)']}
+                      style={styles.highlightCardGradient}
+                    />
+                    <Text style={styles.highlightCardSmallTitle}>{item.label}</Text>
+                    <View style={styles.highlightCardArrow}>
+                      <Ionicons name="arrow-forward" size={16} color={COLORS.textDark} />
+                    </View>
+                    <View style={styles.highlightCardBadge}>
+                      <View style={styles.badgeDot} />
+                      <Text style={styles.badgeText}>{item.badge}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* ─── BLOGS SECTION ─── */}
+            <View style={styles.blogsSection}>
+              <Text style={styles.blogsSectionTitle}>Latest Articles & Insights</Text>
+              <Text style={styles.blogsSectionSub}>
                 Expert advice on tomato cultivation, disease management, and health benefits
               </Text>
-              
+
               <View style={styles.blogsContainer}>
                 {BLOGS.map((blog) => (
                   <TouchableOpacity
@@ -335,11 +477,7 @@ const LandingScreen = () => {
                     activeOpacity={0.8}
                   >
                     <View style={styles.blogImageWrapper}>
-                      <Image
-                        source={{ uri: blog.image }}
-                        style={styles.blogCardImage}
-                        resizeMode="cover"
-                      />
+                      <Image source={{ uri: blog.image }} style={styles.blogCardImage} resizeMode="cover" />
                       <LinearGradient
                         colors={['transparent', 'rgba(8, 22, 0, 0.95)']}
                         style={styles.blogCardGradient}
@@ -349,12 +487,8 @@ const LandingScreen = () => {
                       </View>
                     </View>
                     <View style={styles.blogCardContent}>
-                      <Text style={styles.blogCardTitle} numberOfLines={2}>
-                        {blog.title}
-                      </Text>
-                      <Text style={styles.blogCardDescription} numberOfLines={3}>
-                        {blog.description}
-                      </Text>
+                      <Text style={styles.blogCardTitle} numberOfLines={2}>{blog.title}</Text>
+                      <Text style={styles.blogCardDescription} numberOfLines={3}>{blog.description}</Text>
                       <View style={styles.blogReadMore}>
                         <Text style={styles.blogReadMoreText}>Read Article</Text>
                         <Ionicons name="arrow-forward" size={14} color={COLORS.color2} />
@@ -370,7 +504,19 @@ const LandingScreen = () => {
               </TouchableOpacity>
             </View>
 
-            {/* Section Five - Tech Stack */}
+            {/* ─── CONTACT STRIP ─── */}
+            <View style={styles.contactStrip}>
+              <TouchableOpacity style={styles.contactStripBtn} onPress={handleEmail}>
+                <Ionicons name="mail-outline" size={16} color={COLORS.textLight} />
+                <Text style={styles.contactStripText}>tomatoguard@gmail.com</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.contactStripBtn} onPress={handlePhone}>
+                <Ionicons name="call-outline" size={16} color={COLORS.textLight} />
+                <Text style={styles.contactStripText}>+63 123456789</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* ─── TECH STACK ─── */}
             <LinearGradient colors={[COLORS.color5, COLORS.color3]} style={styles.sectionFive}>
               <View style={styles.techRibbon}>
                 {TECH_STACK.map((tech, index) => (
@@ -381,6 +527,7 @@ const LandingScreen = () => {
                 ))}
               </View>
             </LinearGradient>
+
           </View>
         </ScrollView>
       </MainLayout>
@@ -406,260 +553,496 @@ const localStyles = StyleSheet.create({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.color4,
+    backgroundColor: COLORS.bgCream,
   },
-  // Section One - Hero
-  sectionOne: {
-    width: SCREEN_WIDTH,
-    height: isSmallDevice ? SCREEN_HEIGHT * 0.6 : SCREEN_HEIGHT * 0.7,
-    justifyContent: 'center',
+
+  // ─── HERO ───
+  heroSection: {
+    backgroundColor: COLORS.bgCream,
+    flexDirection: 'row',
+    paddingLeft: 0,
+    paddingRight: isSmallDevice ? 12 : 20,
+    paddingTop: isSmallDevice ? 12 : 20,
+    paddingBottom: isSmallDevice ? 20 : 32,
+    gap: 0,
+  },
+  heroAccentBar: {
+    width: isSmallDevice ? 8 : 12,
+    backgroundColor: COLORS.accentGreen,
+    borderTopRightRadius: 6,
+    borderBottomRightRadius: 6,
+    marginRight: isSmallDevice ? 8 : 12,
+    minHeight: isSmallDevice ? 460 : 560,
+  },
+  heroCard: {
+    flex: 1,
+    borderRadius: isSmallDevice ? 20 : 28,
+    overflow: 'hidden',
+    minHeight: isSmallDevice ? 460 : 560,
+  },
+  heroCardBg: {
+    flex: 1,
+    minHeight: isSmallDevice ? 460 : 560,
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: isSmallDevice ? 20 : 28,
+  },
+
+  // Nav inside hero
+  heroNav: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: isSmallDevice ? 16 : 20,
+    paddingHorizontal: isSmallDevice ? 16 : 24,
+    paddingTop: isSmallDevice ? 16 : 20,
+    paddingBottom: 8,
   },
-  heroGradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 150,
-  },
-  heroContent: {
-    alignItems: 'center',
-    paddingHorizontal: isSmallDevice ? 16 : 20,
-    marginBottom: isSmallDevice ? 20 : 30,
-  },
-  logoImage: {
-    width: isSmallDevice ? 150 : 800,
-    height: isSmallDevice ? 80 : 300,
-    marginBottom: isSmallDevice ? 8 : 12,
-  },
-  heroTitle: {
-    fontFamily: 'System',
-    fontSize: isSmallDevice ? scale(28) : 56,
-    fontWeight: '700',
-    fontStyle: 'italic',
-    textAlign: 'center',
-    color: COLORS.textLight,
-    marginBottom: isSmallDevice ? 12 : 16,
-  },
-  heroSubtitle: {
-    fontFamily: 'System',
-    fontSize: isSmallDevice ? 14 : 16,
-    textAlign: 'center',
-    color: COLORS.textLight,
-    paddingHorizontal: isSmallDevice ? 8 : 0,
-  },
-  contacts: {
-    flexDirection: isSmallDevice ? 'column' : 'row',
-    gap: 12,
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  contactButton: {
+  heroNavLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderWidth: 2,
-    borderColor: COLORS.textLight,
-    borderRadius: 999,
   },
-  contactText: {
-    color: COLORS.textLight,
-    fontSize: isSmallDevice ? 11 : 12,
-    fontFamily: 'System',
-  },
-  // Section Two - Testimonial
-  sectionTwo: {
-    paddingHorizontal: isSmallDevice ? 16 : 20,
-    paddingVertical: isSmallDevice ? 30 : 40,
-    paddingBottom: isSmallDevice ? 40 : 80,
-    paddingTop: isSmallDevice ? 30 : 100,
-    backgroundColor: COLORS.color4,
-    alignItems: 'center',
-  },
-  testimonialCard: {
-    borderRadius: isSmallDevice ? 16 : 24,
-    padding: isSmallDevice ? 20 : 30,
-    flexDirection: isSmallDevice ? 'column' : 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    minHeight: isSmallDevice ? 'auto' : 280,
-    width: isSmallDevice ? '100%' : 1000,
-    maxWidth: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  testimonialLeft: {
-    flex: 1,
-    paddingRight: isSmallDevice ? 0 : 20,
-    width: '100%',
-  },
-  testimonialText: {
-    fontFamily: 'System',
-    fontSize: isSmallDevice ? scale(20) : 38,
-    fontWeight: '600',
-    fontStyle: 'italic',
-    color: COLORS.textLight,
-    marginBottom: 20,
-    textAlign: isSmallDevice ? 'center' : 'left',
-  },
-  testimonialRight: {
-    width: isSmallDevice ? '100%' : 500,
-    height: isSmallDevice ? 200 : 'auto',
+  navLogoCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: COLORS.accentGreen,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: isSmallDevice ? 20 : 0,
   },
-  tomatoImage: {
-    position: isSmallDevice ? 'relative' : 'absolute',
-    bottom: isSmallDevice ? 0 : -100,
-    right: isSmallDevice ? 0 : 10,
-    width: isSmallDevice ? SCREEN_WIDTH * 0.6 : 400,
-    height: isSmallDevice ? 200 : 280,
+  navBrandText: {
+    color: COLORS.textLight,
+    fontSize: isSmallDevice ? 14 : 16,
+    fontWeight: '700',
   },
-  learnMoreBtn: {
-    backgroundColor: COLORS.color2,
-    paddingVertical: 12,
+  heroNavRight: {
+    flexDirection: 'row',
+    gap: isSmallDevice ? 4 : 6,
+    flexWrap: 'wrap',
+  },
+  navItem: {
+    paddingVertical: 6,
+    paddingHorizontal: isSmallDevice ? 8 : 12,
+    borderRadius: 999,
+  },
+  navItemActive: {
+    backgroundColor: COLORS.textLight,
+  },
+  navItemText: {
+    color: COLORS.textLight,
+    fontSize: isSmallDevice ? 11 : 13,
+    fontWeight: '500',
+  },
+  navItemActiveText: {
+    color: COLORS.textDark,
+    fontWeight: '700',
+  },
+
+  // Hero body
+  heroBody: {
+    flex: 1,
+    paddingHorizontal: isSmallDevice ? 16 : 28,
+    paddingBottom: isSmallDevice ? 20 : 32,
+    paddingTop: isSmallDevice ? 24 : 32,
+    justifyContent: 'flex-end',
+  },
+  heroEyebrow: {
+    color: COLORS.muted,
+    fontSize: isSmallDevice ? 13 : 15,
+    fontWeight: '400',
+    marginBottom: 4,
+  },
+  heroGiantTitle: {
+    color: COLORS.textLight,
+    fontSize: isSmallDevice ? scale(64) : 96,
+    fontWeight: '900',
+    fontStyle: 'italic',
+    lineHeight: isSmallDevice ? scale(66) : 98,
+    marginBottom: 12,
+    letterSpacing: -2,
+  },
+  heroDescription: {
+    color: 'rgba(255,255,255,0.75)',
+    fontSize: isSmallDevice ? 12 : 14,
+    lineHeight: 20,
+    maxWidth: 380,
+    marginBottom: 24,
+  },
+  heroStatsBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 16,
+    padding: 12,
+    alignSelf: 'flex-start',
+    gap: 12,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  heroStatsLeft: {
+    gap: 2,
+  },
+  heroStatsNumber: {
+    color: COLORS.textLight,
+    fontSize: isSmallDevice ? 22 : 26,
+    fontWeight: '800',
+  },
+  heroStatsLabel: {
+    color: COLORS.muted,
+    fontSize: 10,
+    lineHeight: 14,
+  },
+  heroStatsImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+  },
+  heroShopBtn: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.4)',
+    paddingVertical: 14,
     paddingHorizontal: 28,
     borderRadius: 999,
-    alignSelf: isSmallDevice ? 'center' : 'flex-start',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    alignSelf: 'flex-start',
   },
-  learnMoreBtnText: {
+  heroShopBtnText: {
     color: COLORS.textLight,
     fontSize: 14,
     fontWeight: '600',
+    letterSpacing: 0.3,
   },
-  // Section Three - About
-  sectionThree: {
+
+  // ─── NEW DETECTIONS ───
+  newPlantsSection: {
+    backgroundColor: COLORS.bgCream,
     paddingHorizontal: isSmallDevice ? 16 : 20,
-    paddingVertical: isSmallDevice ? 40 : 60,
-    backgroundColor: COLORS.color4,
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingVertical: isSmallDevice ? 32 : 48,
   },
-  sectionThreeWrapper: {
-    gap: isSmallDevice ? 30 : 80,
+  newPlantsHeader: {
     flexDirection: isSmallDevice ? 'column' : 'row',
-    width: '100%',
-    maxWidth: isSmallDevice ? '100%' : 1200,
+    justifyContent: 'space-between',
+    alignItems: isSmallDevice ? 'flex-start' : 'flex-end',
+    marginBottom: isSmallDevice ? 24 : 32,
+    gap: isSmallDevice ? 8 : 0,
   },
-  visualArea: {
-    position: 'relative',
-    alignItems: isSmallDevice ? 'center' : 'flex-end',
-    width: isSmallDevice ? '100%' : 'auto',
+  newPlantsTitle: {
+    color: COLORS.textDark,
+    fontSize: isSmallDevice ? scale(34) : 52,
+    fontWeight: '900',
+    lineHeight: isSmallDevice ? scale(36) : 54,
+    letterSpacing: -1.5,
+    fontStyle: 'italic',
   },
-  imageCard: {
-    width: isSmallDevice ? '100%' : 600,
-    height: isSmallDevice ? 250 : 380,
-    borderRadius: isSmallDevice ? 16 : 24,
+  newPlantsDesc: {
+    color: COLORS.textMuted,
+    fontSize: isSmallDevice ? 12 : 13,
+    lineHeight: 20,
+    maxWidth: 260,
+    textAlign: isSmallDevice ? 'left' : 'right',
+  },
+  newPlantsCards: {
+    flexDirection: isSmallDevice ? 'column' : 'row',
+    gap: isSmallDevice ? 16 : 20,
+    marginBottom: 24,
+  },
+  newPlantCard: {
+    flex: isSmallDevice ? undefined : 1,
+    backgroundColor: COLORS.textLight,
+    borderRadius: isSmallDevice ? 16 : 20,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
-  farmersImage: {
+  newPlantCardImageWrap: {
+    width: '100%',
+    height: isSmallDevice ? 160 : 200,
+    position: 'relative',
+  },
+  newPlantCardImage: {
     width: '100%',
     height: '100%',
   },
-  experienceCard: {
+  heartBtn: {
     position: 'absolute',
-    bottom: isSmallDevice ? -15 : -20,
-    right: isSmallDevice ? 10 : 20,
-    width: isSmallDevice ? 100 : 120,
-    height: isSmallDevice ? 100 : 120,
-    borderRadius: 20,
+    top: 10,
+    left: 10,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: COLORS.textLight,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  experienceNumber: {
-    fontSize: isSmallDevice ? 32 : 40,
+  newPlantCardName: {
+    color: COLORS.textDark,
+    fontSize: isSmallDevice ? 15 : 16,
     fontWeight: '700',
-    color: COLORS.textLight,
-    fontFamily: 'System',
+    paddingHorizontal: 14,
+    paddingTop: 12,
   },
-  experienceText: {
-    fontSize: isSmallDevice ? 10 : 11,
-    color: COLORS.textLight,
-    textAlign: 'center',
-    fontFamily: 'System',
+  newPlantCardMeta: {
+    color: COLORS.textMuted,
+    fontSize: 11,
+    paddingHorizontal: 14,
+    paddingTop: 4,
+    paddingBottom: 10,
   },
-  contentArea: {
-    paddingTop: isSmallDevice ? 20 : 30,
-    width: isSmallDevice ? '100%' : 500,
+  newPlantCardBottom: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingBottom: 14,
   },
-  contentTitle: {
-    fontFamily: 'System',
-    fontSize: isSmallDevice ? scale(24) : 32,
-    fontWeight: '700',
-    fontStyle: 'italic',
-    color: COLORS.textLight,
-    marginBottom: 20,
-    textAlign: isSmallDevice ? 'center' : 'left',
-  },
-  contentText: {
-    fontFamily: 'System',
+  newPlantCardAction: {
+    color: COLORS.textDark,
     fontSize: isSmallDevice ? 13 : 14,
-    lineHeight: isSmallDevice ? 20 : 22,
-    color: COLORS.muted,
-    marginBottom: 24,
-    textAlign: 'justify',
+    fontWeight: '600',
   },
-  // Section Four - Carousel
-  sectionFour: {
-    paddingVertical: isSmallDevice ? 40 : 60,
-    backgroundColor: COLORS.color4,
+  newPlantCardArrow: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.textDark,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  sectionTitle: {
-    fontFamily: 'System',
-    fontSize: isSmallDevice ? scale(24) : 32,
-    fontWeight: '700',
+
+  // Pagination
+  paginationDots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  paginationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.bgLight,
+  },
+  paginationDotActive: {
+    width: 24,
+    backgroundColor: COLORS.textDark,
+  },
+
+  // ─── CATEGORY SECTION ───
+  categorySection: {
+    backgroundColor: COLORS.bgLight,
+    paddingHorizontal: isSmallDevice ? 16 : 20,
+    paddingVertical: isSmallDevice ? 32 : 48,
+  },
+  categoryHeader: {
+    flexDirection: isSmallDevice ? 'column' : 'row',
+    gap: isSmallDevice ? 12 : 40,
+    alignItems: isSmallDevice ? 'flex-start' : 'center',
+    marginBottom: isSmallDevice ? 24 : 32,
+  },
+  categoryHeaderLeft: {
+    color: COLORS.textMuted,
+    fontSize: isSmallDevice ? 12 : 13,
+    lineHeight: 20,
+    flex: isSmallDevice ? undefined : 1,
+    maxWidth: isSmallDevice ? '100%' : 260,
+  },
+  categoryHeaderTitle: {
+    color: COLORS.textDark,
+    fontSize: isSmallDevice ? scale(38) : 64,
+    fontWeight: '900',
+    letterSpacing: -2,
     fontStyle: 'italic',
-    color: COLORS.textLight,
-    marginBottom: 12,
-    textAlign: 'center',
-    paddingHorizontal: isSmallDevice ? 16 : 0,
+    lineHeight: isSmallDevice ? scale(40) : 68,
+    flex: isSmallDevice ? undefined : 2,
+    textAlign: isSmallDevice ? 'left' : 'right',
   },
-  sectionSubtitle: {
-    fontFamily: 'System',
-    fontSize: isSmallDevice ? 13 : 14,
-    color: COLORS.textLight,
-    textAlign: 'center',
-    marginBottom: isSmallDevice ? 30 : 40,
-    paddingHorizontal: isSmallDevice ? 20 : 40,
+  categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: isSmallDevice ? 10 : 14,
   },
+  categoryCard: {
+    width: isSmallDevice ? '47%' : '47%',
+    height: isSmallDevice ? 160 : 200,
+    borderRadius: isSmallDevice ? 16 : 20,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  categoryCardTall: {
+    height: isSmallDevice ? 200 : 260,
+  },
+  categoryCardImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+  },
+  categoryCardGradient: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  categoryCardContent: {
+    position: 'absolute',
+    bottom: 14,
+    left: 14,
+    right: 44,
+  },
+  categoryCardDesc: {
+    color: 'rgba(255,255,255,0.72)',
+    fontSize: 10,
+    lineHeight: 15,
+    marginBottom: 6,
+  },
+  categoryCardLabel: {
+    color: COLORS.textLight,
+    fontSize: isSmallDevice ? 16 : 19,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  categoryCardArrow: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.textLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // ─── QUALITY SECTION ───
+  qualitySection: {
+    backgroundColor: COLORS.bgCream,
+    paddingHorizontal: isSmallDevice ? 16 : 20,
+    paddingVertical: isSmallDevice ? 40 : 64,
+    alignItems: 'center',
+  },
+  qualityTitle: {
+    color: COLORS.textDark,
+    fontSize: isSmallDevice ? scale(34) : 56,
+    fontWeight: '900',
+    letterSpacing: -2,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: isSmallDevice ? scale(38) : 62,
+  },
+  qualityDesc: {
+    color: COLORS.textMuted,
+    fontSize: isSmallDevice ? 13 : 15,
+    lineHeight: 22,
+    textAlign: 'center',
+    maxWidth: 500,
+    marginBottom: 32,
+  },
+  qualityImageWrap: {
+    width: '100%',
+    maxWidth: 560,
+    height: isSmallDevice ? 220 : 320,
+    borderRadius: isSmallDevice ? 20 : 28,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  qualityImage: {
+    width: '100%',
+    height: '100%',
+  },
+  qualityPlayBtn: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    marginTop: -28,
+    marginLeft: -28,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+
+  // ─── FILTER + CAROUSEL ───
+  filterSection: {
+    backgroundColor: COLORS.bgCream,
+    paddingVertical: isSmallDevice ? 32 : 48,
+  },
+  filterTabs: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: isSmallDevice ? 16 : 20,
+    gap: isSmallDevice ? 6 : 10,
+    marginBottom: isSmallDevice ? 20 : 28,
+    flexWrap: 'wrap',
+  },
+  filterTab: {
+    paddingVertical: 8,
+    paddingHorizontal: isSmallDevice ? 14 : 18,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: COLORS.bgLight,
+    backgroundColor: COLORS.textLight,
+  },
+  filterTabActive: {
+    backgroundColor: COLORS.textDark,
+    borderColor: COLORS.textDark,
+  },
+  filterTabText: {
+    color: COLORS.textMuted,
+    fontSize: isSmallDevice ? 12 : 13,
+    fontWeight: '600',
+  },
+  filterTabTextActive: {
+    color: COLORS.textLight,
+  },
+  seeAllBtn: {
+    marginLeft: 'auto',
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    borderRadius: 999,
+    backgroundColor: COLORS.textDark,
+  },
+  seeAllBtnText: {
+    color: COLORS.textLight,
+    fontSize: isSmallDevice ? 12 : 13,
+    fontWeight: '600',
+  },
+
+  // Carousel
   diseasesList: {
     paddingHorizontal: (SCREEN_WIDTH - ITEM_WIDTH) / 2,
     gap: ITEM_SPACING,
-    paddingBottom: isSmallDevice ? 40 : 60,
+    paddingBottom: isSmallDevice ? 16 : 24,
   },
   carouselItem: {
     width: ITEM_WIDTH,
-    height: isSmallDevice ? 280 : 320,
-    borderRadius: isSmallDevice ? 16 : 24,
+    height: isSmallDevice ? 260 : 300,
+    borderRadius: isSmallDevice ? 16 : 20,
     overflow: 'hidden',
     position: 'relative',
-    opacity: 0.6,
-    transform: [{ scale: 0.85 }],
+    opacity: 0.65,
+    transform: [{ scale: 0.88 }],
   },
   carouselItemActive: {
-    borderWidth: isSmallDevice ? 3 : 4,
-    borderColor: COLORS.color5,
     opacity: 1,
     transform: [{ scale: 1 }],
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 8,
   },
   carouselImage: {
     width: '100%',
@@ -670,59 +1053,161 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: isSmallDevice ? 150 : 200,
+    height: isSmallDevice ? 130 : 160,
   },
   carouselText: {
     position: 'absolute',
-    bottom: 16,
-    left: 0,
-    right: 0,
-    textAlign: 'center',
-    fontSize: isSmallDevice ? 14 : 15,
-    fontWeight: '600',
+    bottom: isSmallDevice ? 42 : 50,
+    left: 14,
+    right: 14,
+    fontSize: isSmallDevice ? 16 : 18,
+    fontWeight: '800',
     color: COLORS.textLight,
-    fontFamily: 'System',
+    letterSpacing: -0.5,
   },
-  // Section Five - Tech Stack
-  sectionFive: {
-    paddingVertical: isSmallDevice ? 30 : 40,
-    paddingHorizontal: isSmallDevice ? 16 : 20,
-  },
-  techRibbon: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  carouselArrow: {
+    position: 'absolute',
+    bottom: 14,
+    right: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.textLight,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: isSmallDevice ? 20 : 30,
   },
-  techItem: {
+
+  // ─── HIGHLIGHT CARDS ───
+  highlightSection: {
+    backgroundColor: COLORS.bgCream,
+    paddingHorizontal: isSmallDevice ? 16 : 20,
+    paddingBottom: isSmallDevice ? 32 : 48,
+    gap: isSmallDevice ? 12 : 16,
+  },
+  highlightCardLarge: {
+    width: '100%',
+    height: isSmallDevice ? 220 : 280,
+    borderRadius: isSmallDevice ? 20 : 24,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  highlightSmallRow: {
+    flexDirection: 'row',
+    gap: isSmallDevice ? 12 : 16,
+  },
+  highlightCardSmall: {
+    flex: 1,
+    height: isSmallDevice ? 160 : 200,
+    borderRadius: isSmallDevice ? 16 : 20,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  highlightCardImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+  },
+  highlightCardGradient: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  highlightCardBody: {
+    position: 'absolute',
+    bottom: 14,
+    left: 16,
+    right: 52,
+  },
+  highlightCardTitle: {
+    color: COLORS.textLight,
+    fontSize: isSmallDevice ? 20 : 24,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+    marginBottom: 6,
+  },
+  highlightCardDesc: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  highlightCardSmallTitle: {
+    position: 'absolute',
+    bottom: 14,
+    left: 14,
+    right: 48,
+    color: COLORS.textLight,
+    fontSize: isSmallDevice ? 18 : 21,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  highlightCardArrow: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  highlightCardBadge: {
+    position: 'absolute',
+    bottom: 14,
+    right: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 4,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
   },
-  techText: {
-    fontFamily: 'System',
-    fontSize: isSmallDevice ? 13 : 14,
-    fontWeight: '600',
+  badgeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#7dff8a',
+  },
+  badgeText: {
     color: COLORS.textLight,
+    fontSize: 10,
+    fontWeight: '600',
   },
-  // Section Blogs
-  sectionBlogs: {
+
+  // ─── BLOGS ───
+  blogsSection: {
     paddingVertical: isSmallDevice ? 40 : 60,
     paddingHorizontal: isSmallDevice ? 16 : 20,
-    backgroundColor: COLORS.color4,
+    backgroundColor: COLORS.textDark,
     alignItems: 'center',
+  },
+  blogsSectionTitle: {
+    color: COLORS.textLight,
+    fontSize: isSmallDevice ? scale(28) : 40,
+    fontWeight: '900',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginBottom: 10,
+    letterSpacing: -1,
+  },
+  blogsSectionSub: {
+    color: COLORS.muted,
+    fontSize: isSmallDevice ? 13 : 14,
+    textAlign: 'center',
+    marginBottom: isSmallDevice ? 28 : 36,
+    paddingHorizontal: isSmallDevice ? 10 : 40,
   },
   blogsContainer: {
     flexDirection: isSmallDevice ? 'column' : 'row',
     flexWrap: 'wrap',
-    gap: isSmallDevice ? 20 : 24,
+    gap: isSmallDevice ? 16 : 20,
     justifyContent: 'center',
-    marginBottom: isSmallDevice ? 30 : 40,
+    marginBottom: isSmallDevice ? 28 : 36,
     maxWidth: isSmallDevice ? '100%' : 1200,
   },
   blogCard: {
-    width: isSmallDevice ? '100%' : 360,
+    width: isSmallDevice ? '100%' : 340,
     backgroundColor: COLORS.color5,
     borderRadius: isSmallDevice ? 16 : 20,
     overflow: 'hidden',
@@ -731,7 +1216,7 @@ const styles = StyleSheet.create({
   },
   blogImageWrapper: {
     width: '100%',
-    height: isSmallDevice ? 180 : 220,
+    height: isSmallDevice ? 180 : 210,
     position: 'relative',
   },
   blogCardImage: {
@@ -757,27 +1242,24 @@ const styles = StyleSheet.create({
   blogCategoryText: {
     color: COLORS.textLight,
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    fontFamily: 'System',
   },
   blogCardContent: {
     padding: isSmallDevice ? 16 : 20,
   },
   blogCardTitle: {
-    fontFamily: 'System',
-    fontSize: isSmallDevice ? 16 : 18,
-    fontWeight: '700',
     color: COLORS.textLight,
-    marginBottom: 10,
-    lineHeight: isSmallDevice ? 22 : 24,
+    fontSize: isSmallDevice ? 15 : 17,
+    fontWeight: '700',
+    marginBottom: 8,
+    lineHeight: isSmallDevice ? 21 : 23,
   },
   blogCardDescription: {
-    fontFamily: 'System',
-    fontSize: isSmallDevice ? 13 : 14,
     color: COLORS.muted,
-    lineHeight: 20,
+    fontSize: isSmallDevice ? 12 : 13,
+    lineHeight: 19,
     marginBottom: 12,
   },
   blogReadMore: {
@@ -787,9 +1269,8 @@ const styles = StyleSheet.create({
   },
   blogReadMoreText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.color2,
-    fontFamily: 'System',
   },
   viewAllBtn: {
     flexDirection: 'row',
@@ -808,8 +1289,57 @@ const styles = StyleSheet.create({
   viewAllBtnText: {
     color: COLORS.textLight,
     fontSize: 14,
+    fontWeight: '700',
+  },
+
+  // ─── CONTACT STRIP ───
+  contactStrip: {
+    backgroundColor: COLORS.textDark,
+    flexDirection: isSmallDevice ? 'column' : 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+    paddingVertical: isSmallDevice ? 20 : 24,
+    paddingHorizontal: 20,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.08)',
+  },
+  contactStripBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 999,
+  },
+  contactStripText: {
+    color: COLORS.textLight,
+    fontSize: isSmallDevice ? 12 : 13,
+  },
+
+  // ─── TECH STACK ───
+  sectionFive: {
+    paddingVertical: isSmallDevice ? 28 : 40,
+    paddingHorizontal: isSmallDevice ? 16 : 20,
+  },
+  techRibbon: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: isSmallDevice ? 20 : 30,
+  },
+  techItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  techText: {
+    fontSize: isSmallDevice ? 13 : 14,
     fontWeight: '600',
-    fontFamily: 'System',
+    color: COLORS.textLight,
   },
 });
 

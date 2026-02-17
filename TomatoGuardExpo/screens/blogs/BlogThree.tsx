@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-
+import { useNavigation } from '@react-navigation/native';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const isSmallDevice = SCREEN_WIDTH < 768;
 
@@ -28,9 +28,11 @@ interface BlogThreeProps {
   setActiveTab: (tab: string) => void;
 }
 
-const BlogThree: React.FC<BlogThreeProps> = ({ setActiveTab }) => {
+const BlogThree: React.FC = () => {
+  const navigation = useNavigation();
+
   const handleBackToBlogs = () => {
-    setActiveTab('blogs');
+    navigation.goBack();
   };
 
   return (
@@ -88,7 +90,11 @@ const BlogThree: React.FC<BlogThreeProps> = ({ setActiveTab }) => {
 
             {/* Heart Health Section */}
             <Text style={styles.sectionTitle}>1. Promotes Heart Health</Text>
-            
+                        <Image
+                      source={{ uri: 'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771332446/91028696-16c2-4e6f-9523-f5116373dbca.png' }}
+                      style={{ width: '100%', height: 300, borderRadius: 10, marginTop: 10, marginBottom: 10 }}
+                      resizeMode="cover"
+                        />
             <LinearGradient
               colors={['rgba(233, 82, 58, 0.15)', 'rgba(45, 119, 54, 0.15)']}
               style={styles.highlightCard}
@@ -115,7 +121,12 @@ const BlogThree: React.FC<BlogThreeProps> = ({ setActiveTab }) => {
 
             {/* Cancer Prevention Section */}
             <Text style={styles.sectionTitle}>2. May Help Prevent Cancer</Text>
-            
+            <Text style={styles.sectionTitle}>1. Promotes Heart Health</Text>
+                        <Image
+                      source={{ uri: 'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771332519/480290b4-6609-4794-b68d-3b0566b6bee5.png' }}
+                      style={{ width: '100%', height: 300, borderRadius: 10, marginTop: 10, marginBottom: 10 }}
+                      resizeMode="cover"
+                        />
             <Text style={styles.paragraph}>
               Cancer occurs when abnormal cells grow uncontrollably and spread to other parts of the body. Observational studies have noted links between tomatoes and reduced incidence of prostate, lung, and stomach cancers.
             </Text>
@@ -134,7 +145,11 @@ const BlogThree: React.FC<BlogThreeProps> = ({ setActiveTab }) => {
 
             {/* Skin Health Section */}
             <Text style={styles.sectionTitle}>3. Protects Against Sun Damage</Text>
-            
+             <Image
+                      source={{ uri: 'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771332704/a2a03f37-f321-4577-95d9-8d06a4516ffb.png' }}
+                      style={{ width: '100%', height: 300, borderRadius: 10, marginTop: 10, marginBottom: 10 }}
+                      resizeMode="cover"
+                        />
             <View style={styles.skinCard}>
               <View style={styles.skinHeader}>
                 <Ionicons name="sunny" size={40} color={COLORS.color1} />
@@ -187,6 +202,12 @@ const BlogThree: React.FC<BlogThreeProps> = ({ setActiveTab }) => {
                 Tomatoes contain lutein, zeaxanthin, and beta-carotene—powerful antioxidants that protect your eyes from light-induced damage and may reduce the risk of age-related macular degeneration and cataracts.
               </Text>
             </LinearGradient>
+
+            <Image
+                      source={{ uri: 'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771332920/6d2d088b-da37-48c1-a499-136b62d64c4d.png' }}
+                      style={{ width: '100%', height: 350, borderRadius: 10, marginTop: 10, marginBottom: 10 }}
+                      resizeMode="cover"
+                        />
 
             {/* Digestive Health Section */}
             <Text style={styles.sectionTitle}>6. Aids Digestive Health</Text>
@@ -246,7 +267,11 @@ const BlogThree: React.FC<BlogThreeProps> = ({ setActiveTab }) => {
 
             {/* How to Maximize Benefits */}
             <Text style={styles.sectionTitle}>Maximizing Health Benefits</Text>
-            
+            <Image
+                      source={{ uri: 'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771333100/0f3a1943-e3c9-4228-ba9b-f9a98bef0419.png' }}
+                      style={{ width: '100%', height: 350, borderRadius: 10, marginTop: 10, marginBottom: 10 }}
+                      resizeMode="cover"
+                        />
             <View style={styles.tipsGrid}>
               <View style={styles.tipCard}>
                 <Ionicons name="flame-outline" size={32} color={COLORS.color2} />
@@ -299,9 +324,7 @@ const BlogThree: React.FC<BlogThreeProps> = ({ setActiveTab }) => {
                 Growing your own tomatoes? Share your experiences and tips with our community!
               </Text>
               <TouchableOpacity 
-                style={styles.ctaButton}
-                onPress={() => setActiveTab('forum')}
-              >
+                style={styles.backButton} onPress={handleBackToBlogs}>
                 <Text style={styles.ctaButtonText}>Join the Discussion</Text>
                 <Ionicons name="arrow-forward" size={18} color={COLORS.textLight} />
               </TouchableOpacity>

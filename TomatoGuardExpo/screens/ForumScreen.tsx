@@ -17,6 +17,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { forumService, Post as ForumPost } from '../services/api/forumService';
 import { FontAwesome5 } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import {
   faThumbsUp,
   faComment,
@@ -30,6 +31,15 @@ import CreatePostOverlay from '../components/CreatePost';
 import PostDetailOverlay from '../components/PostDetails';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const isSmallDevice = SCREEN_WIDTH < 768;
+
+const COLORS = {
+  emeraldpine: '#084734',
+  limeglow: '#CEF17B',
+  greentea: '#CDEDB3',
+  textLight: '#ffffff',
+  muted: '#000000',
+};
 
 interface ForumScreenProps {
   setActiveTab: (tab: string) => void;
@@ -240,70 +250,72 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
       style={styles.postCard}
       onPress={() => handlePostClick(item.id)}
     >
-      <View style={styles.postHeader}>
-        <View style={styles.postAuthorInfo}>
-          <View style={styles.postAvatar}>
-            <FontAwesome5 icon={faUser} size={20} color="#ffffff" />
+      <BlurView intensity={20} tint="dark" style={styles.blurContainer}>
+        <View style={styles.postHeader}>
+          <View style={styles.postAuthorInfo}>
+            <View style={styles.postAvatar}>
+              <FontAwesome5 icon={faUser} size={20} color="#ffffff" />
+            </View>
+            <View>
+              <Text style={styles.postAuthorName}>{item.author_name || 'Anonymous'}</Text>
+              <Text style={styles.postTime}>{new Date(item.created_at).toLocaleDateString()}</Text>
+            </View>
           </View>
-          <View>
-            <Text style={styles.postAuthorName}>{item.author_name || 'Anonymous'}</Text>
-            <Text style={styles.postTime}>{new Date(item.created_at).toLocaleDateString()}</Text>
-          </View>
+          
+          {item.category && (
+            <View style={[styles.categoryBadge, getCategoryColor(item.category)]}>
+              <Text style={styles.categoryBadgeText}>{item.category}</Text>
+            </View>
+          )}
         </View>
-        
-        {item.category && (
-          <View style={[styles.categoryBadge, getCategoryColor(item.category)]}>
-            <Text style={styles.categoryBadgeText}>{item.category}</Text>
-          </View>
-        )}
-      </View>
-
-      <View style={styles.postContent}>
-        <Text style={styles.postTitle}>{item.title}</Text>
-        <Text style={styles.postDescription} numberOfLines={3}>
-          {item.description}
-        </Text>
-      </View>
-
-      {renderPostImages(item.image_urls)}
-
-      <View style={styles.postActions}>
-        <TouchableOpacity
-          style={[
-            styles.actionBtn, 
-            styles.upvoteBtn,
-            item.user_has_liked && styles.upvoteBtnActive
-          ]}
-          onPress={() => handleVote(item.id, 'like')}
-        >
-          <FontAwesome5 
-            icon={faThumbsUp} 
-            size={16} 
-            color={item.user_has_liked ? "#10b981" : "#ffffff"} 
-          />
-          <Text style={[
-            styles.actionText,
-            item.user_has_liked && styles.actionTextActive
-          ]}>
-            {item.likes_count}
+  
+        <View style={styles.postContent}>
+          <Text style={styles.postTitle}>{item.title}</Text>
+          <Text style={styles.postDescription} numberOfLines={3}>
+            {item.description}
           </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.actionBtn, styles.commentBtn]}
-          onPress={() => handlePostClick(item.id)}
-        >
-          <FontAwesome5 icon={faComment} size={16} color="#ffffff" />
-          <Text style={styles.actionText}>{item.comments_count} Comments</Text>
-        </TouchableOpacity>
-      </View>
+        </View>
+  
+        {renderPostImages(item.image_urls)}
+  
+        <View style={styles.postActions}>
+          <TouchableOpacity
+            style={[
+              styles.actionBtn, 
+              styles.upvoteBtn,
+              item.user_has_liked && styles.upvoteBtnActive
+            ]}
+            onPress={() => handleVote(item.id, 'like')}
+          >
+            <FontAwesome5 
+              icon={faThumbsUp} 
+              size={16} 
+              color={item.user_has_liked ? "#10b981" : "#ffffff"} 
+            />
+            <Text style={[
+              styles.actionText,
+              item.user_has_liked && styles.actionTextActive
+            ]}>
+              {item.likes_count}
+            </Text>
+          </TouchableOpacity>
+  
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.commentBtn]}
+            onPress={() => handlePostClick(item.id)}
+          >
+            <FontAwesome5 icon={faComment} size={16} color="#ffffff" />
+            <Text style={styles.actionText}>{item.comments_count} Comments</Text>
+          </TouchableOpacity>
+        </View>
+      </BlurView>
     </TouchableOpacity>
   );
 
   const getCategoryColor = (category: string) => {
     const colors: { [key: string]: any } = {
-      diseases: { backgroundColor: '#ef444420', borderColor: '#ef4444' },
-      treatment: { backgroundColor: '#10b98120', borderColor: '#10b981' },
+      diseases: { backgroundColor: '#baed91', borderColor: '#CDEDB3' },
+      treatment: { backgroundColor: '#baed91', borderColor: '#CDEDB3' },
       general: { backgroundColor: '#3b82f620', borderColor: '#3b82f6' },
       questions: { backgroundColor: '#f59e0b20', borderColor: '#f59e0b' },
       success: { backgroundColor: '#8b5cf620', borderColor: '#8b5cf6' },
@@ -408,7 +420,7 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
             <Text style={styles.sectionTitle}>
               {activeTab === 'mine' ? 'My Posts' : 'Recent Discussions'}
             </Text>
-            
+
             {activeTab === 'all' ? (
               // ===== ALL POSTS TAB =====
               loading ? (
@@ -497,56 +509,59 @@ const styles = StyleSheet.create({
   mainContent: {
     flex: 1,
     backgroundColor: 'transparent',
-    borderRadius: SCREEN_WIDTH < 768 ? 0 : 20,
+    borderRadius: isSmallDevice ? 0 : 20,
   },
 
   // Top Bar with Search and Create Post Button
   topBar: {
-    flexDirection: SCREEN_WIDTH < 768 ? 'column' : 'row',
-    padding: SCREEN_WIDTH < 768 ? 16 : 20,
-    gap: SCREEN_WIDTH < 768 ? 12 : 16,
-    alignItems: SCREEN_WIDTH < 768 ? 'stretch' : 'center',
+    flexDirection: isSmallDevice ? 'column' : 'row',
+    padding: isSmallDevice ? 16 : 20,
+    gap: isSmallDevice ? 12 : 16,
+    alignItems: isSmallDevice ? 'stretch' : 'center',
   },
   searchInputContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
+    color: COLORS.emeraldpine,
+    backgroundColor: COLORS.textLight,
     borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: SCREEN_WIDTH < 768 ? 12 : 16,
+    paddingVertical: isSmallDevice ? 12 : 16,
   },
   searchInput: {
     flex: 1,
-    color: '#2d7736',
-    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
+    color: COLORS.emeraldpine,
+    fontSize: isSmallDevice ? 13 : 14,
     marginLeft: 12,
   },
   filterBtn: {
     padding: 8,
-    backgroundColor: '#2d7736',
+    backgroundColor: COLORS.emeraldpine,
     borderRadius: 8,
   },
   createPostButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#10b981',
-    paddingVertical: SCREEN_WIDTH < 768 ? 12 : 14,
-    paddingHorizontal: SCREEN_WIDTH < 768 ? 16 : 20,
+    backgroundColor: COLORS.emeraldpine,
+    paddingVertical: isSmallDevice ? 12 : 14,
+    paddingHorizontal: isSmallDevice ? 16 : 20,
     borderRadius: 12,
     gap: 8,
-    minWidth: SCREEN_WIDTH < 768 ? undefined : 160,
+    minWidth: isSmallDevice ? undefined : 160,
+    background: COLORS.emeraldpine,
+    borderWidth: 1,
   },
   createPostButtonText: {
-    color: '#ffffff',
+    color: COLORS.textLight,
     fontSize: 14,
     fontWeight: '600',
   },
 
   // Feed Toggle Container
   feedToggleContainer: {
-    paddingHorizontal: SCREEN_WIDTH < 768 ? 16 : 20,
+    paddingHorizontal: isSmallDevice ? 16 : 20,
     paddingVertical: 12,
   },
   feedToggle: {
@@ -561,8 +576,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: SCREEN_WIDTH < 768 ? 10 : 12,
-    paddingHorizontal: SCREEN_WIDTH < 768 ? 12 : 16,
+    paddingVertical: isSmallDevice ? 10 : 12,
+    paddingHorizontal: isSmallDevice ? 12 : 16,
     borderRadius: 10,
     gap: 8,
     backgroundColor: 'transparent',
@@ -574,7 +589,7 @@ const styles = StyleSheet.create({
   },
   feedToggleText: {
     color: '#94a3b8',
-    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
+    fontSize: isSmallDevice ? 13 : 14,
     fontWeight: '500',
   },
   feedToggleTextActive: {
@@ -602,11 +617,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   categoryScrollContent: {
-    paddingHorizontal: SCREEN_WIDTH < 768 ? 16 : 20,
+    paddingHorizontal: isSmallDevice ? 16 : 20,
     gap: 8,
   },
   categoryChip: {
-    paddingHorizontal: SCREEN_WIDTH < 768 ? 14 : 16,
+    paddingHorizontal: isSmallDevice ? 14 : 16,
     paddingVertical: 8,
     backgroundColor: '#ffffff',
     borderRadius: 20,
@@ -618,7 +633,7 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     color: '#2d7736',
-    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
+    fontSize: isSmallDevice ? 13 : 14,
     fontWeight: '500',
   },
   categoryTextActive: {
@@ -627,10 +642,10 @@ const styles = StyleSheet.create({
 
   // Posts Container
   postsContainer: {
-    padding: SCREEN_WIDTH < 768 ? 16 : 20,
+    padding: isSmallDevice ? 16 : 20,
   },
   sectionTitle: {
-    fontSize: SCREEN_WIDTH < 768 ? 18 : 20,
+    fontSize: isSmallDevice ? 18 : 20,
     fontWeight: 'bold',
     color: '#ffffff',
     marginBottom: 16,
@@ -645,7 +660,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     color: '#94a3b8',
-    fontSize: SCREEN_WIDTH < 768 ? 14 : 16,
+    fontSize: isSmallDevice ? 14 : 16,
     marginTop: 12,
   },
   emptyContainer: {
@@ -654,14 +669,14 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     color: '#ffffff',
-    fontSize: SCREEN_WIDTH < 768 ? 16 : 18,
+    fontSize: isSmallDevice ? 16 : 18,
     fontWeight: '600',
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubtext: {
     color: '#94a3b8',
-    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
+    fontSize: isSmallDevice ? 13 : 14,
     marginBottom: 20,
   },
   emptyButton: {
@@ -678,15 +693,24 @@ const styles = StyleSheet.create({
 
   // Post Card
   postCard: {
-    backgroundColor: '#1e293b',
-    borderRadius: SCREEN_WIDTH < 768 ? 12 : 16,
-    padding: SCREEN_WIDTH < 768 ? 14 : 16,
-    marginBottom: SCREEN_WIDTH < 768 ? 12 : 16,
+    maxWidth: 800,
+    width: '100%',
+    alignSelf: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.07)',
+    borderWidth: 1,
+    borderColor: COLORS.limeglow,
+    borderRadius: isSmallDevice ? 12 : 16,
+    marginBottom: isSmallDevice ? 12 : 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 5,
+  },
+  blurContainer: {
+    borderRadius: isSmallDevice ? 12 : 16,
+    overflow: 'hidden',
+    padding: isSmallDevice ? 14 : 16,
   },
   postHeader: {
     flexDirection: 'row',
@@ -701,32 +725,32 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   postAvatar: {
-    width: SCREEN_WIDTH < 768 ? 36 : 40,
-    height: SCREEN_WIDTH < 768 ? 36 : 40,
-    borderRadius: SCREEN_WIDTH < 768 ? 18 : 20,
+    width: isSmallDevice ? 36 : 40,
+    height: isSmallDevice ? 36 : 40,
+    borderRadius: isSmallDevice ? 18 : 20,
     backgroundColor: '#475569',
     justifyContent: 'center',
     alignItems: 'center',
   },
   postAuthorName: {
-    color: '#ffffff',
-    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
+    color: COLORS.textLight,
+    fontSize: isSmallDevice ? 13 : 14,
     fontWeight: '600',
   },
   postTime: {
     color: '#94a3b8',
-    fontSize: SCREEN_WIDTH < 768 ? 11 : 12,
+    fontSize: isSmallDevice ? 11 : 12,
     marginTop: 2,
   },
   categoryBadge: {
-    paddingHorizontal: SCREEN_WIDTH < 768 ? 10 : 12,
+    paddingHorizontal: isSmallDevice ? 10 : 12,
     paddingVertical: 4,
     borderRadius: 12,
     borderWidth: 1,
   },
   categoryBadgeText: {
-    color: '#ffffff',
-    fontSize: SCREEN_WIDTH < 768 ? 10 : 11,
+    color: COLORS.emeraldpine,
+    fontSize: isSmallDevice ? 10 : 11,
     fontWeight: '600',
     textTransform: 'capitalize',
   },
@@ -734,8 +758,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   postTitle: {
-    color: '#ffffff',
-    fontSize: SCREEN_WIDTH < 768 ? 16 : 18,
+    color: COLORS.textLight,
+    fontSize: isSmallDevice ? 16 : 18,
     fontWeight: '600',
     marginBottom: 8,
     fontFamily: 'serif',
@@ -743,18 +767,19 @@ const styles = StyleSheet.create({
   },
   postDescription: {
     color: '#cbd5e1',
-    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
-    lineHeight: SCREEN_WIDTH < 768 ? 18 : 20,
+    fontSize: isSmallDevice ? 13 : 14,
+    lineHeight: isSmallDevice ? 18 : 20,
   },
   imageContainer: {
     marginVertical: 12,
     borderRadius: 12,
     overflow: 'hidden',
+    backgroundColor: COLORS.muted,
   },
   singleImage: {
-    width: SCREEN_WIDTH < 768 ? 160 : 200,
-    height: SCREEN_WIDTH < 768 ? 160 : 200,
-    borderRadius: 12,
+    width: isSmallDevice ? 160 : 200,
+    height: isSmallDevice ? 160 : 200,
+    alignSelf: 'center',
   },
   twoImagesContainer: {
     flexDirection: 'row',
@@ -763,7 +788,7 @@ const styles = StyleSheet.create({
   },
   halfImage: {
     flex: 1,
-    height: SCREEN_WIDTH < 768 ? 160 : 200,
+    height: isSmallDevice ? 160 : 200,
     borderRadius: 8,
   },
   imageWrapper: {
@@ -783,12 +808,12 @@ const styles = StyleSheet.create({
   },
   moreImagesText: {
     color: '#ffffff',
-    fontSize: SCREEN_WIDTH < 768 ? 20 : 24,
+    fontSize: isSmallDevice ? 20 : 24,
     fontWeight: 'bold',
   },
   postActions: {
     flexDirection: 'row',
-    gap: SCREEN_WIDTH < 768 ? 8 : 12,
+    gap: isSmallDevice ? 8 : 12,
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: '#334155',
@@ -796,29 +821,31 @@ const styles = StyleSheet.create({
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: SCREEN_WIDTH < 768 ? 10 : 12,
+    paddingHorizontal: isSmallDevice ? 10 : 12,
     paddingVertical: 6,
     borderRadius: 8,
     gap: 6,
   },
   upvoteBtn: {
-    backgroundColor: '#065f46',
+    backgroundColor: COLORS.limeglow,
+    color: COLORS.emeraldpine,
   },
   upvoteBtnActive: {
-    backgroundColor: '#10b98130',
+    backgroundColor: COLORS.limeglow,
     borderWidth: 1,
-    borderColor: '#10b981',
+    borderColor: COLORS.limeglow,
+    color: COLORS.emeraldpine,
   },
   commentBtn: {
-    backgroundColor: '#1e40af',
+    backgroundColor: COLORS.limeglow,
   },
   actionText: {
-    color: '#ffffff',
-    fontSize: SCREEN_WIDTH < 768 ? 12 : 13,
+    color: COLORS.emeraldpine,
+    fontSize: isSmallDevice ? 12 : 13,
     fontWeight: '500',
   },
   actionTextActive: {
-    color: '#10b981',
+    color: COLORS.emeraldpine,
   },
 });
 

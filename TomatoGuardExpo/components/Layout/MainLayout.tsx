@@ -9,7 +9,6 @@ import {
   Dimensions,
   StyleSheet,
   Image,
-  ImageBackground,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { BlurView } from 'expo-blur';
@@ -43,11 +42,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({
       <StatusBar style="light" />
 
       {/* Main Content */}
-      <ImageBackground 
-        source={require('./../../assets/section1-bg.png')}
-        style={{ flex: 1 }}
-        resizeMode="cover"
-      >
         {/* Header with Glass Effect */}
         <View style={styles.headerContainer}>
           <BlurView
@@ -106,7 +100,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           </BlurView>
         </View>
         {children}
-      </ImageBackground>
     </SafeAreaView>
   );
 };

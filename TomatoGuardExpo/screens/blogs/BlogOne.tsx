@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const isSmallDevice = SCREEN_WIDTH < 768;
@@ -28,10 +29,12 @@ interface BlogOneProps {
   setActiveTab: (tab: string) => void;
 }
 
-const BlogOne: React.FC<BlogOneProps> = ({ setActiveTab }) => {
-  const handleBackToBlogs = () => {
-    setActiveTab('blogs');
-  };
+const BlogOne: React.FC = () => {
+  const navigation = useNavigation();
+
+ const handleBackToBlogs = () => {
+  navigation.goBack(); 
+};
 
   return (
     <View style={styles.container}>
@@ -94,6 +97,11 @@ const BlogOne: React.FC<BlogOneProps> = ({ setActiveTab }) => {
               <Text style={styles.paragraph}>
                 Early blight is one of the most common tomato diseases, caused by the fungus Alternaria solani. It typically appears as dark, concentric spots on older leaves, which eventually turn yellow and drop off.
               </Text>
+              <Image
+                source={{ uri: 'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771316831/tomato_guard/wno17u1nvvq2n5vtixgs.jpg' }}
+                style={{ width: '100%', height: 180, borderRadius: 10, marginTop: 10, marginBottom: 10 }}
+                resizeMode="cover"
+              />
               <View style={styles.symptomBox}>
                 <Text style={styles.symptomTitle}>Symptoms to Watch For:</Text>
                 <Text style={styles.bulletPoint}>• Dark brown spots with concentric rings</Text>
@@ -107,6 +115,11 @@ const BlogOne: React.FC<BlogOneProps> = ({ setActiveTab }) => {
               <Text style={styles.paragraph}>
                 Late blight, caused by Phytophthora infestans, is a devastating disease that can destroy entire crops within days. It thrives in cool, wet conditions and spreads rapidly.
               </Text>
+               <Image
+                source={{ uri: 'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771316752/tomato_guard/ronvpo1uxub9qzessrwu.jpg' }}
+                style={{ width: '100%', height: 180, borderRadius: 10, marginTop: 10, marginBottom: 10 }}
+                resizeMode="cover"
+              />
               <View style={styles.symptomBox}>
                 <Text style={styles.symptomTitle}>Symptoms to Watch For:</Text>
                 <Text style={styles.bulletPoint}>• Water-soaked spots on leaves and stems</Text>
@@ -120,6 +133,11 @@ const BlogOne: React.FC<BlogOneProps> = ({ setActiveTab }) => {
               <Text style={styles.paragraph}>
                 Septoria leaf spot is caused by the fungus Septoria lycopersici and primarily affects the foliage of tomato plants. It's characterized by numerous small, circular spots with gray centers.
               </Text>
+              <Image
+                source={{ uri: 'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771331657/1d3dc5a7-5c0a-4852-8210-b06eede5d40a___Matt.S_CG_6071_copy_u69lf8.jpg' }}
+                style={{ width: '100%', height: 180, borderRadius: 10, marginTop: 10, marginBottom: 10 }}
+                resizeMode="cover"
+              />
               <View style={styles.symptomBox}>
                 <Text style={styles.symptomTitle}>Symptoms to Watch For:</Text>
                 <Text style={styles.bulletPoint}>• Small circular spots with dark borders</Text>
@@ -231,9 +249,8 @@ const BlogOne: React.FC<BlogOneProps> = ({ setActiveTab }) => {
                 Have questions about tomato diseases? Join our community forum to discuss with experienced growers!
               </Text>
               <TouchableOpacity 
-                style={styles.ctaButton}
-                onPress={() => setActiveTab('forum')}
-              >
+                style={styles.backButton} onPress={handleBackToBlogs}>
+                  
                 <Text style={styles.ctaButtonText}>Visit Forums</Text>
                 <Ionicons name="arrow-forward" size={18} color={COLORS.textLight} />
               </TouchableOpacity>

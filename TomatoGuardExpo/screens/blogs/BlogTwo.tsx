@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-
+import { useNavigation } from '@react-navigation/native';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const isSmallDevice = SCREEN_WIDTH < 768;
 
@@ -28,11 +28,12 @@ interface BlogTwoProps {
   setActiveTab: (tab: string) => void;
 }
 
-const BlogTwo: React.FC<BlogTwoProps> = ({ setActiveTab }) => {
-  const handleBackToBlogs = () => {
-    setActiveTab('blogs');
-  };
+const BlogTwo: React.FC = () => {
+  const navigation = useNavigation();
 
+  const handleBackToBlogs = () => {
+  navigation.goBack(); 
+};
   return (
     <View style={styles.container}>
       <ScrollView 
@@ -85,6 +86,11 @@ const BlogTwo: React.FC<BlogTwoProps> = ({ setActiveTab }) => {
             <Text style={styles.paragraph}>
               Tomatoes are one of the most popular vegetables (technically fruits) worldwide, and for good reason. They're not just delicious and versatile in the kitchen—they're also packed with nutrients that offer numerous health benefits. From vitamins and minerals to powerful antioxidants, tomatoes deserve their reputation as a superfood.
             </Text>
+        <Image
+          source={{ uri: 'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771331943/ae613dd4-c746-4502-b757-58b9bf0a81f1.png' }}
+          style={{ width: '100%', height: 300, borderRadius: 10, marginTop: 10, marginBottom: 10 }}
+          resizeMode="cover"
+            />
 
             {/* Nutrition Facts Section */}
             <Text style={styles.sectionTitle}>Nutrition Facts</Text>
@@ -120,7 +126,11 @@ const BlogTwo: React.FC<BlogTwoProps> = ({ setActiveTab }) => {
 
             {/* Vitamins and Minerals */}
             <Text style={styles.sectionTitle}>Rich in Vitamins and Minerals</Text>
-            
+            <Image
+          source={{ uri: 'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771332228/b11743ac-793e-4bfb-ba49-33fa553218fe.png' }}
+          style={{ width: '100%', height: 300, borderRadius: 10, marginTop: 10, marginBottom: 10 }}
+          resizeMode="cover"
+            />
             <View style={styles.vitaminCard}>
               <View style={styles.vitaminHeader}>
                 <Ionicons name="nutrition-outline" size={24} color={COLORS.color2} />
@@ -277,9 +287,7 @@ const BlogTwo: React.FC<BlogTwoProps> = ({ setActiveTab }) => {
                 Want to learn more about growing healthy, nutritious tomatoes? Join our community!
               </Text>
               <TouchableOpacity 
-                style={styles.ctaButton}
-                onPress={() => setActiveTab('forum')}
-              >
+                style={styles.backButton} onPress={handleBackToBlogs}>
                 <Text style={styles.ctaButtonText}>Visit Forums</Text>
                 <Ionicons name="arrow-forward" size={18} color={COLORS.textLight} />
               </TouchableOpacity>

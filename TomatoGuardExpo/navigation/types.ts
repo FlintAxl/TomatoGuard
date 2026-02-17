@@ -26,6 +26,9 @@ export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
   Forum: NavigatorScreenParams<ForumStackParamList>;
   Landing: undefined;
+  BlogOne: undefined;
+  BlogTwo: undefined;
+  BlogThree: undefined;
 };
 
 export type AuthStackNavigationProp = NativeStackNavigationProp<AuthStackParamList>;
