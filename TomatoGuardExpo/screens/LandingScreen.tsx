@@ -27,19 +27,12 @@ const scale = (size: number) => (SCREEN_WIDTH / 375) * size;
 const isSmallDevice = SCREEN_WIDTH < 768;
 
 const COLORS = {
-  color1: '#f8ff76',
-  color2: '#e9523a',
-  color3: '#2d7736',
-  color4: '#081600',
-  color5: '#1b4e00',
-  textLight: '#ffffff',
-  muted: '#d6e4dd',
-  // New design system colors
   bgCream: '#f0ede6',
   bgLight: '#e8e4db',
   darkGreen: '#1a3a2a',
   medGreen: '#2d5a3d',
   accentGreen: '#3d7a52',
+  textLight: '#ffffff',
   textDark: '#0d1f14',
   textMuted: '#5a7a65',
   cardBg: '#1e3d2a',
@@ -236,9 +229,6 @@ const LandingScreen = () => {
 
             {/* ─── HERO SECTION ─── */}
             <View style={styles.heroSection}>
-              {/* Left teal/green sidebar accent */}
-              <View style={styles.heroAccentBar} />
-
               {/* Hero inner rounded card — dark green, like the reference */}
               <View style={styles.heroCard}>
                 <ImageBackground
@@ -249,22 +239,21 @@ const LandingScreen = () => {
                 >
                   {/* Hero body */}
                   <View style={styles.heroBody}>
-                    {/* Stats badge */}
-                    <View style={styles.heroStatsBadge}>
-                      <View style={styles.heroStatsLeft}>
-                        <Text style={styles.heroStatsNumber}>15+</Text>
-                        <Text style={styles.heroStatsLabel}>
-                          Diseases{'\n'}Detected
-                        </Text>
+                      {/* Stats badge */}
+                      <View style={styles.heroStatsBadge}>
+                        <View style={styles.heroStatsLeft}>
+                          <Text style={styles.heroStatsNumber}>15+</Text>
+                          <Text style={styles.heroStatsLabel}>
+                            Diseases Detected
+                          </Text>
+                        </View>
+                        <Image
+                          source={{ uri: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770890142/healthyfruit_gz98qz.jpg' }}
+                          style={styles.heroStatsImage}
+                        />
                       </View>
-                      <Image
-                        source={{ uri: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770890142/healthyfruit_gz98qz.jpg' }}
-                        style={styles.heroStatsImage}
-                      />
-                    </View>
-
-                    <TouchableOpacity style={styles.heroShopBtn} onPress={handleCheckNow}>
-                      <Text style={styles.heroShopBtnText}>Scan tomatoes</Text>
+                      <TouchableOpacity style={styles.heroShopBtn} onPress={handleCheckNow}>
+                      <Text style={styles.heroShopBtnText}>Login / Register</Text>
                     </TouchableOpacity>
                   </View>
                 </ImageBackground>
@@ -274,7 +263,7 @@ const LandingScreen = () => {
             {/* ─── "NEW PLANTS" → "NEW DETECTIONS" SECTION ─── */}
             <View style={styles.newPlantsSection}>
               <View style={styles.newPlantsHeader}>
-                <Text style={styles.newPlantsTitle}>New Detections</Text>
+                <Text style={styles.newPlantsTitle}>Blogs and Articles</Text>
                 <Text style={styles.newPlantsDesc}>
                   Identify and treat the latest tomato diseases affecting crops, including fruit,
                   leaf, and stem conditions — all in real time.
@@ -283,23 +272,23 @@ const LandingScreen = () => {
 
               {/* 3-card row */}
               <View style={styles.newPlantsCards}>
-                {DISEASES.slice(0, 3).map((disease) => (
-                  <View key={disease.id} style={styles.newPlantCard}>
+                {BLOGS.map((blog) => (
+                  <TouchableOpacity key={blog.id} style={styles.newPlantCard} onPress={() => handleBlogPress(blog.id)} activeOpacity={0.85}>
                     <View style={styles.newPlantCardImageWrap}>
-                      <Image source={{ uri: disease.image }} style={styles.newPlantCardImage} resizeMode="cover" />
-                      <TouchableOpacity style={styles.heartBtn}>
-                        <Ionicons name="heart-outline" size={14} color={COLORS.textDark} />
-                      </TouchableOpacity>
+                      <Image source={{ uri: blog.image }} style={styles.newPlantCardImage} resizeMode="cover" />
+                      <View style={styles.blogCategoryBadge}>
+                        <Text style={styles.blogCategoryText}>{blog.category}</Text>
+                      </View>
                     </View>
-                    <Text style={styles.newPlantCardName}>{disease.name}</Text>
-                    <Text style={styles.newPlantCardMeta}>Fungal · Contagious</Text>
+                    <Text style={styles.newPlantCardName} numberOfLines={2}>{blog.title}</Text>
+                    <Text style={styles.newPlantCardMeta} numberOfLines={2}>{blog.description}</Text>
                     <View style={styles.newPlantCardBottom}>
-                      <Text style={styles.newPlantCardAction}>View Details</Text>
-                      <TouchableOpacity style={styles.newPlantCardArrow} onPress={handleCheckNow}>
+                      <Text style={styles.newPlantCardAction}>Read Article</Text>
+                      <TouchableOpacity style={styles.newPlantCardArrow} onPress={() => handleBlogPress(blog.id)}>
                         <Ionicons name="arrow-forward" size={14} color={COLORS.textLight} />
                       </TouchableOpacity>
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </View>
 
@@ -309,6 +298,11 @@ const LandingScreen = () => {
                   <View key={i} style={[styles.paginationDot, i === 2 && styles.paginationDotActive]} />
                 ))}
               </View>
+
+              <TouchableOpacity style={styles.viewAllBtn} onPress={handleViewAllBlogs}>
+                <Text style={styles.viewAllBtnText}>View All Articles</Text>
+                <Ionicons name="arrow-forward" size={16} color={COLORS.textLight} />
+              </TouchableOpacity>
             </View>
 
             {/* ─── VIDEO / INDOOR COLLECTION → DISEASE CATEGORY GRID ─── */}
@@ -317,37 +311,60 @@ const LandingScreen = () => {
                 <Text style={styles.categoryHeaderLeft}>
                   Check out our detection tools including AI-powered diagnostics where you can learn more about your tomato crops.
                 </Text>
-                <Text style={styles.categoryHeaderTitle}>Disease{'\n'}Collection</Text>
+                <Text style={styles.categoryHeaderTitle}>Disease Collection</Text>
               </View>
+              
+              <View style={styles.highlightSection}>
+                {/* Large card */}
+                <TouchableOpacity style={styles.highlightCardLarge} onPress={handleCheckNow} activeOpacity={0.85}>
+                  <Image
+                    source={{ uri: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889106/anthracnose_kbwcut.png' }}
+                    style={styles.highlightCardImage}
+                    resizeMode="cover"
+                  />
+                  <LinearGradient
+                    colors={['transparent', 'rgba(8,22,0,0.92)']}
+                    style={styles.highlightCardGradient}
+                  />
+                  <View style={styles.highlightCardBody}>
+                    <Text style={styles.highlightCardTitle}>Fruit Diseases</Text>
+                    <Text style={styles.highlightCardDesc}>
+                      There are many tomato fruit diseases that can devastate your harvest.
+                      Learn to detect and treat them early using our AI scanner.
+                    </Text>
+                  </View>
+                  <View style={styles.highlightCardArrow}>
+                    <Ionicons name="arrow-forward" size={18} color={COLORS.textDark} />
+                  </View>
+                  <View style={styles.highlightCardBadge}>
+                    <View style={styles.badgeDot} />
+                    <Text style={styles.badgeText}>Fungal</Text>
+                  </View>
+                </TouchableOpacity>
 
-              {/* 2×2 grid of category cards */}
-              <View style={styles.categoryGrid}>
-                {DISEASE_CATEGORIES.map((cat, idx) => (
-                  <TouchableOpacity
-                    key={cat.id}
-                    style={[
-                      styles.categoryCard,
-                      idx === 0 && styles.categoryCardTall,
-                    ]}
-                    onPress={handleCheckNow}
-                    activeOpacity={0.85}
-                  >
-                    <Image source={{ uri: cat.image }} style={styles.categoryCardImage} resizeMode="cover" />
-                    <LinearGradient
-                      colors={['transparent', 'rgba(10,26,16,0.88)']}
-                      style={styles.categoryCardGradient}
-                    />
-                    <View style={styles.categoryCardContent}>
-                      {idx === 0 && cat.desc ? (
-                        <Text style={styles.categoryCardDesc}>{cat.desc}</Text>
-                      ) : null}
-                      <Text style={styles.categoryCardLabel}>{cat.label}</Text>
-                    </View>
-                    <View style={styles.categoryCardArrow}>
-                      <Ionicons name="arrow-forward" size={16} color={COLORS.textDark} />
-                    </View>
-                  </TouchableOpacity>
-                ))}
+                {/* Two small cards */}
+                <View style={styles.highlightSmallRow}>
+                  {[
+                    { label: 'Leaf\nDiseases', img: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889110/bacterialspot_svwbyu.png', badge: 'Bacterial' },
+                    { label: 'Stem\nDiseases', img: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889112/dampingoff_i3hxbj.png', badge: 'Fungal' },
+                  ].map((item) => (
+                    <TouchableOpacity key={item.label} style={styles.highlightCardSmall} onPress={handleCheckNow} activeOpacity={0.85}>
+                      <Image source={{ uri: item.img }} style={styles.highlightCardImage} resizeMode="cover" />
+                      <LinearGradient
+                        colors={['transparent', 'rgba(8,22,0,0.88)']}
+                        style={styles.highlightCardGradient}
+                      />
+                      <Text style={styles.highlightCardSmallTitle}>{item.label}</Text>
+                      <View style={styles.highlightCardArrow}>
+                        <Ionicons name="arrow-forward" size={16} color={COLORS.textDark} />
+                      </View>
+                      <View style={styles.highlightCardBadge}>
+                        <View style={styles.badgeDot} />
+                        <Text style={styles.badgeText}>{item.badge}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
             </View>
 
@@ -368,30 +385,12 @@ const LandingScreen = () => {
                   style={styles.qualityImage}
                   resizeMode="cover"
                 />
-                <View style={styles.qualityPlayBtn}>
-                  <Ionicons name="play" size={28} color={COLORS.textDark} />
-                </View>
+                  
               </View>
             </View>
 
             {/* ─── FILTER TABS + DISEASE TYPES (replaces plain carousel) ─── */}
             <View style={styles.filterSection}>
-              <View style={styles.filterTabs}>
-                {['All Diseases', 'Fruit', 'Leaf', 'Stem'].map((tab, i) => (
-                  <TouchableOpacity
-                    key={tab}
-                    style={[styles.filterTab, i === 0 && styles.filterTabActive]}
-                  >
-                    <Text style={[styles.filterTabText, i === 0 && styles.filterTabTextActive]}>
-                      {tab}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-                <TouchableOpacity style={styles.seeAllBtn} onPress={handleCheckNow}>
-                  <Text style={styles.seeAllBtnText}>See All</Text>
-                </TouchableOpacity>
-              </View>
-
               <FlatList
                 ref={flatListRef}
                 data={DISEASES}
@@ -407,117 +406,8 @@ const LandingScreen = () => {
               />
             </View>
 
-            {/* ─── PET FRIENDLY / CATEGORY CARDS → HIGHLIGHT CARDS ─── */}
-            <View style={styles.highlightSection}>
-              {/* Large card */}
-              <TouchableOpacity style={styles.highlightCardLarge} onPress={handleCheckNow} activeOpacity={0.85}>
-                <Image
-                  source={{ uri: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889106/anthracnose_kbwcut.png' }}
-                  style={styles.highlightCardImage}
-                  resizeMode="cover"
-                />
-                <LinearGradient
-                  colors={['transparent', 'rgba(8,22,0,0.92)']}
-                  style={styles.highlightCardGradient}
-                />
-                <View style={styles.highlightCardBody}>
-                  <Text style={styles.highlightCardTitle}>Fruit Diseases</Text>
-                  <Text style={styles.highlightCardDesc}>
-                    There are many tomato fruit diseases that can devastate your harvest.
-                    Learn to detect and treat them early using our AI scanner.
-                  </Text>
-                </View>
-                <View style={styles.highlightCardArrow}>
-                  <Ionicons name="arrow-forward" size={18} color={COLORS.textDark} />
-                </View>
-                <View style={styles.highlightCardBadge}>
-                  <View style={styles.badgeDot} />
-                  <Text style={styles.badgeText}>Fungal</Text>
-                </View>
-              </TouchableOpacity>
-
-              {/* Two small cards */}
-              <View style={styles.highlightSmallRow}>
-                {[
-                  { label: 'Leaf\nDiseases', img: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889110/bacterialspot_svwbyu.png', badge: 'Bacterial' },
-                  { label: 'Stem\nDiseases', img: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770889112/dampingoff_i3hxbj.png', badge: 'Fungal' },
-                ].map((item) => (
-                  <TouchableOpacity key={item.label} style={styles.highlightCardSmall} onPress={handleCheckNow} activeOpacity={0.85}>
-                    <Image source={{ uri: item.img }} style={styles.highlightCardImage} resizeMode="cover" />
-                    <LinearGradient
-                      colors={['transparent', 'rgba(8,22,0,0.88)']}
-                      style={styles.highlightCardGradient}
-                    />
-                    <Text style={styles.highlightCardSmallTitle}>{item.label}</Text>
-                    <View style={styles.highlightCardArrow}>
-                      <Ionicons name="arrow-forward" size={16} color={COLORS.textDark} />
-                    </View>
-                    <View style={styles.highlightCardBadge}>
-                      <View style={styles.badgeDot} />
-                      <Text style={styles.badgeText}>{item.badge}</Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* ─── BLOGS SECTION ─── */}
-            <View style={styles.blogsSection}>
-              <Text style={styles.blogsSectionTitle}>Latest Articles & Insights</Text>
-              <Text style={styles.blogsSectionSub}>
-                Expert advice on tomato cultivation, disease management, and health benefits
-              </Text>
-
-              <View style={styles.blogsContainer}>
-                {BLOGS.map((blog) => (
-                  <TouchableOpacity
-                    key={blog.id}
-                    style={styles.blogCard}
-                    onPress={() => handleBlogPress(blog.id)}
-                    activeOpacity={0.8}
-                  >
-                    <View style={styles.blogImageWrapper}>
-                      <Image source={{ uri: blog.image }} style={styles.blogCardImage} resizeMode="cover" />
-                      <LinearGradient
-                        colors={['transparent', 'rgba(8, 22, 0, 0.95)']}
-                        style={styles.blogCardGradient}
-                      />
-                      <View style={styles.blogCategoryBadge}>
-                        <Text style={styles.blogCategoryText}>{blog.category}</Text>
-                      </View>
-                    </View>
-                    <View style={styles.blogCardContent}>
-                      <Text style={styles.blogCardTitle} numberOfLines={2}>{blog.title}</Text>
-                      <Text style={styles.blogCardDescription} numberOfLines={3}>{blog.description}</Text>
-                      <View style={styles.blogReadMore}>
-                        <Text style={styles.blogReadMoreText}>Read Article</Text>
-                        <Ionicons name="arrow-forward" size={14} color={COLORS.color2} />
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <TouchableOpacity style={styles.viewAllBtn} onPress={handleViewAllBlogs}>
-                <Text style={styles.viewAllBtnText}>View All Articles</Text>
-                <Ionicons name="arrow-forward" size={16} color={COLORS.textLight} />
-              </TouchableOpacity>
-            </View>
-
-            {/* ─── CONTACT STRIP ─── */}
-            <View style={styles.contactStrip}>
-              <TouchableOpacity style={styles.contactStripBtn} onPress={handleEmail}>
-                <Ionicons name="mail-outline" size={16} color={COLORS.textLight} />
-                <Text style={styles.contactStripText}>tomatoguard@gmail.com</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.contactStripBtn} onPress={handlePhone}>
-                <Ionicons name="call-outline" size={16} color={COLORS.textLight} />
-                <Text style={styles.contactStripText}>+63 123456789</Text>
-              </TouchableOpacity>
-            </View>
-
             {/* ─── TECH STACK ─── */}
-            <LinearGradient colors={[COLORS.color5, COLORS.color3]} style={styles.sectionFive}>
+            <LinearGradient colors={[COLORS.medGreen, COLORS.darkGreen]} style={styles.sectionFive}>
               <View style={styles.techRibbon}>
                 {TECH_STACK.map((tech, index) => (
                   <View key={index} style={styles.techItem}>
@@ -553,121 +443,46 @@ const localStyles = StyleSheet.create({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bgCream,
+    backgroundColor: COLORS.textLight,
+    paddingHorizontal: isSmallDevice ? 0 : 20,
   },
 
   // ─── HERO ───
   heroSection: {
-    backgroundColor: COLORS.bgCream,
+    backgroundColor: COLORS.textLight,
     flexDirection: 'row',
-    paddingLeft: 0,
+    paddingLeft: isSmallDevice ? 12 : 20,
     paddingRight: isSmallDevice ? 12 : 20,
     paddingTop: isSmallDevice ? 12 : 20,
     paddingBottom: isSmallDevice ? 20 : 32,
     gap: 0,
   },
-  heroAccentBar: {
-    width: isSmallDevice ? 8 : 12,
-    backgroundColor: COLORS.accentGreen,
-    borderTopRightRadius: 6,
-    borderBottomRightRadius: 6,
-    marginRight: isSmallDevice ? 8 : 12,
-    minHeight: isSmallDevice ? 460 : 560,
-  },
   heroCard: {
     flex: 1,
     borderRadius: isSmallDevice ? 20 : 28,
     overflow: 'hidden',
-    minHeight: isSmallDevice ? 460 : 560,
+    minHeight: isSmallDevice ? 200 : 560,
   },
   heroCardBg: {
     flex: 1,
-    minHeight: isSmallDevice ? 460 : 560,
+    minHeight: isSmallDevice ? 200 : 560,
   },
   heroOverlay: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: isSmallDevice ? 20 : 28,
   },
-
-  // Nav inside hero
-  heroNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: isSmallDevice ? 16 : 24,
-    paddingTop: isSmallDevice ? 16 : 20,
-    paddingBottom: 8,
-  },
-  heroNavLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  navLogoCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: COLORS.accentGreen,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  navBrandText: {
-    color: COLORS.textLight,
-    fontSize: isSmallDevice ? 14 : 16,
-    fontWeight: '700',
-  },
-  heroNavRight: {
-    flexDirection: 'row',
-    gap: isSmallDevice ? 4 : 6,
-    flexWrap: 'wrap',
-  },
-  navItem: {
-    paddingVertical: 6,
-    paddingHorizontal: isSmallDevice ? 8 : 12,
-    borderRadius: 999,
-  },
-  navItemActive: {
-    backgroundColor: COLORS.textLight,
-  },
-  navItemText: {
-    color: COLORS.textLight,
-    fontSize: isSmallDevice ? 11 : 13,
-    fontWeight: '500',
-  },
-  navItemActiveText: {
-    color: COLORS.textDark,
-    fontWeight: '700',
-  },
-
+  
   // Hero body
   heroBody: {
     flex: 1,
+    width: '100%',
     paddingHorizontal: isSmallDevice ? 16 : 28,
     paddingBottom: isSmallDevice ? 20 : 32,
     paddingTop: isSmallDevice ? 24 : 32,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
     justifyContent: 'flex-end',
-  },
-  heroEyebrow: {
-    color: COLORS.muted,
-    fontSize: isSmallDevice ? 13 : 15,
-    fontWeight: '400',
-    marginBottom: 4,
-  },
-  heroGiantTitle: {
-    color: COLORS.textLight,
-    fontSize: isSmallDevice ? scale(64) : 96,
-    fontWeight: '900',
-    fontStyle: 'italic',
-    lineHeight: isSmallDevice ? scale(66) : 98,
-    marginBottom: 12,
-    letterSpacing: -2,
-  },
-  heroDescription: {
-    color: 'rgba(255,255,255,0.75)',
-    fontSize: isSmallDevice ? 12 : 14,
-    lineHeight: 20,
-    maxWidth: 380,
-    marginBottom: 24,
   },
   heroStatsBadge: {
     flexDirection: 'row',
@@ -690,7 +505,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   heroStatsLabel: {
-    color: COLORS.muted,
+    color: COLORS.textLight,
     fontSize: 10,
     lineHeight: 14,
   },
@@ -717,9 +532,9 @@ const styles = StyleSheet.create({
 
   // ─── NEW DETECTIONS ───
   newPlantsSection: {
-    backgroundColor: COLORS.bgCream,
+    backgroundColor: COLORS.textLight,
     paddingHorizontal: isSmallDevice ? 16 : 20,
-    paddingVertical: isSmallDevice ? 32 : 48,
+    paddingVertical: isSmallDevice ? 32 : 28,
   },
   newPlantsHeader: {
     flexDirection: isSmallDevice ? 'column' : 'row',
@@ -754,8 +569,8 @@ const styles = StyleSheet.create({
     borderRadius: isSmallDevice ? 16 : 20,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
+    shadowOffset: { width: 1, height: 4 },
+    shadowOpacity: 0.5,
     shadowRadius: 12,
     elevation: 4,
   },
@@ -768,22 +583,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  heartBtn: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: COLORS.textLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
-  },
   newPlantCardName: {
     color: COLORS.textDark,
     fontSize: isSmallDevice ? 15 : 16,
@@ -794,6 +593,7 @@ const styles = StyleSheet.create({
   newPlantCardMeta: {
     color: COLORS.textMuted,
     fontSize: 11,
+    lineHeight: 16,
     paddingHorizontal: 14,
     paddingTop: 4,
     paddingBottom: 10,
@@ -818,6 +618,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  viewAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    alignSelf: 'center',
+    backgroundColor: COLORS.medGreen,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    margin: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  viewAllBtnText: {
+    color: COLORS.textLight,
+    fontSize: 14,
+    fontWeight: '700',
+  },
 
   // Pagination
   paginationDots: {
@@ -838,9 +659,9 @@ const styles = StyleSheet.create({
 
   // ─── CATEGORY SECTION ───
   categorySection: {
-    backgroundColor: COLORS.bgLight,
+    backgroundColor: COLORS.darkGreen,
     paddingHorizontal: isSmallDevice ? 16 : 20,
-    paddingVertical: isSmallDevice ? 32 : 48,
+    paddingVertical: isSmallDevice ? 32 : 68,
   },
   categoryHeader: {
     flexDirection: isSmallDevice ? 'column' : 'row',
@@ -849,14 +670,14 @@ const styles = StyleSheet.create({
     marginBottom: isSmallDevice ? 24 : 32,
   },
   categoryHeaderLeft: {
-    color: COLORS.textMuted,
+    color: COLORS.textLight,
     fontSize: isSmallDevice ? 12 : 13,
     lineHeight: 20,
     flex: isSmallDevice ? undefined : 1,
     maxWidth: isSmallDevice ? '100%' : 260,
   },
   categoryHeaderTitle: {
-    color: COLORS.textDark,
+    color: COLORS.textLight,
     fontSize: isSmallDevice ? scale(38) : 64,
     fontWeight: '900',
     letterSpacing: -2,
@@ -920,13 +741,13 @@ const styles = StyleSheet.create({
 
   // ─── QUALITY SECTION ───
   qualitySection: {
-    backgroundColor: COLORS.bgCream,
+    backgroundColor: COLORS.textLight,
     paddingHorizontal: isSmallDevice ? 16 : 20,
     paddingVertical: isSmallDevice ? 40 : 64,
     alignItems: 'center',
   },
   qualityTitle: {
-    color: COLORS.textDark,
+    color: COLORS.darkGreen,
     fontSize: isSmallDevice ? scale(34) : 56,
     fontWeight: '900',
     letterSpacing: -2,
@@ -955,28 +776,10 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  qualityPlayBtn: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    marginTop: -28,
-    marginLeft: -28,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
-  },
 
   // ─── FILTER + CAROUSEL ───
   filterSection: {
-    backgroundColor: COLORS.bgCream,
+    backgroundColor: COLORS.textLight,
     paddingVertical: isSmallDevice ? 32 : 48,
   },
   filterTabs: {
@@ -1079,9 +882,6 @@ const styles = StyleSheet.create({
 
   // ─── HIGHLIGHT CARDS ───
   highlightSection: {
-    backgroundColor: COLORS.bgCream,
-    paddingHorizontal: isSmallDevice ? 16 : 20,
-    paddingBottom: isSmallDevice ? 32 : 48,
     gap: isSmallDevice ? 12 : 16,
   },
   highlightCardLarge: {
@@ -1175,66 +975,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // ─── BLOGS ───
-  blogsSection: {
-    paddingVertical: isSmallDevice ? 40 : 60,
-    paddingHorizontal: isSmallDevice ? 16 : 20,
-    backgroundColor: COLORS.textDark,
-    alignItems: 'center',
-  },
-  blogsSectionTitle: {
-    color: COLORS.textLight,
-    fontSize: isSmallDevice ? scale(28) : 40,
-    fontWeight: '900',
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginBottom: 10,
-    letterSpacing: -1,
-  },
-  blogsSectionSub: {
-    color: COLORS.muted,
-    fontSize: isSmallDevice ? 13 : 14,
-    textAlign: 'center',
-    marginBottom: isSmallDevice ? 28 : 36,
-    paddingHorizontal: isSmallDevice ? 10 : 40,
-  },
-  blogsContainer: {
-    flexDirection: isSmallDevice ? 'column' : 'row',
-    flexWrap: 'wrap',
-    gap: isSmallDevice ? 16 : 20,
-    justifyContent: 'center',
-    marginBottom: isSmallDevice ? 28 : 36,
-    maxWidth: isSmallDevice ? '100%' : 1200,
-  },
-  blogCard: {
-    width: isSmallDevice ? '100%' : 340,
-    backgroundColor: COLORS.color5,
-    borderRadius: isSmallDevice ? 16 : 20,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  blogImageWrapper: {
-    width: '100%',
-    height: isSmallDevice ? 180 : 210,
-    position: 'relative',
-  },
-  blogCardImage: {
-    width: '100%',
-    height: '100%',
-  },
-  blogCardGradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 100,
-  },
   blogCategoryBadge: {
     position: 'absolute',
     top: 12,
     right: 12,
-    backgroundColor: COLORS.color2,
+    backgroundColor: COLORS.darkGreen,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 16,
@@ -1245,78 +990,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-  },
-  blogCardContent: {
-    padding: isSmallDevice ? 16 : 20,
-  },
-  blogCardTitle: {
-    color: COLORS.textLight,
-    fontSize: isSmallDevice ? 15 : 17,
-    fontWeight: '700',
-    marginBottom: 8,
-    lineHeight: isSmallDevice ? 21 : 23,
-  },
-  blogCardDescription: {
-    color: COLORS.muted,
-    fontSize: isSmallDevice ? 12 : 13,
-    lineHeight: 19,
-    marginBottom: 12,
-  },
-  blogReadMore: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  blogReadMoreText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.color2,
-  },
-  viewAllBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: COLORS.color2,
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 999,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  viewAllBtnText: {
-    color: COLORS.textLight,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-
-  // ─── CONTACT STRIP ───
-  contactStrip: {
-    backgroundColor: COLORS.textDark,
-    flexDirection: isSmallDevice ? 'column' : 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 16,
-    paddingVertical: isSmallDevice ? 20 : 24,
-    paddingHorizontal: 20,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.08)',
-  },
-  contactStripBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.25)',
-    borderRadius: 999,
-  },
-  contactStripText: {
-    color: COLORS.textLight,
-    fontSize: isSmallDevice ? 12 : 13,
   },
 
   // ─── TECH STACK ───

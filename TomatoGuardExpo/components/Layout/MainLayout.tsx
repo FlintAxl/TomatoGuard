@@ -14,6 +14,20 @@ import { StatusBar } from 'expo-status-bar';
 import { BlurView } from 'expo-blur';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const isSmallDevice = SCREEN_WIDTH < 768;
+
+const COLORS = {
+  bgCream: '#f0ede6',
+  bgLight: '#e8e4db',
+  darkGreen: '#1a3a2a',
+  medGreen: '#2d5a3d',
+  accentGreen: '#3d7a52',
+  textLight: '#ffffff',
+  textDark: '#0d1f14',
+  textMuted: '#5a7a65',
+  cardBg: '#1e3d2a',
+  navBg: '#0d2018',
+};  
 
 interface MainLayoutProps {
   drawerOpen: boolean;
@@ -110,7 +124,7 @@ const styles = StyleSheet.create({
     margin: SCREEN_WIDTH < 768 ? 8 : 16,
     borderRadius: SCREEN_WIDTH < 768 ? 12 : 16,
     overflow: 'hidden',
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: 'rgb(255, 255, 255)',
   },
   headerBlur: {
     paddingVertical: SCREEN_WIDTH < 768 ? 12 : 16,
