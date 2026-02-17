@@ -200,105 +200,29 @@ class TomatoValidator:
 
     def validate(self, image_bytes: bytes, part_prediction: dict) -> dict:
         """
-        Run full validation.  Returns a dict with:
+        Only check part classifier confidence. Returns a dict with:
           is_valid        – bool, True means "proceed with disease detection"
           rejection_reason – str or None
           scores          – dict of individual check scores
         """
         scores: Dict[str, Any] = {}
 
-        # --- 1. Color profile check ---
-        color_ratio = self._compute_plant_color_ratio(image_bytes)
-        scores['plant_color_ratio'] = round(color_ratio, 3)
-        
-        # --- 2. Part classifier confidence ---
         part_confidence = part_prediction.get('confidence', 0)
         scores['part_confidence'] = round(part_confidence, 3)
 
-        # --- 3. Texture / edge complexity ---
-        texture_score = self._compute_texture_score(image_bytes)
-        scores['texture_score'] = round(texture_score, 3)
-
-        # --- Decision logic ---
         rejection_reasons = []
-
-        if color_ratio < self.MIN_PLANT_COLOR_RATIO:
-            rejection_reasons.append(
-                f"Image color profile does not match tomato plant (plant colors: {color_ratio:.0%}, need ≥{self.MIN_PLANT_COLOR_RATIO:.0%})"
-            )
-
         if part_confidence < self.MIN_PART_CLASSIFIER_CONFIDENCE:
             rejection_reasons.append(
                 f"Part classifier confidence too low ({part_confidence:.0%}, need ≥{self.MIN_PART_CLASSIFIER_CONFIDENCE:.0%})"
             )
 
-        if texture_score < self.MIN_TEXTURE_SCORE:
-            rejection_reasons.append(
-                f"Image texture does not resemble a plant surface (score: {texture_score:.2f})"
-            )
-
         is_valid = len(rejection_reasons) == 0
-        # Allow through if at least 2 of 3 checks pass (soft gate)
-        if not is_valid:
-            passing = sum([
-                color_ratio >= self.MIN_PLANT_COLOR_RATIO,
-                part_confidence >= self.MIN_PART_CLASSIFIER_CONFIDENCE,
-                texture_score >= self.MIN_TEXTURE_SCORE,
-            ])
-            if passing >= 2:
-                is_valid = True
-                scores['soft_pass'] = True
 
         return {
             'is_valid': is_valid,
             'rejection_reason': '; '.join(rejection_reasons) if not is_valid else None,
             'scores': scores,
         }
-
-    # ------------------------------------------------------------------ #
-    #  Internal helpers                                                    #
-    # ------------------------------------------------------------------ #
-
-    def _compute_plant_color_ratio(self, image_bytes: bytes) -> float:
-        """Fraction of pixels that fall into plant-relevant HSV ranges."""
-        try:
-            nparr = np.frombuffer(image_bytes, np.uint8)
-            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            if img is None:
-                return 0.0
-
-            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-            total_pixels = hsv.shape[0] * hsv.shape[1]
-            combined_mask = np.zeros(hsv.shape[:2], dtype=np.uint8)
-
-            for cr in self.PLANT_COLOR_RANGES:
-                mask = cv2.inRange(hsv, cr['lower'], cr['upper'])
-                combined_mask = cv2.bitwise_or(combined_mask, mask)
-
-            plant_pixels = int(np.count_nonzero(combined_mask))
-            return plant_pixels / total_pixels if total_pixels > 0 else 0.0
-        except Exception:
-            return 0.0
-
-    def _compute_texture_score(self, image_bytes: bytes) -> float:
-        """
-        Measure edge density via Canny.  Plant surfaces are textured;
-        solid-color walls / screens are not.
-        """
-        try:
-            nparr = np.frombuffer(image_bytes, np.uint8)
-            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            if img is None:
-                return 0.0
-
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            # Slight blur to suppress noise
-            gray = cv2.GaussianBlur(gray, (5, 5), 0)
-            edges = cv2.Canny(gray, 50, 150)
-            edge_ratio = float(np.count_nonzero(edges)) / (gray.shape[0] * gray.shape[1])
-            return edge_ratio
-        except Exception:
-            return 0.0
 
 
 class TomatoImagePreprocessor:
@@ -387,7 +311,7 @@ class MLService:
         self.validator = TomatoValidator()  # NEW: Add tomato validator
         # Updated class names to match your evaluation results
         self.class_names = {
-            'part': ['fruit', 'leaf', 'stem'],
+            'part': ['fruit', 'leaf','non_tomato', 'stem'],
             'fruit': ['Anthracnose', 'Blossom End Rot', 'Botrytis Gray Mold', 'Buckeye Rot', 'Healthy', 'Sunscald'],
             'leaf': ['Bacterial Spot', 'Early Blight', 'Healthy', 'Late Blight', 'Septoria Leaf Spot', 'Yellow Leaf Curl'],
             'stem': ['Blight', 'Healthy', 'Wilt']  # Fixed order to match your confusion matrix
@@ -397,7 +321,7 @@ class MLService:
     def load_models(self):
         """Load all trained models with verification"""
         model_files = {
-            'part': 'part_classifier.h5',
+            'part': 'part_classifier_new.h5',
             'leaf': 'leaf_model.h5',
             'fruit': 'fruit_model.h5',
             'stem': 'stem_model.h5'
@@ -703,6 +627,36 @@ class MLService:
         t0 = _time.perf_counter()
         validation = self.validator.validate(image_bytes, part_result)
         timings['validation'] = round(_time.perf_counter() - t0, 3)
+
+        # Reject if predicted part is 'non_tomato'
+        if part_result['part'] == 'non_tomato':
+            timings['total'] = round(_time.perf_counter() - pipeline_start, 3)
+            return {
+                'is_tomato': False,
+                'rejection_reason': 'The uploaded image does not appear to be a tomato plant part (classified as non_tomato).',
+                'validation_scores': validation['scores'],
+                'part_detection': part_result,
+                'disease_detection': None,
+                'spot_detection': None,
+                'recommendations': {
+                    'message': 'The uploaded image does not appear to be a tomato plant part.',
+                    'suggestions': [
+                        'Make sure the photo clearly shows a tomato leaf, fruit, or stem',
+                        'Avoid photos with too much background or non-plant objects',
+                        'Ensure good lighting so plant colors are visible',
+                        'Try cropping the image to focus on the plant part',
+                    ],
+                },
+                'image_info': image_info,
+                'model_info': {
+                    'loaded_models': loaded_models,
+                    'total_models': len(self.loaded_models_info),
+                    'analysis_timestamp': datetime.now().isoformat(),
+                    'preprocessing_method': 'enhanced' if use_enhanced_preprocessing else 'original',
+                    'validation_gate': 'rejected',
+                },
+                'performance': timings,
+            }
 
         if not validation['is_valid']:
             timings['total'] = round(_time.perf_counter() - pipeline_start, 3)
