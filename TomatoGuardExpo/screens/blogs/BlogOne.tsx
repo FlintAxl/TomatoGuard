@@ -115,11 +115,6 @@ const BlogOne: React.FC = () => {
               <Text style={styles.paragraph}>
                 Late blight, caused by Phytophthora infestans, is a devastating disease that can destroy entire crops within days. It thrives in cool, wet conditions and spreads rapidly.
               </Text>
-               <Image
-                source={{ uri: 'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771316752/tomato_guard/ronvpo1uxub9qzessrwu.jpg' }}
-                style={{ width: '100%', height: 180, borderRadius: 10, marginTop: 10, marginBottom: 10 }}
-                resizeMode="cover"
-              />
               <View style={styles.symptomBox}>
                 <Text style={styles.symptomTitle}>Symptoms to Watch For:</Text>
                 <Text style={styles.bulletPoint}>• Water-soaked spots on leaves and stems</Text>
@@ -133,11 +128,6 @@ const BlogOne: React.FC = () => {
               <Text style={styles.paragraph}>
                 Septoria leaf spot is caused by the fungus Septoria lycopersici and primarily affects the foliage of tomato plants. It's characterized by numerous small, circular spots with gray centers.
               </Text>
-              <Image
-                source={{ uri: 'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771331657/1d3dc5a7-5c0a-4852-8210-b06eede5d40a___Matt.S_CG_6071_copy_u69lf8.jpg' }}
-                style={{ width: '100%', height: 180, borderRadius: 10, marginTop: 10, marginBottom: 10 }}
-                resizeMode="cover"
-              />
               <View style={styles.symptomBox}>
                 <Text style={styles.symptomTitle}>Symptoms to Watch For:</Text>
                 <Text style={styles.bulletPoint}>• Small circular spots with dark borders</Text>

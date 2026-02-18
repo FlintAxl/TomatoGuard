@@ -58,11 +58,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({
       {/* Main Content */}
         {/* Header with Glass Effect */}
         <View style={styles.headerContainer}>
-          <BlurView
-            intensity={30}
-            tint="dark"
-            style={styles.headerBlur}
-          >
             <View style={styles.headerContent}>
               {/* Left Section: Menu Button + Logo */}
               <View style={styles.headerLeft}>
@@ -111,7 +106,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 </View>
               )}
             </View>
-          </BlurView>
         </View>
         {children}
     </SafeAreaView>
@@ -124,9 +118,7 @@ const styles = StyleSheet.create({
     margin: SCREEN_WIDTH < 768 ? 8 : 16,
     borderRadius: SCREEN_WIDTH < 768 ? 12 : 16,
     overflow: 'hidden',
-    backgroundColor: 'rgb(255, 255, 255)',
-  },
-  headerBlur: {
+    backgroundColor: COLORS.darkGreen,
     paddingVertical: SCREEN_WIDTH < 768 ? 12 : 16,
     paddingHorizontal: SCREEN_WIDTH < 768 ? 12 : 20,
   },

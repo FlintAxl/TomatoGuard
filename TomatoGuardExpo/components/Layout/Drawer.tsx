@@ -30,7 +30,7 @@ const Drawer: React.FC<DrawerProps> = ({
 }) => {
   const { authState } = useAuth();
   const navigation = useNavigation<RootStackNavigationProp>();
-  
+    
   const baseNavItems = [
     { id: 'forums', label: 'Forums', icon: 'comments' },
     { id: 'blogs', label: 'Blogs', icon: 'pen' },

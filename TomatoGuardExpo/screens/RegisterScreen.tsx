@@ -13,22 +13,26 @@ import {
   StyleSheet,
   Dimensions,
   Animated,
+  ImageBackground,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { useAuth } from '../contexts/AuthContext';
 import MainLayout from '../components/Layout/MainLayout';
 import Drawer from '../components/Layout/Drawer';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const isSmallDevice = SCREEN_WIDTH < 768;
 
 const COLORS = {
-  color1: '#f8ff76',
-  color2: '#e9523a',
-  color3: '#2d7736',
-  color4: '#081600',
-  color5: '#1b4e00',
+  bgCream: '#f0ede6',
+  bgLight: '#e8e4db',
+  darkGreen: '#1a3a2a',
+  medGreen: '#2d5a3d',
+  accentGreen: '#3d7a52',
   textLight: '#ffffff',
-  muted: '#d6e4dd',
+  textDark: '#0d1f14',
+  textMuted: '#5a7a65',
+  cardBg: '#1e3d2a',
+  navBg: '#0d2018',
 };
 
 const RegisterScreen = ({ navigation }: any) => {
@@ -45,7 +49,6 @@ const RegisterScreen = ({ navigation }: any) => {
 
   const { register } = useAuth();
 
-  // Animation for card fade-up effect
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
 
@@ -89,7 +92,6 @@ const RegisterScreen = ({ navigation }: any) => {
   };
 
   const handleRegister = async () => {
-    // Validation
     if (!email || !password || !confirmPassword) {
       setError('Please fill in all required fields');
       return;
@@ -116,7 +118,6 @@ const RegisterScreen = ({ navigation }: any) => {
         full_name: fullName || undefined,
       });
       setSuccess('Registration successful! Redirecting...');
-      // Auto-redirect happens after successful registration/login
     } catch (err: any) {
       setError(err.message || 'Registration failed');
     } finally {
@@ -125,7 +126,11 @@ const RegisterScreen = ({ navigation }: any) => {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <ImageBackground
+      source={{ uri: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1771333800/Screen_Shot_2026-02-17_at_9.09.39_PM_o8nvq8.png' }}
+      style={{ flex: 1 }}
+      resizeMode="cover"
+    >
       <MainLayout
         drawerOpen={drawerOpen}
         drawerAnimation={drawerAnimation}
@@ -138,7 +143,7 @@ const RegisterScreen = ({ navigation }: any) => {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={{ flex: 1 }}
         >
-          <ScrollView 
+          <ScrollView
             contentContainerStyle={{ flexGrow: 1 }}
             keyboardShouldPersistTaps="always"
             showsVerticalScrollIndicator={false}
@@ -152,142 +157,138 @@ const RegisterScreen = ({ navigation }: any) => {
                 },
               ]}
             >
-              <BlurView
-                intensity={30}
-                tint="dark"
-                style={styles.container}
-              >
-                {/* Form on Left */}
-                <View style={styles.formSection}>
-                  <View style={styles.formContent}>
-                    {/* Logo and Header */}
-                    <View style={styles.authHeader}>
-                      <Text style={styles.authLogo}>TomatoGuard</Text>
-                      <Text style={styles.authSubtitle}>Create your account</Text>
+              {/* Form on Left */}
+              <View style={styles.formSection}>
+                <View style={styles.formContent}>
+                  {/* Logo and Header */}
+                  <View style={styles.authHeader}>
+                    <Text style={styles.authLogo}>TomatoGuard</Text>
+                    <Text style={styles.authSubtitle}>Create your account</Text>
+                  </View>
+
+                  {/* Register Form */}
+                  <View style={styles.authForm}>
+                    {error ? (
+                      <View style={styles.errorMessage}>
+                        <Text style={styles.errorIcon}>⚠️</Text>
+                        <Text style={styles.errorText}>{error}</Text>
+                      </View>
+                    ) : null}
+
+                    {success ? (
+                      <View style={styles.successMessage}>
+                        <Text style={styles.successIcon}>✓</Text>
+                        <Text style={styles.successText}>{success}</Text>
+                      </View>
+                    ) : null}
+
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.inputLabel}>Full Name (Optional)</Text>
+                      <TextInput
+                        style={[
+                          styles.textInput,
+                          focusedInput === 'fullName' && styles.textInputFocused,
+                        ]}
+                        placeholder="Enter your full name"
+                        placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                        value={fullName}
+                        onChangeText={setFullName}
+                        onFocus={() => setFocusedInput('fullName')}
+                        onBlur={() => setFocusedInput(null)}
+                        editable={!loading}
+                      />
                     </View>
 
-                    {/* Register Form */}
-                    <View style={styles.authForm}>
-                      {error ? (
-                        <View style={styles.errorMessage}>
-                          <Text style={styles.errorIcon}>⚠️</Text>
-                          <Text style={styles.errorText}>{error}</Text>
-                        </View>
-                      ) : null}
-
-                      {success ? (
-                        <View style={styles.successMessage}>
-                          <Text style={styles.successIcon}>✓</Text>
-                          <Text style={styles.successText}>{success}</Text>
-                        </View>
-                      ) : null}
-
-                      <View style={styles.inputContainer}>
-                        <Text style={styles.inputLabel}>Full Name (Optional)</Text>
-                        <TextInput
-                          style={[
-                            styles.textInput,
-                            focusedInput === 'fullName' && styles.textInputFocused,
-                          ]}
-                          placeholder="Enter your full name"
-                          placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                          value={fullName}
-                          onChangeText={setFullName}
-                          onFocus={() => setFocusedInput('fullName')}
-                          onBlur={() => setFocusedInput(null)}
-                          editable={!loading}
-                        />
-                      </View>
-
-                      <View style={styles.inputContainer}>
-                        <Text style={styles.inputLabel}>Email *</Text>
-                        <TextInput
-                          style={[
-                            styles.textInput,
-                            focusedInput === 'email' && styles.textInputFocused,
-                          ]}
-                          placeholder="Enter your email"
-                          placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                          value={email}
-                          onChangeText={setEmail}
-                          onFocus={() => setFocusedInput('email')}
-                          onBlur={() => setFocusedInput(null)}
-                          autoCapitalize="none"
-                          keyboardType="email-address"
-                          editable={!loading}
-                        />
-                      </View>
-
-                      <View style={styles.inputContainer}>
-                        <Text style={styles.inputLabel}>Password *</Text>
-                        <TextInput
-                          style={[
-                            styles.textInput,
-                            focusedInput === 'password' && styles.textInputFocused,
-                          ]}
-                          placeholder="Create a password (min. 6 characters)"
-                          placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                          value={password}
-                          onChangeText={setPassword}
-                          onFocus={() => setFocusedInput('password')}
-                          onBlur={() => setFocusedInput(null)}
-                          secureTextEntry={true}
-                          editable={!loading}
-                        />
-                      </View>
-
-                      <View style={styles.inputContainer}>
-                        <Text style={styles.inputLabel}>Confirm Password *</Text>
-                        <TextInput
-                          style={[
-                            styles.textInput,
-                            focusedInput === 'confirmPassword' && styles.textInputFocused,
-                          ]}
-                          placeholder="Confirm your password"
-                          placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                          value={confirmPassword}
-                          onChangeText={setConfirmPassword}
-                          onFocus={() => setFocusedInput('confirmPassword')}
-                          onBlur={() => setFocusedInput(null)}
-                          secureTextEntry={true}
-                          editable={!loading}
-                        />
-                      </View>
-
-                      <TouchableOpacity
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.inputLabel}>Email *</Text>
+                      <TextInput
                         style={[
-                          styles.authButton,
-                          loading && styles.authButtonDisabled,
+                          styles.textInput,
+                          focusedInput === 'email' && styles.textInputFocused,
                         ]}
-                        onPress={handleRegister}
-                        disabled={loading}
-                      >
-                        {loading ? (
-                          <ActivityIndicator color="#ffffff" />
-                        ) : (
-                          <Text style={styles.authButtonText}>Create Account</Text>
-                        )}
-                      </TouchableOpacity>
+                        placeholder="Enter your email"
+                        placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                        value={email}
+                        onChangeText={setEmail}
+                        onFocus={() => setFocusedInput('email')}
+                        onBlur={() => setFocusedInput(null)}
+                        autoCapitalize="none"
+                        keyboardType="email-address"
+                        editable={!loading}
+                      />
+                    </View>
 
-                      <View style={styles.authLinkContainer}>
-                        <Text style={styles.authLinkText}>Already have an account?</Text>
-                        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                          <Text style={styles.authLink}>Sign in</Text>
-                        </TouchableOpacity>
-                      </View>
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.inputLabel}>Password *</Text>
+                      <TextInput
+                        style={[
+                          styles.textInput,
+                          focusedInput === 'password' && styles.textInputFocused,
+                        ]}
+                        placeholder="Create a password (min. 6 characters)"
+                        placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                        value={password}
+                        onChangeText={setPassword}
+                        onFocus={() => setFocusedInput('password')}
+                        onBlur={() => setFocusedInput(null)}
+                        secureTextEntry={true}
+                        editable={!loading}
+                      />
+                    </View>
+
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.inputLabel}>Confirm Password *</Text>
+                      <TextInput
+                        style={[
+                          styles.textInput,
+                          focusedInput === 'confirmPassword' && styles.textInputFocused,
+                        ]}
+                        placeholder="Confirm your password"
+                        placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                        value={confirmPassword}
+                        onChangeText={setConfirmPassword}
+                        onFocus={() => setFocusedInput('confirmPassword')}
+                        onBlur={() => setFocusedInput(null)}
+                        secureTextEntry={true}
+                        editable={!loading}
+                      />
+                    </View>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.authButton,
+                        loading && styles.authButtonDisabled,
+                      ]}
+                      onPress={handleRegister}
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <ActivityIndicator color="#ffffff" />
+                      ) : (
+                        <Text style={styles.authButtonText}>Create Account</Text>
+                      )}
+                    </TouchableOpacity>
+
+                    <View style={styles.authLinkContainer}>
+                      <Text style={styles.authLinkText}>Already have an account?</Text>
+                      <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                        <Text style={styles.authLink}>Sign in</Text>
+                      </TouchableOpacity>
                     </View>
                   </View>
                 </View>
+              </View>
 
-                {/* Picture on Right */}
+              {/* Picture on Right (desktop only) */}
+              {SCREEN_WIDTH >= 768 && (
                 <View style={styles.imageSection}>
                   <Image
-                    source={require('./../assets/section3-bg.png')}
+                    source={require('./../assets/tomatofarmers.png')}
                     style={styles.sideImage}
                     resizeMode="cover"
                   />
                 </View>
-              </BlurView>
+              )}
             </Animated.View>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -300,31 +301,27 @@ const RegisterScreen = ({ navigation }: any) => {
         drawerOpen={drawerOpen}
         onClose={handleCloseDrawer}
       />
-    </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
   containerWrapper: {
     flex: 1,
-    margin: SCREEN_WIDTH < 768 ? 0 : 50,
-    borderRadius: SCREEN_WIDTH < 768 ? 0 : 24,
+    margin: isSmallDevice ? 0 : 50,
+    borderRadius: isSmallDevice ? 0 : 24,
     overflow: 'hidden',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  container: {
-    flex: 1,
-    flexDirection: SCREEN_WIDTH < 768 ? 'column' : 'row',
-    minHeight: SCREEN_WIDTH < 768 ? SCREEN_HEIGHT : SCREEN_HEIGHT - 150,
+    flexDirection: isSmallDevice ? 'column' : 'row',
+    minHeight: isSmallDevice ? SCREEN_HEIGHT : SCREEN_HEIGHT - 150,
   },
 
-  // Form Section (Left on desktop, top on mobile)
+  // Form Section
   formSection: {
     flex: 1,
-    minWidth: SCREEN_WIDTH < 768 ? '100%' : '60%',
-    padding: SCREEN_WIDTH < 768 ? 20 : 40,
+    minWidth: isSmallDevice ? '100%' : '60%',
+    padding: isSmallDevice ? 20 : 40,
     justifyContent: 'center',
-    order: SCREEN_WIDTH < 768 ? 2 : 1,
+    backgroundColor: 'rgba(250, 250, 250, 0)',
   },
   formContent: {
     maxWidth: 480,
@@ -332,12 +329,11 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
 
-  // Image Section (Right on desktop, bottom on mobile)
+  // Image Section
   imageSection: {
-    flex: SCREEN_WIDTH < 768 ? 0 : 1,
-    minWidth: SCREEN_WIDTH < 768 ? '100%' : '40%',
-    height: SCREEN_WIDTH < 768 ? 200 : '100%',
-    order: SCREEN_WIDTH < 768 ? 1 : 2,
+    flex: 1,
+    minWidth: isSmallDevice ? '100%' : '40%',
+    height: isSmallDevice ? 200 : '100%',
   },
   sideImage: {
     width: '100%',
@@ -347,11 +343,11 @@ const styles = StyleSheet.create({
   // Header
   authHeader: {
     alignItems: 'center',
-    marginBottom: SCREEN_WIDTH < 768 ? 30 : 40,
-    marginTop: SCREEN_WIDTH < 768 ? 20 : 0,
+    marginBottom: isSmallDevice ? 30 : 40,
+    marginTop: isSmallDevice ? 20 : 0,
   },
   authLogo: {
-    fontSize: SCREEN_WIDTH < 768 ? 36 : 48,
+    fontSize: isSmallDevice ? 36 : 48,
     fontWeight: '700',
     fontStyle: 'italic',
     color: COLORS.textLight,
@@ -359,8 +355,8 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
   },
   authSubtitle: {
-    fontSize: SCREEN_WIDTH < 768 ? 14 : 16,
-    color: COLORS.muted,
+    fontSize: isSmallDevice ? 14 : 16,
+    color: COLORS.textLight,
     fontFamily: 'System',
   },
 
@@ -373,12 +369,10 @@ const styles = StyleSheet.create({
   errorMessage: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(233, 82, 58, 0.15)',
-    borderWidth: 1,
-    borderColor: COLORS.color2,
-    borderRadius: SCREEN_WIDTH < 768 ? 8 : 12,
-    padding: SCREEN_WIDTH < 768 ? 12 : 14,
-    marginBottom: SCREEN_WIDTH < 768 ? 20 : 24,
+    backgroundColor: 'rgb(255, 49, 17)',
+    borderRadius: isSmallDevice ? 8 : 12,
+    padding: isSmallDevice ? 12 : 14,
+    marginBottom: isSmallDevice ? 20 : 24,
     gap: 10,
   },
   errorIcon: {
@@ -387,7 +381,7 @@ const styles = StyleSheet.create({
   errorText: {
     flex: 1,
     color: COLORS.textLight,
-    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
+    fontSize: isSmallDevice ? 13 : 14,
     fontFamily: 'System',
   },
 
@@ -395,61 +389,60 @@ const styles = StyleSheet.create({
   successMessage: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(45, 119, 54, 0.15)',
-    borderWidth: 1,
-    borderColor: COLORS.color3,
-    borderRadius: SCREEN_WIDTH < 768 ? 8 : 12,
-    padding: SCREEN_WIDTH < 768 ? 12 : 14,
-    marginBottom: SCREEN_WIDTH < 768 ? 20 : 24,
+    backgroundColor: 'rgba(61, 122, 82, 0.85)',
+    borderRadius: isSmallDevice ? 8 : 12,
+    padding: isSmallDevice ? 12 : 14,
+    marginBottom: isSmallDevice ? 20 : 24,
     gap: 10,
   },
   successIcon: {
     fontSize: 18,
-    color: COLORS.color3,
+    color: COLORS.textLight,
   },
   successText: {
     flex: 1,
     color: COLORS.textLight,
-    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
+    fontSize: isSmallDevice ? 13 : 14,
     fontFamily: 'System',
   },
 
   // Input Container
   inputContainer: {
-    marginBottom: SCREEN_WIDTH < 768 ? 18 : 24,
+    marginBottom: isSmallDevice ? 18 : 24,
   },
   inputLabel: {
-    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
+    fontSize: isSmallDevice ? 13 : 14,
     fontWeight: '600',
     color: COLORS.textLight,
     marginBottom: 8,
     fontFamily: 'System',
   },
   textInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.32)',
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: SCREEN_WIDTH < 768 ? 8 : 12,
-    paddingVertical: SCREEN_WIDTH < 768 ? 12 : 14,
-    paddingHorizontal: SCREEN_WIDTH < 768 ? 14 : 16,
-    fontSize: SCREEN_WIDTH < 768 ? 14 : 15,
-    color: COLORS.textLight,
+    borderColor: COLORS.accentGreen,
+    borderRadius: isSmallDevice ? 8 : 12,
+    paddingVertical: isSmallDevice ? 12 : 14,
+    paddingHorizontal: isSmallDevice ? 14 : 16,
+    fontSize: isSmallDevice ? 14 : 15,
+    color: COLORS.darkGreen,
     fontFamily: 'System',
+    fontWeight: 'bold',  // Added bold
   },
   textInputFocused: {
-    borderColor: COLORS.color1,
-    backgroundColor: 'rgba(248, 255, 118, 0.05)',
+    borderColor: COLORS.medGreen,
+    backgroundColor: 'rgba(255, 255, 255, 0.32)',
   },
 
   // Auth Button
   authButton: {
-    backgroundColor: COLORS.color3,
-    paddingVertical: SCREEN_WIDTH < 768 ? 14 : 16,
-    borderRadius: SCREEN_WIDTH < 768 ? 8 : 12,
+    backgroundColor: COLORS.accentGreen,
+    paddingVertical: isSmallDevice ? 14 : 16,
+    borderRadius: isSmallDevice ? 8 : 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: SCREEN_WIDTH < 768 ? 8 : 12,
-    marginBottom: SCREEN_WIDTH < 768 ? 20 : 24,
+    marginTop: isSmallDevice ? 8 : 12,
+    marginBottom: isSmallDevice ? 20 : 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -461,7 +454,7 @@ const styles = StyleSheet.create({
   },
   authButtonText: {
     color: COLORS.textLight,
-    fontSize: SCREEN_WIDTH < 768 ? 15 : 16,
+    fontSize: isSmallDevice ? 15 : 16,
     fontWeight: '600',
     fontFamily: 'System',
   },
@@ -472,16 +465,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 6,
-    paddingBottom: SCREEN_WIDTH < 768 ? 20 : 0,
+    paddingBottom: isSmallDevice ? 20 : 0,
   },
   authLinkText: {
-    color: COLORS.muted,
-    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
+    color: COLORS.textLight,
+    fontSize: isSmallDevice ? 13 : 14,
     fontFamily: 'System',
   },
   authLink: {
-    color: COLORS.color3,
-    fontSize: SCREEN_WIDTH < 768 ? 13 : 14,
+    color: COLORS.textLight,
+    fontSize: isSmallDevice ? 13 : 14,
     fontWeight: '600',
     fontFamily: 'System',
   },

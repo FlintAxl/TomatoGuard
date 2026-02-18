@@ -240,6 +240,7 @@ const LandingScreen = () => {
                   {/* Hero body */}
                   <View style={styles.heroBody}>
                       {/* Stats badge */}
+                      {SCREEN_WIDTH >= 768 && (
                       <View style={styles.heroStatsBadge}>
                         <View style={styles.heroStatsLeft}>
                           <Text style={styles.heroStatsNumber}>15+</Text>
@@ -252,6 +253,7 @@ const LandingScreen = () => {
                           style={styles.heroStatsImage}
                         />
                       </View>
+                      )}
                       <TouchableOpacity style={styles.heroShopBtn} onPress={handleCheckNow}>
                       <Text style={styles.heroShopBtnText}>Login / Register</Text>
                     </TouchableOpacity>
@@ -407,12 +409,14 @@ const LandingScreen = () => {
             </View>
 
             {/* ─── TECH STACK ─── */}
-            <LinearGradient colors={[COLORS.medGreen, COLORS.darkGreen]} style={styles.sectionFive}>
+            <LinearGradient colors={[COLORS.darkGreen, COLORS.darkGreen]} style={styles.sectionFive}>
               <View style={styles.techRibbon}>
                 {TECH_STACK.map((tech, index) => (
                   <View key={index} style={styles.techItem}>
-                    <Ionicons name={tech.icon as any} size={32} color={COLORS.textLight} />
+                    <Ionicons name={tech.icon as any} size={isSmallDevice ? 20 : 32} color={COLORS.textLight} />
+                    {SCREEN_WIDTH >= 768 && (
                     <Text style={styles.techText}>{tech.name}</Text>
+                    )}
                   </View>
                 ))}
               </View>
@@ -518,14 +522,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.15)',
     borderWidth: 1.5,
     borderColor: 'rgba(255,255,255,0.4)',
-    paddingVertical: 14,
-    paddingHorizontal: 28,
+    paddingVertical: isSmallDevice ? 10 : 14,
+    paddingHorizontal: isSmallDevice ? 20 : 28,
     borderRadius: 999,
     alignSelf: 'flex-start',
   },
   heroShopBtnText: {
     color: COLORS.textLight,
-    fontSize: 14,
+    fontSize: isSmallDevice ? 10 : 14,
     fontWeight: '600',
     letterSpacing: 0.3,
   },
@@ -539,13 +543,13 @@ const styles = StyleSheet.create({
   newPlantsHeader: {
     flexDirection: isSmallDevice ? 'column' : 'row',
     justifyContent: 'space-between',
-    alignItems: isSmallDevice ? 'flex-start' : 'flex-end',
+    alignItems: isSmallDevice ? 'center' : 'flex-end',
     marginBottom: isSmallDevice ? 24 : 32,
-    gap: isSmallDevice ? 8 : 0,
+    gap: isSmallDevice ? 12 : 40,
   },
   newPlantsTitle: {
-    color: COLORS.textDark,
-    fontSize: isSmallDevice ? scale(34) : 52,
+    color: COLORS.darkGreen,
+    fontSize: isSmallDevice ? scale(40) : 52,
     fontWeight: '900',
     lineHeight: isSmallDevice ? scale(36) : 54,
     letterSpacing: -1.5,
@@ -556,7 +560,7 @@ const styles = StyleSheet.create({
     fontSize: isSmallDevice ? 12 : 13,
     lineHeight: 20,
     maxWidth: 260,
-    textAlign: isSmallDevice ? 'left' : 'right',
+    textAlign: isSmallDevice ? 'justify' : 'right',
   },
   newPlantsCards: {
     flexDirection: isSmallDevice ? 'column' : 'row',
@@ -660,13 +664,14 @@ const styles = StyleSheet.create({
   // ─── CATEGORY SECTION ───
   categorySection: {
     backgroundColor: COLORS.darkGreen,
-    paddingHorizontal: isSmallDevice ? 16 : 20,
-    paddingVertical: isSmallDevice ? 32 : 68,
+    paddingHorizontal: isSmallDevice ? 16 : 30,
+    paddingVertical: isSmallDevice ? 32 : 48,
+    borderRadius: isSmallDevice ? 0 : 24,
   },
   categoryHeader: {
-    flexDirection: isSmallDevice ? 'column' : 'row',
+    flexDirection: isSmallDevice ? 'column-reverse' : 'row',
     gap: isSmallDevice ? 12 : 40,
-    alignItems: isSmallDevice ? 'flex-start' : 'center',
+    alignItems: 'center',
     marginBottom: isSmallDevice ? 24 : 32,
   },
   categoryHeaderLeft: {
@@ -675,6 +680,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     flex: isSmallDevice ? undefined : 1,
     maxWidth: isSmallDevice ? '100%' : 260,
+    textAlign: 'justify',
   },
   categoryHeaderTitle: {
     color: COLORS.textLight,
@@ -685,58 +691,6 @@ const styles = StyleSheet.create({
     lineHeight: isSmallDevice ? scale(40) : 68,
     flex: isSmallDevice ? undefined : 2,
     textAlign: isSmallDevice ? 'left' : 'right',
-  },
-  categoryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: isSmallDevice ? 10 : 14,
-  },
-  categoryCard: {
-    width: isSmallDevice ? '47%' : '47%',
-    height: isSmallDevice ? 160 : 200,
-    borderRadius: isSmallDevice ? 16 : 20,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  categoryCardTall: {
-    height: isSmallDevice ? 200 : 260,
-  },
-  categoryCardImage: {
-    ...StyleSheet.absoluteFillObject,
-    width: '100%',
-    height: '100%',
-  },
-  categoryCardGradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  categoryCardContent: {
-    position: 'absolute',
-    bottom: 14,
-    left: 14,
-    right: 44,
-  },
-  categoryCardDesc: {
-    color: 'rgba(255,255,255,0.72)',
-    fontSize: 10,
-    lineHeight: 15,
-    marginBottom: 6,
-  },
-  categoryCardLabel: {
-    color: COLORS.textLight,
-    fontSize: isSmallDevice ? 16 : 19,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-  },
-  categoryCardArrow: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: COLORS.textLight,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 
   // ─── QUALITY SECTION ───
@@ -757,7 +711,7 @@ const styles = StyleSheet.create({
     lineHeight: isSmallDevice ? scale(38) : 62,
   },
   qualityDesc: {
-    color: COLORS.textMuted,
+    color: COLORS.darkGreen,
     fontSize: isSmallDevice ? 13 : 15,
     lineHeight: 22,
     textAlign: 'center',
@@ -925,8 +879,8 @@ const styles = StyleSheet.create({
   },
   highlightCardDesc: {
     color: 'rgba(255,255,255,0.7)',
-    fontSize: 11,
-    lineHeight: 16,
+    fontSize: isSmallDevice ? 9 : 11,
+    lineHeight: isSmallDevice ? 12 : 16,
   },
   highlightCardSmallTitle: {
     position: 'absolute',
@@ -934,7 +888,7 @@ const styles = StyleSheet.create({
     left: 14,
     right: 48,
     color: COLORS.textLight,
-    fontSize: isSmallDevice ? 18 : 21,
+    fontSize: isSmallDevice ? 10 : 21,
     fontWeight: '900',
     letterSpacing: -0.5,
   },
@@ -964,14 +918,14 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.25)',
   },
   badgeDot: {
-    width: 6,
-    height: 6,
+    width: isSmallDevice ? 4 : 6,
+    height: isSmallDevice ? 4 : 6,
     borderRadius: 3,
     backgroundColor: '#7dff8a',
   },
   badgeText: {
     color: COLORS.textLight,
-    fontSize: 10,
+    fontSize: isSmallDevice ? 5 : 10,
     fontWeight: '600',
   },
 
@@ -994,8 +948,10 @@ const styles = StyleSheet.create({
 
   // ─── TECH STACK ───
   sectionFive: {
-    paddingVertical: isSmallDevice ? 28 : 40,
-    paddingHorizontal: isSmallDevice ? 16 : 20,
+    paddingVertical: isSmallDevice ? 18 : 30,
+    paddingHorizontal: isSmallDevice ? 10 : 20,
+    marginBottom: isSmallDevice ? 0 : 20,
+    borderRadius: isSmallDevice ? 0 : 24,
   },
   techRibbon: {
     flexDirection: 'row',
@@ -1010,7 +966,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   techText: {
-    fontSize: isSmallDevice ? 13 : 14,
+    fontSize: isSmallDevice ? 10 : 14,
     fontWeight: '600',
     color: COLORS.textLight,
   },

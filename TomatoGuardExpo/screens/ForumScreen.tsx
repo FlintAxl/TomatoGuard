@@ -12,21 +12,10 @@ import {
   ActivityIndicator,
   Dimensions,
   StyleSheet,
-  Platform,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { forumService, Post as ForumPost } from '../services/api/forumService';
-import { FontAwesome5 } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
-import {
-  faThumbsUp,
-  faComment,
-  faUser,
-  faEdit,
-  faSearch,
-  faFilter,
-  faImage,
-} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesome5 } from '@expo/vector-icons'; // Only this import needed
 import CreatePostOverlay from '../components/CreatePost';
 import PostDetailOverlay from '../components/PostDetails';
 
@@ -34,11 +23,18 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const isSmallDevice = SCREEN_WIDTH < 768;
 
 const COLORS = {
-  emeraldpine: '#084734',
-  limeglow: '#CEF17B',
-  greentea: '#CDEDB3',
+  bgCream: '#f0ede6',
+  bgLight: '#e8e4db',
+  darkGreen: '#1a3a2a',
+  medGreen: '#2d5a3d',
+  accentGreen: '#3d7a52',
   textLight: '#ffffff',
-  muted: '#000000',
+  textDark: '#0d1f14',
+  textMuted: '#5a7a65',
+  cardBg: '#1e3d2a',
+  navBg: '#0d2018',
+  limeglow: '#CEF17B',
+  errorRed: '#e9523a',
 };
 
 interface ForumScreenProps {
@@ -46,19 +42,26 @@ interface ForumScreenProps {
   navigateToPostDetail: (postId: string) => void;
 }
 
+// Updated category icons with string names
+const categoryIcons: { [key: string]: string } = {
+  all: 'globe',
+  diseases: 'bug', // or use 'virus' if available in your FontAwesome5 version
+  treatment: 'syringe',
+  general: 'leaf',
+  questions: 'question-circle',
+};
+
 const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostDetail }) => {
-  const { authState, updateUser, logout } = useAuth();
-  
-  // State for posts and UI
+  const { authState } = useAuth();
+
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [myPosts, setMyPosts] = useState<ForumPost[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingMyPosts, setLoadingMyPosts] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
-  const [activeTab, setActiveForumTab] = useState<'all' | 'mine'>('all');
-  
-  // Overlay states
+  const [showMyPosts, setShowMyPosts] = useState(false);
+
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [showPostDetail, setShowPostDetail] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
@@ -71,17 +74,14 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
     { id: 'questions', label: 'Questions' },
   ];
 
-  // Fetch posts from backend
   const fetchPosts = async () => {
     if (!authState.accessToken) return;
-    
     try {
       setLoading(true);
       const fetchedPosts = await forumService.getPosts(authState.accessToken, {
         category: filterCategory !== 'all' ? filterCategory : undefined,
-        search: searchQuery || undefined
+        search: searchQuery || undefined,
       });
-      
       const postsArray = Array.isArray(fetchedPosts) ? fetchedPosts : [];
       setPosts(postsArray);
     } catch (error) {
@@ -92,10 +92,8 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
     }
   };
 
-  // Fetch my posts
   const fetchMyPosts = async () => {
     if (!authState.accessToken || !authState.user?.id) return;
-    
     try {
       setLoadingMyPosts(true);
       const fetchedPosts = await forumService.getUserPosts(authState.user.id, authState.accessToken);
@@ -108,18 +106,15 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
     }
   };
 
-  // Fetch posts on component mount
   useEffect(() => {
     fetchPosts();
     fetchMyPosts();
   }, []);
 
-  // Refetch posts when filters change
   useEffect(() => {
     fetchPosts();
   }, [filterCategory, searchQuery]);
 
-  // Refetch posts when overlays close
   useEffect(() => {
     if (!showCreatePost && !showPostDetail) {
       fetchPosts();
@@ -132,17 +127,10 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
       Alert.alert('Error', 'You must be logged in to vote');
       return;
     }
-
     try {
       const updatedPost = await forumService.toggleLike(postId, authState.accessToken);
-      const updatedPosts = posts.map(post => 
-        post.id === postId ? updatedPost : post
-      );
-      setPosts(updatedPosts);
-      // Also update in myPosts if present
-      setMyPosts(prev => prev.map(post => 
-        post.id === postId ? updatedPost : post
-      ));
+      setPosts(prev => prev.map(post => (post.id === postId ? updatedPost : post)));
+      setMyPosts(prev => prev.map(post => (post.id === postId ? updatedPost : post)));
     } catch (error) {
       console.error('Error voting:', error);
       Alert.alert('Error', 'Failed to vote');
@@ -154,37 +142,48 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
     setShowPostDetail(true);
   };
 
-  const filteredPosts = posts;
+  const displayedPosts = showMyPosts ? myPosts : posts;
+  const isLoadingDisplayed = showMyPosts ? loadingMyPosts : loading;
+
+  const getCategoryColor = (category: string) => {
+    const colors: { [key: string]: any } = {
+      diseases: { backgroundColor: '#fdecea', borderColor: COLORS.errorRed },
+      treatment: { backgroundColor: '#e8f5ec', borderColor: COLORS.accentGreen },
+      general: { backgroundColor: '#e8f0fe', borderColor: '#4a7ee8' },
+      questions: { backgroundColor: '#fff8e1', borderColor: '#f59e0b' },
+      success: { backgroundColor: '#ede9fe', borderColor: '#8b5cf6' },
+    };
+    return colors[category] || { backgroundColor: '#e8f0fe', borderColor: '#4a7ee8' };
+  };
+
+  const getCategoryTextColor = (category: string) => {
+    const colors: { [key: string]: string } = {
+      diseases: COLORS.errorRed,
+      treatment: COLORS.accentGreen,
+      general: '#4a7ee8',
+      questions: '#f59e0b',
+      success: '#8b5cf6',
+    };
+    return colors[category] || '#4a7ee8';
+  };
 
   const renderPostImages = (imageUrls: string[]) => {
     if (!imageUrls || imageUrls.length === 0) return null;
 
     if (imageUrls.length === 1) {
       return (
-        <View style={styles.imageContainer}>
-          <Image
-            source={{ uri: imageUrls[0] }}
-            style={styles.singleImage}
-            resizeMode="cover"
-          />
+        <View style={sharedStyles.imageContainer}>
+          <Image source={{ uri: imageUrls[0] }} style={sharedStyles.singleImage} resizeMode="cover" />
         </View>
       );
     }
 
     if (imageUrls.length === 2) {
       return (
-        <View style={styles.imageContainer}>
-          <View style={styles.twoImagesContainer}>
-            <Image
-              source={{ uri: imageUrls[0] }}
-              style={styles.halfImage}
-              resizeMode="cover"
-            />
-            <Image
-              source={{ uri: imageUrls[1] }}
-              style={styles.halfImage}
-              resizeMode="cover"
-            />
+        <View style={sharedStyles.imageContainer}>
+          <View style={sharedStyles.twoImagesContainer}>
+            <Image source={{ uri: imageUrls[0] }} style={sharedStyles.halfImage} resizeMode="cover" />
+            <Image source={{ uri: imageUrls[1] }} style={sharedStyles.halfImage} resizeMode="cover" />
           </View>
         </View>
       );
@@ -192,23 +191,11 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
 
     if (imageUrls.length === 3) {
       return (
-        <View style={styles.imageContainer}>
-          <Image
-            source={{ uri: imageUrls[0] }}
-            style={styles.singleImage}
-            resizeMode="cover"
-          />
-          <View style={styles.twoImagesContainer}>
-            <Image
-              source={{ uri: imageUrls[1] }}
-              style={styles.halfImage}
-              resizeMode="cover"
-            />
-            <Image
-              source={{ uri: imageUrls[2] }}
-              style={styles.halfImage}
-              resizeMode="cover"
-            />
+        <View style={sharedStyles.imageContainer}>
+          <Image source={{ uri: imageUrls[0] }} style={sharedStyles.singleImage} resizeMode="cover" />
+          <View style={sharedStyles.twoImagesContainer}>
+            <Image source={{ uri: imageUrls[1] }} style={sharedStyles.halfImage} resizeMode="cover" />
+            <Image source={{ uri: imageUrls[2] }} style={sharedStyles.halfImage} resizeMode="cover" />
           </View>
         </View>
       );
@@ -216,27 +203,15 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
 
     const remainingCount = imageUrls.length - 3;
     return (
-      <View style={styles.imageContainer}>
-        <Image
-          source={{ uri: imageUrls[0] }}
-          style={styles.singleImage}
-          resizeMode="cover"
-        />
-        <View style={styles.twoImagesContainer}>
-          <Image
-            source={{ uri: imageUrls[1] }}
-            style={styles.halfImage}
-            resizeMode="cover"
-          />
-          <View style={styles.imageWrapper}>
-            <Image
-              source={{ uri: imageUrls[2] }}
-              style={styles.halfImage}
-              resizeMode="cover"
-            />
+      <View style={sharedStyles.imageContainer}>
+        <Image source={{ uri: imageUrls[0] }} style={sharedStyles.singleImage} resizeMode="cover" />
+        <View style={sharedStyles.twoImagesContainer}>
+          <Image source={{ uri: imageUrls[1] }} style={sharedStyles.halfImage} resizeMode="cover" />
+          <View style={sharedStyles.imageWrapper}>
+            <Image source={{ uri: imageUrls[2] }} style={sharedStyles.halfImage} resizeMode="cover" />
             {remainingCount > 0 && (
-              <View style={styles.moreImagesOverlay}>
-                <Text style={styles.moreImagesText}>+{remainingCount}</Text>
+              <View style={sharedStyles.moreImagesOverlay}>
+                <Text style={sharedStyles.moreImagesText}>+{remainingCount}</Text>
               </View>
             )}
           </View>
@@ -247,247 +222,367 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
 
   const renderPost = ({ item }: { item: ForumPost }) => (
     <TouchableOpacity
-      style={styles.postCard}
+      style={sharedStyles.postCard}
       onPress={() => handlePostClick(item.id)}
+      activeOpacity={0.92}
     >
-      <BlurView intensity={20} tint="dark" style={styles.blurContainer}>
-        <View style={styles.postHeader}>
-          <View style={styles.postAuthorInfo}>
-            <View style={styles.postAvatar}>
-              <FontAwesome5 icon={faUser} size={20} color="#ffffff" />
+      <View style={sharedStyles.postCardAccent} />
+      <View style={sharedStyles.postCardInner}>
+        {/* Header */}
+        <View style={sharedStyles.postHeader}>
+          <View style={sharedStyles.postAuthorInfo}>
+            <View style={sharedStyles.postAvatar}>
+              <FontAwesome5 name="user" size={isSmallDevice ? 11 : 14} color={COLORS.textLight} />
             </View>
-            <View>
-              <Text style={styles.postAuthorName}>{item.author_name || 'Anonymous'}</Text>
-              <Text style={styles.postTime}>{new Date(item.created_at).toLocaleDateString()}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={sharedStyles.postAuthorName}>{item.author_name || 'Anonymous'}</Text>
+              <Text style={sharedStyles.postTime}>{new Date(item.created_at).toLocaleDateString()}</Text>
             </View>
           </View>
-          
           {item.category && (
-            <View style={[styles.categoryBadge, getCategoryColor(item.category)]}>
-              <Text style={styles.categoryBadgeText}>{item.category}</Text>
+            <View style={[sharedStyles.categoryBadge, getCategoryColor(item.category)]}>
+              <Text style={[sharedStyles.categoryBadgeText, { color: getCategoryTextColor(item.category) }]}>
+                {item.category}
+              </Text>
             </View>
           )}
         </View>
-  
-        <View style={styles.postContent}>
-          <Text style={styles.postTitle}>{item.title}</Text>
-          <Text style={styles.postDescription} numberOfLines={3}>
+
+        {/* Content */}
+        <View style={sharedStyles.postContent}>
+          <Text style={sharedStyles.postTitle}>{item.title}</Text>
+          <Text style={sharedStyles.postDescription} numberOfLines={3}>
             {item.description}
           </Text>
         </View>
-  
+
         {renderPostImages(item.image_urls)}
-  
-        <View style={styles.postActions}>
+
+        {/* Actions */}
+        <View style={sharedStyles.postActions}>
           <TouchableOpacity
-            style={[
-              styles.actionBtn, 
-              styles.upvoteBtn,
-              item.user_has_liked && styles.upvoteBtnActive
-            ]}
+            style={[sharedStyles.actionBtn, sharedStyles.upvoteBtn, item.user_has_liked && sharedStyles.upvoteBtnActive]}
             onPress={() => handleVote(item.id, 'like')}
           >
-            <FontAwesome5 
-              icon={faThumbsUp} 
-              size={16} 
-              color={item.user_has_liked ? "#10b981" : "#ffffff"} 
+            <FontAwesome5
+              name="thumbs-up"
+              size={isSmallDevice ? 11 : 13}
+              color={item.user_has_liked ? COLORS.textLight : COLORS.darkGreen}
             />
-            <Text style={[
-              styles.actionText,
-              item.user_has_liked && styles.actionTextActive
-            ]}>
+            <Text style={[sharedStyles.actionText, item.user_has_liked && sharedStyles.actionTextActive]}>
               {item.likes_count}
             </Text>
           </TouchableOpacity>
-  
+
           <TouchableOpacity
-            style={[styles.actionBtn, styles.commentBtn]}
+            style={[sharedStyles.actionBtn, sharedStyles.commentBtn]}
             onPress={() => handlePostClick(item.id)}
           >
-            <FontAwesome5 icon={faComment} size={16} color="#ffffff" />
-            <Text style={styles.actionText}>{item.comments_count} Comments</Text>
+            <FontAwesome5 name="comment" size={isSmallDevice ? 11 : 13} color={COLORS.accentGreen} />
+            <Text style={sharedStyles.commentActionText}>{item.comments_count} Comments</Text>
           </TouchableOpacity>
         </View>
-      </BlurView>
+      </View>
     </TouchableOpacity>
   );
 
-  const getCategoryColor = (category: string) => {
-    const colors: { [key: string]: any } = {
-      diseases: { backgroundColor: '#baed91', borderColor: '#CDEDB3' },
-      treatment: { backgroundColor: '#baed91', borderColor: '#CDEDB3' },
-      general: { backgroundColor: '#3b82f620', borderColor: '#3b82f6' },
-      questions: { backgroundColor: '#f59e0b20', borderColor: '#f59e0b' },
-      success: { backgroundColor: '#8b5cf620', borderColor: '#8b5cf6' },
-    };
-    return colors[category] || { backgroundColor: '#3b82f620', borderColor: '#3b82f6' };
-  };
+  const renderEmpty = () => (
+    <View style={sharedStyles.emptyContainer}>
+      <View style={sharedStyles.emptyIconWrap}>
+        <FontAwesome5
+          name={showMyPosts ? "edit" : "image"}
+          size={isSmallDevice ? 28 : 36}
+          color={COLORS.accentGreen}
+        />
+      </View>
+      <Text style={sharedStyles.emptyText}>
+        {showMyPosts ? "You haven't posted yet" : 'No posts found'}
+      </Text>
+      <Text style={sharedStyles.emptySubtext}>
+        {showMyPosts
+          ? 'Share your thoughts with the community!'
+          : 'Be the first to start a discussion!'}
+      </Text>
+      <TouchableOpacity style={sharedStyles.emptyButton} onPress={() => setShowCreatePost(true)}>
+        <Text style={sharedStyles.emptyButtonText}>
+          {showMyPosts ? 'Create Your First Post' : 'Create Post'}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
 
+  // ── MOBILE LAYOUT ──────────────────────────────────────────────────────────
+  if (isSmallDevice) {
+    return (
+      <View style={mobileStyles.container}>
+
+        {/* Search Row + Create Post Button */}
+        <View style={mobileStyles.searchRow}>
+          <View style={mobileStyles.searchInputContainer}>
+            <FontAwesome5 name="search" size={14} color={COLORS.textMuted} />
+            <TextInput
+              style={mobileStyles.searchInput}
+              placeholder="Search discussions..."
+              placeholderTextColor={COLORS.textMuted}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+          <TouchableOpacity
+            style={mobileStyles.createBtn}
+            onPress={() => setShowCreatePost(true)}
+          >
+            <FontAwesome5 name="edit" size={15} color={COLORS.textLight} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Category + My Posts Horizontal Scroll Row */}
+        <View style={mobileStyles.categoryBar}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={mobileStyles.categoryScroll}
+          >
+            {/* My Posts chip */}
+            <TouchableOpacity
+              style={[
+                mobileStyles.categoryChip,
+                showMyPosts && mobileStyles.categoryChipActive,
+              ]}
+              onPress={() => setShowMyPosts(prev => !prev)}
+            >
+              <Text style={[
+                mobileStyles.categoryChipText,
+                showMyPosts && mobileStyles.categoryChipTextActive,
+              ]}>
+                MY POSTS
+              </Text>
+              {myPosts.length > 0 && (
+                <View style={mobileStyles.chipBadge}>
+                  <Text style={mobileStyles.chipBadgeText}>{myPosts.length}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            {/* Category chips */}
+            {categories.map(category => (
+              <TouchableOpacity
+                key={category.id}
+                style={[
+                  mobileStyles.categoryChip,
+                  !showMyPosts && filterCategory === category.id && mobileStyles.categoryChipActive,
+                ]}
+                onPress={() => {
+                  setFilterCategory(category.id);
+                  setShowMyPosts(false);
+                }}
+              >
+                <Text style={[
+                  mobileStyles.categoryChipText,
+                  !showMyPosts && filterCategory === category.id && mobileStyles.categoryChipTextActive,
+                ]}>
+                  {category.label.toUpperCase()}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Scrollable Posts Feed */}
+        <ScrollView
+          style={mobileStyles.feed}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={mobileStyles.feedContent}
+        >
+          {isLoadingDisplayed ? (
+            <View style={sharedStyles.loadingContainer}>
+              <ActivityIndicator size="large" color={COLORS.accentGreen} />
+              <Text style={sharedStyles.loadingText}>Loading posts...</Text>
+            </View>
+          ) : displayedPosts.length === 0 ? (
+            renderEmpty()
+          ) : (
+            <FlatList
+              data={displayedPosts}
+              renderItem={renderPost}
+              keyExtractor={item => item.id}
+              scrollEnabled={false}
+              showsVerticalScrollIndicator={false}
+            />
+          )}
+        </ScrollView>
+
+        {/* Overlays */}
+        <CreatePostOverlay visible={showCreatePost} onClose={() => setShowCreatePost(false)} />
+        <PostDetailOverlay
+          visible={showPostDetail}
+          onClose={() => {
+            setShowPostDetail(false);
+            setSelectedPostId(null);
+          }}
+          postId={selectedPostId}
+        />
+      </View>
+    );
+  }
+
+  // ── WEB / TABLET 3-COLUMN LAYOUT ──────────────────────────────────────────
   return (
-    <View style={styles.container}>
-      {/* Main Content Area - Full Width */}
-      <View style={styles.mainContent}>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Search Bar and Create Post Button */}
-          <View style={styles.topBar}>
-            <View style={styles.searchInputContainer}>
-              <FontAwesome5 icon={faSearch} size={18} color="#94a3b8" />
+    <View style={webStyles.container}>
+      <View style={webStyles.columnsWrapper}>
+
+        {/* LEFT SIDEBAR — Categories */}
+        <View style={webStyles.leftSidebar}>
+          <Text style={webStyles.sidebarTitle}>Post Categories</Text>
+          <View style={webStyles.userDivider} />
+          {categories.map(category => (
+            <TouchableOpacity
+              key={category.id}
+              style={[
+                webStyles.categoryItem,
+                !showMyPosts && filterCategory === category.id && webStyles.categoryItemActive,
+              ]}
+              onPress={() => {
+                setFilterCategory(category.id);
+                setShowMyPosts(false);
+              }}
+            >
+              <View style={webStyles.categoryIconWrap}>
+                <FontAwesome5
+                  name={categoryIcons[category.id] || "globe"}
+                  size={14}
+                  color={
+                    !showMyPosts && filterCategory === category.id
+                      ? COLORS.limeglow
+                      : 'rgba(255,255,255,0.6)'
+                  }
+                />
+              </View>
+              <Text style={[
+                webStyles.categoryItemText,
+                !showMyPosts && filterCategory === category.id && webStyles.categoryItemTextActive,
+              ]}>
+                {category.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* CENTER — Posts Feed (only this scrolls) */}
+        <View style={webStyles.centerColumn}>
+          {/* Search Bar */}
+          <View style={webStyles.searchSection}>
+            <View style={webStyles.searchInputContainer}>
+              <FontAwesome5 name="search" size={14} color={COLORS.textMuted} />
               <TextInput
-                style={styles.searchInput}
-                placeholder="Search posts..."
-                placeholderTextColor="#94a3b8"
+                style={webStyles.searchInput}
+                placeholder="Search discussions..."
+                placeholderTextColor={COLORS.textMuted}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
-              <TouchableOpacity style={styles.filterBtn}>
-                <FontAwesome5 icon={faFilter} size={18} color="#ffffff" />
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={styles.createPostButton}
-              onPress={() => setShowCreatePost(true)}
-            >
-              <FontAwesome5 icon={faEdit} size={16} color="#ffffff" />
-              {SCREEN_WIDTH >= 768 && (
-                <Text style={styles.createPostButtonText}>Create Post</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-
-          {/* Feed Toggle Tabs */}
-          <View style={styles.feedToggleContainer}>
-            <View style={styles.feedToggle}>
-              <TouchableOpacity
-                style={[
-                  styles.feedToggleBtn,
-                  activeTab === 'all' && styles.feedToggleBtnActive,
-                ]}
-                onPress={() => setActiveForumTab('all')}
-              >
-                <FontAwesome5 icon={faComment} size={14} color={activeTab === 'all' ? '#ffffff' : '#94a3b8'} />
-                <Text style={[styles.feedToggleText, activeTab === 'all' && styles.feedToggleTextActive]}>All Posts</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.feedToggleBtn,
-                  activeTab === 'mine' && styles.feedToggleBtnActive,
-                ]}
-                onPress={() => setActiveForumTab('mine')}
-              >
-                <FontAwesome5 icon={faUser} size={14} color={activeTab === 'mine' ? '#ffffff' : '#94a3b8'} />
-                <Text style={[styles.feedToggleText, activeTab === 'mine' && styles.feedToggleTextActive]}>My Posts</Text>
-                {myPosts.length > 0 && (
-                  <View style={styles.feedToggleBadge}>
-                    <Text style={styles.feedToggleBadgeText}>{myPosts.length}</Text>
-                  </View>
-                )}
+              <TouchableOpacity style={webStyles.filterBtn}>
+                <FontAwesome5 name="filter" size={14} color={COLORS.textLight} />
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* Category Filter */}
-          <View style={styles.categoryContainer}>
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.categoryScrollContent}
-            >
-              {categories.map(category => (
-                <TouchableOpacity
-                  key={category.id}
-                  style={[
-                    styles.categoryChip,
-                    filterCategory === category.id && styles.categoryChipActive,
-                  ]}
-                  onPress={() => setFilterCategory(category.id)}
-                >
-                  <Text
-                    style={[
-                      styles.categoryText,
-                      filterCategory === category.id && styles.categoryTextActive,
-                    ]}
-                  >
-                    {category.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-
-          {/* Posts Feed */}
-          <View style={styles.postsContainer}>
-            <Text style={styles.sectionTitle}>
-              {activeTab === 'mine' ? 'My Posts' : 'Recent Discussions'}
+          {/* Section Label */}
+          <View style={webStyles.sectionTitleRow}>
+            <View style={webStyles.sectionTitleAccent} />
+            <Text style={webStyles.sectionTitle}>
+              {showMyPosts ? 'My Posts' : 'Recent Discussions'}
             </Text>
+          </View>
 
-            {activeTab === 'all' ? (
-              // ===== ALL POSTS TAB =====
-              loading ? (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="large" color="#10b981" />
-                  <Text style={styles.loadingText}>Loading posts...</Text>
-                </View>
-              ) : filteredPosts.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                  <FontAwesome5 icon={faImage} size={48} color="#475569" />
-                  <Text style={styles.emptyText}>No posts found</Text>
-                  <Text style={styles.emptySubtext}>Be the first to start a discussion!</Text>
-                  <TouchableOpacity 
-                    style={styles.emptyButton}
-                    onPress={() => setShowCreatePost(true)}
-                  >
-                    <Text style={styles.emptyButtonText}>Create Post</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <FlatList
-                  data={filteredPosts}
-                  renderItem={renderPost}
-                  keyExtractor={item => item.id}
-                  scrollEnabled={false}
-                  showsVerticalScrollIndicator={false}
-                />
-              )
+          {/* Scrollable posts */}
+          <ScrollView showsVerticalScrollIndicator={false} style={webStyles.postsScroll}>
+            {isLoadingDisplayed ? (
+              <View style={sharedStyles.loadingContainer}>
+                <ActivityIndicator size="large" color={COLORS.accentGreen} />
+                <Text style={sharedStyles.loadingText}>Loading posts...</Text>
+              </View>
+            ) : displayedPosts.length === 0 ? (
+              renderEmpty()
             ) : (
-              // ===== MY POSTS TAB =====
-              loadingMyPosts ? (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="large" color="#10b981" />
-                  <Text style={styles.loadingText}>Loading your posts...</Text>
-                </View>
-              ) : myPosts.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                  <FontAwesome5 icon={faEdit} size={48} color="#475569" />
-                  <Text style={styles.emptyText}>You haven't posted yet</Text>
-                  <Text style={styles.emptySubtext}>Share your thoughts with the community!</Text>
-                  <TouchableOpacity 
-                    style={styles.emptyButton}
-                    onPress={() => setShowCreatePost(true)}
-                  >
-                    <Text style={styles.emptyButtonText}>Create Your First Post</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <FlatList
-                  data={myPosts}
-                  renderItem={renderPost}
-                  keyExtractor={item => item.id}
-                  scrollEnabled={false}
-                  showsVerticalScrollIndicator={false}
-                />
-              )
+              <FlatList
+                data={displayedPosts}
+                renderItem={renderPost}
+                keyExtractor={item => item.id}
+                scrollEnabled={false}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 24 }}
+              />
+            )}
+          </ScrollView>
+        </View>
+
+        {/* RIGHT SIDEBAR — User Info */}
+        <View style={webStyles.rightSidebar}>
+          <View style={webStyles.userAvatarWrap}>
+            {authState.user?.profile_picture ? (
+              <Image source={{ uri: authState.user.profile_picture }} style={webStyles.userAvatar} />
+            ) : (
+              <View style={webStyles.userAvatarPlaceholder}>
+                <FontAwesome5 name="user" size={36} color="rgba(255,255,255,0.7)" />
+              </View>
             )}
           </View>
-        </ScrollView>
+
+          <Text style={webStyles.userNameText}>
+            {authState.user?.full_name || authState.user?.email || 'User Name'}
+          </Text>
+          <Text style={webStyles.userEmailText}>
+            {authState.user?.email || 'user@email.com'}
+          </Text>
+
+          <View style={webStyles.userDivider} />
+            
+          <TouchableOpacity
+            style={webStyles.sidebarActionBtn}
+            onPress={() => setShowCreatePost(true)}
+          >
+            <FontAwesome5 name="edit" size={14} color={COLORS.textLight} />
+            <Text style={webStyles.sidebarActionBtnText}>CREATE POSTS</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              webStyles.sidebarActionBtn,
+              webStyles.sidebarActionBtnSecondary,
+              showMyPosts && webStyles.sidebarActionBtnSecondaryActive,
+            ]}
+            onPress={() => setShowMyPosts(prev => !prev)}
+          >
+            <FontAwesome5
+              name="user"
+              size={14}
+              color={showMyPosts ? COLORS.textLight : COLORS.textMuted}
+            />
+            <Text style={[
+              webStyles.sidebarActionBtnText,
+              !showMyPosts && webStyles.sidebarActionBtnTextMuted,
+            ]}>
+              MY POSTS
+            </Text>
+            {myPosts.length > 0 && (
+              <View style={webStyles.myPostsBadge}>
+                <Text style={webStyles.myPostsBadgeText}>{myPosts.length}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          <View style={webStyles.userDivider} />
+          <Image
+            source={{ uri: 'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771421723/tom_1_s5mxkw.gif' }}
+            style={{ width: '100%', height: '30%', borderRadius: 10, marginTop: 10, marginBottom: 10 }}
+            resizeMode="cover"
+          />
+        </View>
+            
       </View>
 
       {/* Overlays */}
-      <CreatePostOverlay
-        visible={showCreatePost}
-        onClose={() => setShowCreatePost(false)}
-      />
-
+      <CreatePostOverlay visible={showCreatePost} onClose={() => setShowCreatePost(false)} />
       <PostDetailOverlay
         visible={showPostDetail}
         onClose={() => {
@@ -500,286 +595,90 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-
-  // Main Content Styles - Full Width
-  mainContent: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    borderRadius: isSmallDevice ? 0 : 20,
-  },
-
-  // Top Bar with Search and Create Post Button
-  topBar: {
-    flexDirection: isSmallDevice ? 'column' : 'row',
-    padding: isSmallDevice ? 16 : 20,
-    gap: isSmallDevice ? 12 : 16,
-    alignItems: isSmallDevice ? 'stretch' : 'center',
-  },
-  searchInputContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    color: COLORS.emeraldpine,
-    backgroundColor: COLORS.textLight,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: isSmallDevice ? 12 : 16,
-  },
-  searchInput: {
-    flex: 1,
-    color: COLORS.emeraldpine,
-    fontSize: isSmallDevice ? 13 : 14,
-    marginLeft: 12,
-  },
-  filterBtn: {
-    padding: 8,
-    backgroundColor: COLORS.emeraldpine,
-    borderRadius: 8,
-  },
-  createPostButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.emeraldpine,
-    paddingVertical: isSmallDevice ? 12 : 14,
-    paddingHorizontal: isSmallDevice ? 16 : 20,
-    borderRadius: 12,
-    gap: 8,
-    minWidth: isSmallDevice ? undefined : 160,
-    background: COLORS.emeraldpine,
-    borderWidth: 1,
-  },
-  createPostButtonText: {
-    color: COLORS.textLight,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-
-  // Feed Toggle Container
-  feedToggleContainer: {
-    paddingHorizontal: isSmallDevice ? 16 : 20,
-    paddingVertical: 12,
-  },
-  feedToggle: {
-    flexDirection: 'row',
-    backgroundColor: '#1e293b',
-    borderRadius: 12,
-    padding: 4,
-    gap: 4,
-  },
-  feedToggleBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: isSmallDevice ? 10 : 12,
-    paddingHorizontal: isSmallDevice ? 12 : 16,
-    borderRadius: 10,
-    gap: 8,
-    backgroundColor: 'transparent',
-  },
-  feedToggleBtnActive: {
-    backgroundColor: '#10b98125',
-    borderWidth: 1,
-    borderColor: '#10b981',
-  },
-  feedToggleText: {
-    color: '#94a3b8',
-    fontSize: isSmallDevice ? 13 : 14,
-    fontWeight: '500',
-  },
-  feedToggleTextActive: {
-    color: '#ffffff',
-    fontWeight: '600',
-  },
-  feedToggleBadge: {
-    backgroundColor: '#10b981',
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 6,
-    marginLeft: 4,
-  },
-  feedToggleBadgeText: {
-    color: '#ffffff',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-
-  // Category Filter
-  categoryContainer: {
-    paddingVertical: 12,
-  },
-  categoryScrollContent: {
-    paddingHorizontal: isSmallDevice ? 16 : 20,
-    gap: 8,
-  },
-  categoryChip: {
-    paddingHorizontal: isSmallDevice ? 14 : 16,
-    paddingVertical: 8,
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  categoryChipActive: {
-    backgroundColor: '#e9523a',
-  },
-  categoryText: {
-    color: '#2d7736',
-    fontSize: isSmallDevice ? 13 : 14,
-    fontWeight: '500',
-  },
-  categoryTextActive: {
-    color: '#ffffff',
-  },
-
-  // Posts Container
-  postsContainer: {
-    padding: isSmallDevice ? 16 : 20,
-  },
-  sectionTitle: {
-    fontSize: isSmallDevice ? 18 : 20,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 16,
-    fontFamily: 'serif',
-    fontStyle: 'italic',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  loadingText: {
-    color: '#94a3b8',
-    fontSize: isSmallDevice ? 14 : 16,
-    marginTop: 12,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  emptyText: {
-    color: '#ffffff',
-    fontSize: isSmallDevice ? 16 : 18,
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    color: '#94a3b8',
-    fontSize: isSmallDevice ? 13 : 14,
-    marginBottom: 20,
-  },
-  emptyButton: {
-    backgroundColor: '#10b981',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  emptyButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-
-  // Post Card
+// ── SHARED STYLES (post cards, images, empty/loading states) ─────────────────
+const sharedStyles = StyleSheet.create({
   postCard: {
-    maxWidth: 800,
-    width: '100%',
-    alignSelf: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.07)',
-    borderWidth: 1,
-    borderColor: COLORS.limeglow,
-    borderRadius: isSmallDevice ? 12 : 16,
-    marginBottom: isSmallDevice ? 12 : 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  blurContainer: {
-    borderRadius: isSmallDevice ? 12 : 16,
+    backgroundColor: COLORS.bgCream,
+    borderRadius: 14,
+    borderColor: COLORS.medGreen,
+    marginBottom: 12,
+    elevation: 3,
     overflow: 'hidden',
-    padding: isSmallDevice ? 14 : 16,
+    borderWidth: 2,
+  },
+  postCardInner: {
+    padding: isSmallDevice ? 12 : 14,
+  },
+  postCardAccent: {
+    // Add your accent styles here if needed
   },
   postHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   postAuthorInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     flex: 1,
   },
   postAvatar: {
-    width: isSmallDevice ? 36 : 40,
-    height: isSmallDevice ? 36 : 40,
-    borderRadius: isSmallDevice ? 18 : 20,
-    backgroundColor: '#475569',
+    width: isSmallDevice ? 30 : 50,
+    height: isSmallDevice ? 30 : 50,
+    borderRadius: isSmallDevice ? 15 : 37,
+    backgroundColor: COLORS.medGreen,
     justifyContent: 'center',
     alignItems: 'center',
   },
   postAuthorName: {
-    color: COLORS.textLight,
-    fontSize: isSmallDevice ? 13 : 14,
+    color: COLORS.textDark,
+    fontSize: isSmallDevice ? 12 : 20,
     fontWeight: '600',
   },
   postTime: {
-    color: '#94a3b8',
-    fontSize: isSmallDevice ? 11 : 12,
-    marginTop: 2,
+    color: COLORS.textMuted,
+    fontSize: isSmallDevice ? 9 : 10,
+    marginTop: 5,
   },
   categoryBadge: {
-    paddingHorizontal: isSmallDevice ? 10 : 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: isSmallDevice ? 8 : 15,
+    paddingVertical: 5,
+    borderRadius: 20,
     borderWidth: 1,
   },
   categoryBadgeText: {
-    color: COLORS.emeraldpine,
-    fontSize: isSmallDevice ? 10 : 11,
+    fontSize: isSmallDevice ? 9 : 10,
     fontWeight: '600',
     textTransform: 'capitalize',
   },
   postContent: {
-    marginBottom: 12,
+    marginBottom: 10,
   },
   postTitle: {
-    color: COLORS.textLight,
-    fontSize: isSmallDevice ? 16 : 18,
-    fontWeight: '600',
-    marginBottom: 8,
-    fontFamily: 'serif',
+    color: COLORS.darkGreen,
+    fontSize: isSmallDevice ? 13 : 25,
+    fontWeight: '700',
+    marginBottom: 5,
     fontStyle: 'italic',
   },
   postDescription: {
-    color: '#cbd5e1',
-    fontSize: isSmallDevice ? 13 : 14,
-    lineHeight: isSmallDevice ? 18 : 20,
+    color: COLORS.textMuted,
+    fontSize: isSmallDevice ? 11 : 12,
+    lineHeight: isSmallDevice ? 16 : 22,
   },
   imageContainer: {
-    marginVertical: 12,
-    borderRadius: 12,
+    marginVertical: 10,
+    borderRadius: 10,
     overflow: 'hidden',
-    backgroundColor: COLORS.muted,
+    backgroundColor: '#f0ede6',
   },
   singleImage: {
-    width: isSmallDevice ? 160 : 200,
-    height: isSmallDevice ? 160 : 200,
+    width: isSmallDevice ? 130 : 160,
+    height: isSmallDevice ? 130 : 160,
     alignSelf: 'center',
+    borderRadius: 8,
   },
   twoImagesContainer: {
     flexDirection: 'row',
@@ -788,7 +687,7 @@ const styles = StyleSheet.create({
   },
   halfImage: {
     flex: 1,
-    height: isSmallDevice ? 160 : 200,
+    height: isSmallDevice ? 120 : 150,
     borderRadius: 8,
   },
   imageWrapper: {
@@ -797,55 +696,432 @@ const styles = StyleSheet.create({
   },
   moreImagesOverlay: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.55)',
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
   },
   moreImagesText: {
-    color: '#ffffff',
-    fontSize: isSmallDevice ? 20 : 24,
+    color: COLORS.textLight,
+    fontSize: isSmallDevice ? 16 : 20,
     fontWeight: 'bold',
   },
   postActions: {
     flexDirection: 'row',
-    gap: isSmallDevice ? 8 : 12,
-    paddingTop: 12,
+    gap: 8,
+    paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#334155',
+    borderTopColor: '#f0ede6',
   },
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: isSmallDevice ? 10 : 12,
-    paddingVertical: 6,
+    paddingVertical: isSmallDevice ? 5 : 6,
     borderRadius: 8,
-    gap: 6,
+    gap: 5,
   },
   upvoteBtn: {
-    backgroundColor: COLORS.limeglow,
-    color: COLORS.emeraldpine,
+    backgroundColor: COLORS.bgCream,
+    borderWidth: 1.5,
+    borderColor: COLORS.accentGreen,
   },
   upvoteBtnActive: {
-    backgroundColor: COLORS.limeglow,
-    borderWidth: 1,
-    borderColor: COLORS.limeglow,
-    color: COLORS.emeraldpine,
+    backgroundColor: COLORS.accentGreen,
+    borderColor: COLORS.accentGreen,
   },
   commentBtn: {
-    backgroundColor: COLORS.limeglow,
+    backgroundColor: COLORS.bgCream,
+    borderWidth: 1.5,
+    borderColor: COLORS.accentGreen,
   },
   actionText: {
-    color: COLORS.emeraldpine,
-    fontSize: isSmallDevice ? 12 : 13,
+    color: COLORS.textDark,
+    fontSize: isSmallDevice ? 10 : 11,
     fontWeight: '500',
   },
   actionTextActive: {
-    color: COLORS.emeraldpine,
+    color: COLORS.textLight,
+  },
+  commentActionText: {
+    color: COLORS.accentGreen,
+    fontSize: isSmallDevice ? 10 : 11,
+    fontWeight: '500',
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  loadingText: {
+    color: COLORS.textMuted,
+    fontSize: 14,
+    marginTop: 12,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyIconWrap: {
+    width: isSmallDevice ? 60 : 72,
+    height: isSmallDevice ? 60 : 72,
+    borderRadius: isSmallDevice ? 30 : 36,
+    backgroundColor: '#e8f5ec',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  emptyText: {
+    color: COLORS.textDark,
+    fontSize: isSmallDevice ? 14 : 16,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  emptySubtext: {
+    color: COLORS.textMuted,
+    fontSize: isSmallDevice ? 12 : 13,
+    marginBottom: 20,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  emptyButton: {
+    backgroundColor: COLORS.accentGreen,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  emptyButtonText: {
+    color: COLORS.textLight,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+});
+
+// ── MOBILE-ONLY STYLES ───────────────────────────────────────────────────────
+const mobileStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f0',
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: COLORS.textLight,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    gap: 10,
+  },
+  searchInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f0',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#e0ddd6',
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    color: COLORS.textDark,
+    fontSize: 13,
+  },
+  createBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: COLORS.darkGreen,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  categoryBar: {
+    backgroundColor: COLORS.textLight,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    paddingVertical: 10,
+  },
+  categoryScroll: {
+    paddingHorizontal: 14,
+    gap: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  categoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    backgroundColor: '#e8e4db',
+    borderRadius: 8,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  categoryChipActive: {
+    backgroundColor: COLORS.darkGreen,
+    borderColor: COLORS.darkGreen,
+  },
+  categoryChipText: {
+    color: COLORS.textMuted,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
+  categoryChipTextActive: {
+    color: COLORS.textLight,
+  },
+  chipBadge: {
+    backgroundColor: COLORS.accentGreen,
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  chipBadgeText: {
+    color: COLORS.textLight,
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  feed: {
+    flex: 1,
+  },
+  feedContent: {
+    padding: 12,
+    paddingBottom: 24,
+  },
+});
+
+// ── WEB-ONLY STYLES ──────────────────────────────────────────────────────────
+const webStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f0',
+    overflow: 'hidden' as any,
+  },
+  columnsWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+    overflow: 'hidden' as any,
+  },
+
+  // Left sidebar
+  leftSidebar: {
+    width: 250,
+    height: '110%',
+    backgroundColor: COLORS.darkGreen,
+    paddingTop: 24,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    marginLeft: 20,
+  },
+  sidebarTitle: {
+    color: COLORS.textLight,
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    marginBottom: 16,
+    paddingLeft: 4,
+  },
+  categoryItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    marginBottom: 4,
+    gap: 10,
+  },
+  categoryItemActive: {
+    backgroundColor: COLORS.accentGreen,
+  },
+  categoryIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  categoryItemText: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  categoryItemTextActive: {
+    color: COLORS.limeGlow,
+    fontWeight: '700',
+  },
+
+  // Center column
+  centerColumn: {
+    flex: 1,
+    backgroundColor: COLORS.textLight,
+    flexDirection: 'column',
+    overflow: 'hidden' as any,
+  },
+  postsScroll: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+  },
+  searchSection: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: COLORS.textLight,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    alignItems: 'center',
+    gap: 10,
+  },
+  searchInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f0',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#e0ddd6',
+    gap: 10,
+  },
+  searchInput: {
+    flex: 1,
+    color: COLORS.textDark,
+    fontSize: 13,
+  },
+  filterBtn: {
+    padding: 6,
+    backgroundColor: COLORS.accentGreen,
+    borderRadius: 8,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 10,
+    backgroundColor: '#f5f5f0',
+  },
+  sectionTitleAccent: {
+    width: 4,
+    height: 20,
+    backgroundColor: COLORS.accentGreen,
+    borderRadius: 2,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.textDark,
+    fontStyle: 'italic',
+  },
+
+  // Right sidebar
+  rightSidebar: {
+    width: 250,
+    height: '110%',
+    backgroundColor: COLORS.darkGreen,
+    marginRight: 20,
+    paddingTop: 32,
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+    alignItems: 'center',
+    overflow: 'hidden' as any,
+    borderRadius: 14,
+  },
+  userAvatarWrap: {
+    marginBottom: 14,
+  },
+  userAvatar: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    borderWidth: 3,
+    borderColor: COLORS.accentGreen,
+  },
+  userAvatarPlaceholder: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: COLORS.medGreen,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: COLORS.accentGreen,
+  },
+  userNameText: {
+    color: COLORS.textLight,
+    fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'center',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  userEmailText: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 11,
+    textAlign: 'center',
+    marginTop: 4,
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+  },
+  userDivider: {
+    width: '100%',
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    marginVertical: 20,
+  },
+  sidebarActionBtn: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: COLORS.accentGreen,
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  sidebarActionBtnSecondary: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  sidebarActionBtnSecondaryActive: {
+    backgroundColor: COLORS.medGreen,
+    borderColor: COLORS.accentGreen,
+  },
+  sidebarActionBtnText: {
+    color: COLORS.textLight,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+  },
+  sidebarActionBtnTextMuted: {
+    color: COLORS.textMuted,
+  },
+  myPostsBadge: {
+    backgroundColor: COLORS.accentGreen,
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 5,
+  },
+  myPostsBadgeText: {
+    color: COLORS.textLight,
+    fontSize: 10,
+    fontWeight: '700',
   },
 });
 

@@ -36,6 +36,9 @@ import BlogTwo from './blogs/BlogTwo';
 import BlogThree from './blogs/BlogThree';
 import AboutPageScreen from './AboutPageScreen';
 
+// Screens that manage their own scrolling and must NOT be inside the outer ScrollView
+const SELF_SCROLLING_TABS = ['forum'];
+
 const MainAppScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
   const route = useRoute();
@@ -44,15 +47,13 @@ const MainAppScreen = () => {
   const { drawerOpen, drawerAnimation, toggleDrawer, closeDrawer } = useDrawer();
   const [currentBlogId, setCurrentBlogId] = useState<string | null>(null);
   
-  // ADD THESE LINES - Get initial tab from route params
   const params = route.params as any;
   const initialTab = params?.initialTab || 'forum';
   
-  const [activeTab, setActiveTab] = useState(initialTab); // CHANGE THIS LINE
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [currentPostId, setCurrentPostId] = useState<string | null>(null);
   const { handleCameraCapture, handleUploadComplete, results, loading } = useImageAnalysis(setActiveTab);
 
-  // ADD THIS EFFECT - Update tab when route params change
   useEffect(() => {
     if (params?.initialTab) {
       setActiveTab(params.initialTab);
@@ -108,31 +109,30 @@ const MainAppScreen = () => {
       return;
     }
     if (itemId === 'landingpage') {
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Landing' }],
-    });
-    return;
-  }
-  if (itemId === 'forums') {
-    setActiveTab('forum');
-    closeDrawer();
-    return;
-  }
-  if (itemId === 'profile') {
-    setActiveTab('profile');
-    closeDrawer();
-    return;
-  }
-  if (itemId === 'about') {
-    setActiveTab('about');
-    closeDrawer();
-    return;
-  }
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Landing' }],
+      });
+      return;
+    }
+    if (itemId === 'forums') {
+      setActiveTab('forum');
+      closeDrawer();
+      return;
+    }
+    if (itemId === 'profile') {
+      setActiveTab('profile');
+      closeDrawer();
+      return;
+    }
+    if (itemId === 'about') {
+      setActiveTab('about');
+      closeDrawer();
+      return;
+    }
     setActiveTab(itemId);
     closeDrawer();
   };
-  
 
   const getPageSubtitle = () => {
     switch (activeTab) {
@@ -152,12 +152,43 @@ const MainAppScreen = () => {
     }
   };
 
-  const renderContent = () => {
+  const styles = appStyles;
+
+  const pageTitle = (() => {
+    switch (activeTab) {
+      case 'camera': return 'Camera Capture';
+      case 'upload': return 'Upload Images';
+      case 'results': return 'Analysis Results';
+      case 'forum': return 'Forums';
+      case 'createpost': return 'Create Post';
+      case 'postdetail': return 'Post Details';
+      case 'about': return 'About System';
+      default: return 'TomatoGuard';
+    }
+  })();
+
+  // Content that needs its own scroll management (no outer ScrollView wrapper)
+  const renderSelfScrollingContent = () => {
+    switch (activeTab) {
+      case 'forum':
+        return (
+          <ForumScreen
+            setActiveTab={setActiveTab}
+            navigateToPostDetail={navigateToPostDetail}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  // Content that lives inside the outer ScrollView
+  const renderScrollableContent = () => {
     if (loading) {
       return (
-        <View style={styles.loadingContainer}>
+        <View style={localStyles.loadingContainer}>
           <ActivityIndicator size="large" color="#10b981" />
-          <Text style={styles.loadingText}>Analyzing images...</Text>
+          <Text style={localStyles.loadingText}>Analyzing images...</Text>
         </View>
       );
     }
@@ -179,12 +210,6 @@ const MainAppScreen = () => {
         return (
           <View style={styles.contentPadding}>
             <ResultsDisplay results={results} />
-          </View>
-        );
-      case 'forum':
-        return (
-          <View style={styles.contentPadding}>
-            <ForumScreen setActiveTab={setActiveTab} navigateToPostDetail={navigateToPostDetail} />
           </View>
         );
       case 'createpost':
@@ -211,53 +236,40 @@ const MainAppScreen = () => {
             <AboutPageScreen />
           </View>
         );
-        case 'blogs':
-          return (
-            <View style={styles.contentPadding}>
-              <BlogsList setActiveTab={setActiveTab} navigateToBlog={navigateToBlog} />
-            </View>
-          );
-        case 'blogone':
-          return (
-            <View style={styles.contentPadding}>
-              <BlogOne setActiveTab={setActiveTab} />
-            </View>
-          );
-        case 'blogtwo':
-          return (
-            <View style={styles.contentPadding}>
-              <BlogTwo setActiveTab={setActiveTab} />
-            </View>
-          );
-        case 'blogthree':
-          return (
-            <View style={styles.contentPadding}>
-              <BlogThree setActiveTab={setActiveTab} />
-            </View>
-          );
+      case 'blogs':
+        return (
+          <View style={styles.contentPadding}>
+            <BlogsList setActiveTab={setActiveTab} navigateToBlog={navigateToBlog} />
+          </View>
+        );
+      case 'blogone':
+        return (
+          <View style={styles.contentPadding}>
+            <BlogOne setActiveTab={setActiveTab} />
+          </View>
+        );
+      case 'blogtwo':
+        return (
+          <View style={styles.contentPadding}>
+            <BlogTwo setActiveTab={setActiveTab} />
+          </View>
+        );
+      case 'blogthree':
+        return (
+          <View style={styles.contentPadding}>
+            <BlogThree setActiveTab={setActiveTab} />
+          </View>
+        );
       default:
         return null;
     }
   };
 
-  const styles = appStyles;
-  const pageTitle = (() => {
-    switch (activeTab) {
-      case 'camera': return 'Camera Capture';
-      case 'upload': return 'Upload Images';
-      case 'results': return 'Analysis Results';
-      case 'forum': return 'Forums';
-      case 'createpost': return 'Create Post';
-      case 'postdetail': return 'Post Details';
-      case 'about': return 'About System';
-      default: return 'TomatoGuard';
-    }
-  })();
+  const isSelfScrolling = SELF_SCROLLING_TABS.includes(activeTab);
 
   return (
     <ProtectedRoute>
       <View style={localStyles.container}>
-        {/* Main Content - Full Width */}
         <MainLayout
           drawerOpen={drawerOpen}
           drawerAnimation={drawerAnimation}
@@ -267,9 +279,18 @@ const MainAppScreen = () => {
           onMenuPress={toggleDrawer}
           onCloseDrawer={closeDrawer}
         >
-          <ScrollView style={styles.contentArea}>
-            {renderContent()}
-          </ScrollView>
+          {isSelfScrolling ? (
+            // Forum (and any future self-scrolling screens): rendered directly,
+            // filling all remaining space below the header with NO outer ScrollView
+            <View style={localStyles.selfScrollingContainer}>
+              {renderSelfScrollingContent()}
+            </View>
+          ) : (
+            // All other tabs: wrapped in the standard outer ScrollView
+            <ScrollView style={styles.contentArea}>
+              {renderScrollableContent()}
+            </ScrollView>
+          )}
         </MainLayout>
 
         {/* Drawer Overlay */}
@@ -291,7 +312,23 @@ const MainAppScreen = () => {
 const localStyles = StyleSheet.create({
   container: {
     flex: 1,
-    position: 'absolute', // Important: allows drawer and FAB to overlay
+  },
+  // Fills all space below the MainLayout header so ForumScreen
+  // can manage its own three-column fixed layout
+  selfScrollingContainer: {
+    flex: 1,
+    overflow: 'hidden' as any,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#6b7280',
   },
 });
 

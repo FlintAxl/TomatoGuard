@@ -204,10 +204,10 @@ const BlogThree: React.FC = () => {
             </LinearGradient>
 
             <Image
-                      source={{ uri: 'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771332920/6d2d088b-da37-48c1-a499-136b62d64c4d.png' }}
-                      style={{ width: '100%', height: 350, borderRadius: 10, marginTop: 10, marginBottom: 10 }}
-                      resizeMode="cover"
-                        />
+              source={{ uri: 'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771332920/6d2d088b-da37-48c1-a499-136b62d64c4d.png' }}
+              style={{ width: '100%', height: 350, borderRadius: 10, marginTop: 10, marginBottom: 10 }}
+              resizeMode="cover"
+              />
 
             {/* Digestive Health Section */}
             <Text style={styles.sectionTitle}>6. Aids Digestive Health</Text>

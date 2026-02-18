@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigation } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -7,6 +8,7 @@ import {
   StyleSheet,
   Dimensions,
   Image,
+  ImageBackground, // Added for background image
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,17 +17,27 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const isSmallDevice = SCREEN_WIDTH < 768;
 
 const COLORS = {
-  color1: '#f8ff76',
-  color2: '#e9523a',
-  color3: '#2d7736',
-  color4: '#081600',
-  color5: '#1b4e00',
+  bgCream: '#f0ede6',
+  bgLight: '#e8e4db',
+  darkGreen: '#1a3a2a',
+  medGreen: '#2d5a3d',
+  accentGreen: '#3d7a52', // Used as color2
   textLight: '#ffffff',
-  muted: '#d6e4dd',
+  textDark: '#0d1f14',
+  textMuted: '#5a7a65', // Renamed from 'muted' for clarity
+  cardBg: '#1e3d2a',
+  navBg: '#0d2018',
+  limeglow: '#CEF17B',
+  errorRed: '#e9523a',
+  lightGreen: '#4a8b5c',
+  darkText: '#0a1a12',
 };
 
+// Cloudinary link for the background image (using a placeholder; replace with your specific link)
+const BACKGROUND_IMAGE_URL = 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1771333800/Screen_Shot_2026-02-17_at_9.09.39_PM_o8nvq8.png'; // Example: Using the first blog's image; update as needed
+
+// FIXED: Moved the interface to the top with other type declarations
 interface BlogsListProps {
-  setActiveTab: (tab: string) => void;
   navigateToBlog: (blogId: string) => void;
 }
 
@@ -43,7 +55,7 @@ const BLOGS = [
     id: 'blogtwo',
     title: 'Tomatoes: Nutrition Facts and Health Benefits',
     description: 'Discover the nutritional powerhouse that tomatoes are, including their vitamins, minerals, and powerful antioxidants that contribute to overall health.',
-    image: 'hhttps://res.cloudinary.com/dxnb2ozgw/image/upload/v1770819835/Gemini_Generated_Image_xe9pbpxe9pbpxe9p_yaemwf.png',
+    image: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1770819835/Gemini_Generated_Image_xe9pbpxe9pbpxe9p_yaemwf.png', // FIXED: Removed extra 'h' at the beginning
     date: 'January 20, 2025',
     readTime: '6 min read',
     category: 'Nutrition',
@@ -59,41 +71,29 @@ const BLOGS = [
   },
 ];
 
-const BlogsList: React.FC<BlogsListProps> = ({ setActiveTab, navigateToBlog }) => {
+const BlogsList: React.FC<BlogsListProps> = ({ navigateToBlog }) => {
+  const navigation = useNavigation();
   const handleBlogPress = (blogId: string) => {
     navigateToBlog(blogId);
   };
 
   const handleBackToForum = () => {
-    setActiveTab('forum');
+    navigation.navigate('Forum');
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header Section */}
-      <LinearGradient
-        colors={[COLORS.color5, COLORS.color3]}
-        style={styles.headerGradient}
-      >
-        <View style={styles.headerContent}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBackToForum}>
-            <Ionicons name="arrow-back" size={24} color={COLORS.textLight} />
-            <Text style={styles.backButtonText}>Back to Forums</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>TomatoGuard Blog</Text>
-          <Text style={styles.headerSubtitle}>
-            Expert insights on tomato cultivation, disease management, and health benefits
-          </Text>
-        </View>
-      </LinearGradient>
-
+    <ImageBackground
+      source={{ uri: BACKGROUND_IMAGE_URL }}
+      style={styles.container}
+      resizeMode="cover" // Ensures the image covers the entire background
+    >
       {/* Blog List */}
       <ScrollView 
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.blogListContainer}
       >
-        {BLOGS.map((blog, index) => (
+        {BLOGS.map((blog) => (
           <TouchableOpacity
             key={blog.id}
             style={styles.blogCard}
@@ -121,78 +121,30 @@ const BlogsList: React.FC<BlogsListProps> = ({ setActiveTab, navigateToBlog }) =
               
               <View style={styles.blogMeta}>
                 <View style={styles.metaItem}>
-                  <Ionicons name="calendar-outline" size={14} color={COLORS.muted} />
+                  <Ionicons name="calendar-outline" size={14} color={COLORS.textMuted} />
                   <Text style={styles.metaText}>{blog.date}</Text>
                 </View>
                 <View style={styles.metaItem}>
-                  <Ionicons name="time-outline" size={14} color={COLORS.muted} />
+                  <Ionicons name="time-outline" size={14} color={COLORS.textMuted} />
                   <Text style={styles.metaText}>{blog.readTime}</Text>
                 </View>
               </View>
 
               <View style={styles.readMoreContainer}>
                 <Text style={styles.readMoreText}>Read Article</Text>
-                <Ionicons name="arrow-forward" size={16} color={COLORS.color2} />
+                <Ionicons name="arrow-forward" size={16} color={COLORS.accentGreen} />
               </View>
             </View>
           </TouchableOpacity>
         ))}
-
-        {/* Call to Action */}
-        <LinearGradient
-          colors={[COLORS.color5, COLORS.color3]}
-          style={styles.ctaCard}
-        >
-          <Ionicons name="leaf-outline" size={48} color={COLORS.color1} />
-          <Text style={styles.ctaTitle}>Stay Updated</Text>
-          <Text style={styles.ctaText}>
-            Join our community to receive the latest articles on tomato care, disease prevention, and farming best practices.
-          </Text>
-        </LinearGradient>
       </ScrollView>
-    </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
-  },
-  headerGradient: {
-    paddingTop: isSmallDevice ? 20 : 30,
-    paddingBottom: isSmallDevice ? 30 : 40,
-    paddingHorizontal: isSmallDevice ? 16 : 24,
-  },
-  headerContent: {
-    maxWidth: 800,
-    alignSelf: 'center',
-    width: '100%',
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-    gap: 8,
-  },
-  backButtonText: {
-    color: COLORS.textLight,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  headerTitle: {
-    fontSize: isSmallDevice ? 32 : 42,
-    fontWeight: '700',
-    fontStyle: 'italic',
-    color: COLORS.textLight,
-    marginBottom: 12,
-    fontFamily: 'System',
-  },
-  headerSubtitle: {
-    fontSize: isSmallDevice ? 14 : 16,
-    color: COLORS.muted,
-    lineHeight: 24,
-    fontFamily: 'System',
   },
   scrollView: {
     flex: 1,
@@ -205,7 +157,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   blogCard: {
-    backgroundColor: COLORS.color4,
+    backgroundColor: COLORS.darkGreen,
     borderRadius: isSmallDevice ? 16 : 20,
     marginBottom: 24,
     overflow: 'hidden',
@@ -232,7 +184,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 16,
     right: 16,
-    backgroundColor: COLORS.color2,
+    backgroundColor: COLORS.errorRed,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
@@ -257,7 +209,7 @@ const styles = StyleSheet.create({
   },
   blogDescription: {
     fontSize: isSmallDevice ? 14 : 15,
-    color: COLORS.muted,
+    color: COLORS.textLight,
     lineHeight: 22,
     marginBottom: 16,
     fontFamily: 'System',
@@ -275,7 +227,7 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 12,
-    color: COLORS.muted,
+    color: COLORS.textLight,
     fontFamily: 'System',
   },
   readMoreContainer: {
@@ -287,7 +239,7 @@ const styles = StyleSheet.create({
   readMoreText: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.color2,
+    color: COLORS.textLight,
     fontFamily: 'System',
   },
   ctaCard: {
@@ -309,7 +261,7 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     fontSize: 14,
-    color: COLORS.muted,
+    color: COLORS.textMuted,
     textAlign: 'center',
     lineHeight: 22,
     maxWidth: 500,
