@@ -220,6 +220,17 @@ async def toggle_like(
     enriched = await forum_service.enrich_post(updated_post, current_user["id"])
     return enriched
 
+@router.get("/likes")
+async def get_my_likes(
+    current_user=Depends(get_current_user),
+    forum_service: ForumService = Depends(get_forum_service)
+):
+    """
+    Get all posts liked by the current user
+    """
+    liked_posts = await forum_service.get_liked_posts_by_user(current_user["id"])
+    enriched_posts = [await forum_service.enrich_post(post, current_user["id"]) for post in liked_posts]
+    return enriched_posts
 # ========== IMAGE ENDPOINTS ==========
 
 @router.post("/posts/{post_id}/images")

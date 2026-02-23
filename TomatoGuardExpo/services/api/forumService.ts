@@ -438,6 +438,15 @@ export const forumService = {
     return response.data;
   },
 
+  /**
+ * Get all posts liked by the current user
+ */
+getMyLikes: async (token: string): Promise<Post[]> => {
+  const apiClient = getApiClient(token);
+  const response = await apiClient.get('/api/v1/forum/likes');
+  return response.data;
+},
+
   // ========== FORUM DATA ==========
   
   /**

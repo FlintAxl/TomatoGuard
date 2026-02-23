@@ -2,7 +2,7 @@
 Analytics API routes – ML-focused analytics for Admin Dashboard.
 """
 from fastapi import APIRouter, Depends, Query
-from app.dependencies.auth import get_current_admin_user
+from app.dependencies.auth import get_current_admin_user, get_current_active_user
 from app.services.database import get_database
 from app.services.analytics_service import AnalyticsService
 
@@ -12,6 +12,17 @@ router = APIRouter(prefix="/api/v1/analytics", tags=["analytics"])
 def _get_service() -> AnalyticsService:
     db = get_database()
     return AnalyticsService(db)
+
+
+@router.get("/featured-disease-spotlight")
+async def featured_disease_spotlight(
+    days: int = Query(30, ge=7, le=90),
+    current_user: dict = Depends(get_current_active_user),
+):
+    """Featured disease spotlight for the Trends tab – any authenticated user."""
+    svc = _get_service()
+    data = await svc.get_featured_disease_spotlight(days=days)
+    return {"status": "success", "data": data}
 
 
 @router.get("/ml-overview")

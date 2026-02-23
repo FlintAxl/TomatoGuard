@@ -11,6 +11,7 @@ class ForumService:
         self.posts = self.db.posts
         self.users = self.db.users
     
+    
     # ========== POST OPERATIONS ==========
         
     async def create_post(self, post_data: PostCreate, user_id: str) -> Post:
@@ -131,6 +132,7 @@ class ForumService:
         
         result = await self.posts.delete_one({"_id": ObjectId(post_id)})
         return result.deleted_count > 0
+    
     
     # ========== COMMENT OPERATIONS ==========
     
@@ -280,6 +282,23 @@ class ForumService:
                 print(f"Error converting post to model: {e}")
                 continue
         
+        return posts
+    
+    async def get_liked_posts_by_user(self, user_id: str) -> List[Post]:
+        """Get all posts liked by a specific user"""
+        cursor = self.posts.find({"likes": user_id}).sort("created_at", -1)
+        posts_data = await cursor.to_list(length=100)
+
+        posts = []
+        for post_data in posts_data:
+            if '_id' in post_data:
+                post_data['_id'] = str(post_data['_id'])
+            try:
+                posts.append(Post(**post_data))
+            except Exception as e:
+                print(f"Error converting post to model: {e}")
+                continue
+
         return posts
     
     async def get_post_stats(self) -> Dict[str, int]:

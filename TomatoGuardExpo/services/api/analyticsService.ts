@@ -1,5 +1,58 @@
 import { getApiClient } from './client';
 
+// ========== FEATURED DISEASE SPOTLIGHT (Trends Tab) ==========
+
+export interface SpotlightSampleImage {
+  url: string;
+  stage: string;
+  confidence: number;
+}
+
+export interface SpotlightDailyPoint {
+  date: string;
+  count: number;
+}
+
+export interface SpotlightItem {
+  has_data: boolean;
+  disease_name?: string;
+  plant_part?: string;
+  cause?: string;
+  description?: string;
+  environmental_triggers?: string[];
+  prevention_tips?: string[];
+  stats?: {
+    total_detections: number;
+    avg_confidence: number;
+    vs_last_period_pct: number;
+    trend: 'up' | 'down';
+    peak_week: string;
+  };
+  daily_trend?: SpotlightDailyPoint[];
+  sample_images?: SpotlightSampleImage[];
+}
+
+export interface FeaturedDiseaseSpotlight {
+  has_data: boolean;
+  overall?: SpotlightItem;
+  per_part?: {
+    leaf: SpotlightItem;
+    fruit: SpotlightItem;
+    stem: SpotlightItem;
+  };
+}
+
+export const fetchFeaturedDiseaseSpotlight = async (
+  token?: string,
+  days: number = 30
+): Promise<FeaturedDiseaseSpotlight> => {
+  const client = getApiClient(token);
+  const response = await client.get(`/api/v1/analytics/featured-disease-spotlight?days=${days}`);
+  return response.data.data;
+};
+
+// ========== ML ANALYTICS (Admin Dashboard) ==========
+
 export interface MLAnalyticsData {
   overview: {
     total_analyses: number;

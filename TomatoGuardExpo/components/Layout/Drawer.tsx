@@ -32,6 +32,7 @@ const Drawer: React.FC<DrawerProps> = ({
   const navigation = useNavigation<RootStackNavigationProp>();
     
   const baseNavItems = [
+    { id: 'trends', label: 'Trends', icon: 'chart-line' },
     { id: 'forums', label: 'Forums', icon: 'comments' },
     { id: 'blogs', label: 'Blogs', icon: 'pen' },
     { id: 'about', label: 'About System', icon: 'info-circle' },

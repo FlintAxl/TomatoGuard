@@ -10,7 +10,7 @@ from .routes.upload import router as upload_router
 from .routes.auth import router as auth_router
 from app.routes.forum import router as forum_router
 from .services.database import connect_to_mongo, close_mongo_connection
-from .routes.chatbot import router as chatbot_router
+from .routes.chatbot_router import router as chatbot_router
 from .routes.analytics import router as analytics_router
 
 load_dotenv()

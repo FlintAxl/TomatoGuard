@@ -40,6 +40,7 @@ class Settings:
             "http://localhost:8081",
             "http://127.0.0.1:8081",
             "exp://192.168.100.97:8081",
+            "exp://192.168.91.178:8081",
             "https://*.ngrok-free.dev",
             "https://dori-unmutational-johnathon.ngrok-free.dev",
         ]

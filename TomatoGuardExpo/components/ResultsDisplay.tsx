@@ -1,462 +1,441 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  ScrollView, 
-  Image, 
+import {
+  View,
+  Text,
+  ScrollView,
+  Image,
   TouchableOpacity,
   Modal,
-  SafeAreaView
+  SafeAreaView,
+  StyleSheet,
+  Dimensions,
 } from 'react-native';
-import { resultsStyles, cardStyles } from '../styles';
+
+const { width } = Dimensions.get('window');
 
 interface ResultsDisplayProps {
   results: any;
 }
 
-const ResultsDisplay = ({ results }: ResultsDisplayProps) => {
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [imageViewerVisible, setImageViewerVisible] = useState(false);
-  
-  if (!results) {
-    return (
-      <View style={cardStyles.card}>
-        <Text style={cardStyles.cardTitle}>No Analysis Results</Text>
-        <Text style={cardStyles.cardDescription}>
-          No analysis has been performed yet. Please capture or upload images to begin the disease detection process.
-        </Text>
-      </View>
-    );
-  }
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
-  // DEBUG: Add this temporarily to see what data you're receiving
-  console.log('🔍 ResultsDisplay - Full results:', results);
-  console.log('🔍 ResultsDisplay - Analysis exists?', !!results.analysis);
+const parseResults = (results: any) => {
+  if (!results) return { analysis: null, recommendations: null, spotDetection: null };
 
-  // Handle backend response format correctly
   let analysis, recommendations, spotDetection;
 
-  // Direct access - the response should have 'analysis' at the root
   if (results.analysis) {
     analysis = results.analysis;
-    // Recommendations should be inside analysis from ml_service.py
     recommendations = results.analysis?.recommendations;
     spotDetection = results.analysis?.spot_detection;
-    console.log('📊 Using direct analysis path');
-    console.log('📊 Recommendations found:', !!recommendations);
-  } 
-  // Handle batch results array
-  else if (Array.isArray(results) && results.length > 0) {
-    const firstResult = results[0];
-    // Batch results might have analysis nested
-    if (firstResult.analysis) {
-      analysis = firstResult.analysis;
-      recommendations = firstResult.analysis?.recommendations;
-      spotDetection = firstResult.analysis?.spot_detection;
-      console.log('📊 Using batch results path');
-    } else {
-      analysis = firstResult;
-      recommendations = firstResult?.recommendations;
-      spotDetection = firstResult?.spot_detection;
-    }
-  }
-  // Handle nested results.results array (another batch format)
-  else if (results.results && Array.isArray(results.results) && results.results.length > 0) {
-    const firstResult = results.results[0];
-    if (firstResult.analysis) {
-      analysis = firstResult.analysis;
-      recommendations = firstResult.analysis?.recommendations;
-      spotDetection = firstResult.analysis?.spot_detection;
-    } else {
-      analysis = firstResult;
-      recommendations = firstResult?.recommendations;
-      spotDetection = firstResult?.spot_detection;
-    }
-    console.log('📊 Using nested results path');
-  }
-  // Fallback - assume results is the analysis itself
-  else {
+  } else if (Array.isArray(results) && results.length > 0) {
+    const first = results[0];
+    analysis = first.analysis ?? first;
+    recommendations = analysis?.recommendations;
+    spotDetection = analysis?.spot_detection;
+  } else if (results.results?.length > 0) {
+    const first = results.results[0];
+    analysis = first.analysis ?? first;
+    recommendations = analysis?.recommendations;
+    spotDetection = analysis?.spot_detection;
+  } else {
     analysis = results;
     recommendations = results.recommendations;
     spotDetection = results.spot_detection;
-    console.log('📊 Using fallback path');
   }
 
-  // DEBUG: Check what we extracted
-  console.log('🔍 Extracted analysis:', !!analysis);
-  console.log('🔍 Extracted recommendations:', !!recommendations);
-  console.log('🔍 Extracted spotDetection:', !!spotDetection);
+  return { analysis, recommendations, spotDetection };
+};
 
-  // ── Check if the image was rejected by the tomato validation gate ──
-  const isTomato = analysis?.is_tomato;
-  if (isTomato === false) {
-    const rejectionReason = analysis?.rejection_reason || 'The image does not appear to be a tomato plant.';
-    const suggestions: string[] = analysis?.recommendations?.suggestions || [];
-    const validationScores = analysis?.validation_scores || {};
+const getSeverity = (disease: string, confidence: number) => {
+  if (disease.toLowerCase().includes('healthy')) return 'healthy';
+  if (confidence > 80) return 'high';
+  if (confidence > 60) return 'medium';
+  return 'low';
+};
+
+const SEVERITY_THEME = {
+  healthy: { color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', badge: '#dcfce7', text: '#15803d' },
+  high:    { color: '#dc2626', bg: '#fef2f2', border: '#fecaca', badge: '#fee2e2', text: '#b91c1c' },
+  medium:  { color: '#d97706', bg: '#fffbeb', border: '#fde68a', badge: '#fef3c7', text: '#b45309' },
+  low:     { color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', badge: '#dbeafe', text: '#1d4ed8' },
+};
+
+const PART_ICON: Record<string, string> = {
+  leaf: '🍃',
+  fruit: '🍅',
+  stem: '🌿',
+};
+
+// ─── Sub-components ─────────────────────────────────────────────────────────
+
+const Chip = ({ label, color }: { label: string; color: string }) => (
+  <View style={[s.chip, { borderColor: color + '60', backgroundColor: color + '15' }]}>
+    <Text style={[s.chipText, { color }]}>{label}</Text>
+  </View>
+);
+
+const InfoRow = ({ label, value, last }: { label: string; value: string; last?: boolean }) => (
+  <View style={[s.infoRow, last && { borderBottomWidth: 0 }]}>
+    <Text style={s.infoLabel}>{label}</Text>
+    <Text style={s.infoValue}>{value}</Text>
+  </View>
+);
+
+const SectionLabel = ({ emoji, title }: { emoji: string; title: string }) => (
+  <View style={s.sectionLabel}>
+    <Text style={s.sectionEmoji}>{emoji}</Text>
+    <Text style={s.sectionTitle}>{title}</Text>
+  </View>
+);
+
+const BulletList = ({ items }: { items: string[] }) => (
+  <View style={{ gap: 6 }}>
+    {items.map((item, idx) => (
+      <View key={idx} style={s.bulletItem}>
+        <View style={s.bulletDot} />
+        <Text style={s.bulletText}>{item}</Text>
+      </View>
+    ))}
+  </View>
+);
+
+// ─── Spot Summary (non-iterating) ────────────────────────────────────────────
+
+const SpotSummary = ({ spotDetection }: { spotDetection: any }) => {
+  if (!spotDetection || spotDetection.error) return null;
+
+  const boxes: any[] = spotDetection.bounding_boxes ?? [];
+  const total = spotDetection.total_spots ?? boxes.length;
+  const topConf = boxes.length > 0 ? (boxes[0]?.confidence * 100).toFixed(0) + '%' : 'N/A';
+  const avgArea =
+    boxes.length > 0
+      ? Math.round(boxes.reduce((s: number, b: any) => s + (b.area ?? 0), 0) / boxes.length)
+      : 0;
+  const maxArea =
+    boxes.length > 0 ? Math.round(Math.max(...boxes.map((b: any) => b.area ?? 0))) : 0;
+
+  return (
+    <View style={s.spotSummaryRow}>
+      <View style={s.spotStat}>
+        <Text style={s.spotStatVal}>{total}</Text>
+        <Text style={s.spotStatLbl}>Spots</Text>
+      </View>
+      <View style={s.spotDivider} />
+      <View style={s.spotStat}>
+        <Text style={s.spotStatVal}>{topConf}</Text>
+        <Text style={s.spotStatLbl}>Top Confidence</Text>
+      </View>
+      <View style={s.spotDivider} />
+      <View style={s.spotStat}>
+        <Text style={s.spotStatVal}>{avgArea}px²</Text>
+        <Text style={s.spotStatLbl}>Avg Area</Text>
+      </View>
+      <View style={s.spotDivider} />
+      <View style={s.spotStat}>
+        <Text style={s.spotStatVal}>{maxArea}px²</Text>
+        <Text style={s.spotStatLbl}>Largest</Text>
+      </View>
+    </View>
+  );
+};
+
+// ─── Main Component ──────────────────────────────────────────────────────────
+
+const ResultsDisplay = ({ results }: ResultsDisplayProps) => {
+  const [viewerUri, setViewerUri] = useState<string | null>(null);
+
+  if (!results) {
+    return (
+      <View style={s.emptyCard}>
+        <Text style={s.emptyIcon}>🌱</Text>
+        <Text style={s.emptyTitle}>No Analysis Yet</Text>
+        <Text style={s.emptyDesc}>Capture or upload an image to begin detection.</Text>
+      </View>
+    );
+  }
+
+  const { analysis, recommendations, spotDetection } = parseResults(results);
+
+  // ── Rejection Screen ───────────────────────────────────────────────────────
+  if (analysis?.is_tomato === false) {
+    const reason = analysis?.rejection_reason ?? 'This does not appear to be a tomato plant.';
+    const scores = analysis?.validation_scores ?? {};
 
     return (
-      <ScrollView style={resultsStyles.container}>
-        {/* Rejection Banner */}
-        <View style={[resultsStyles.statusBadge, { backgroundColor: '#fef2f2' }]}>  
-          <Text style={resultsStyles.statusIcon}>🚫</Text>
-          <View style={resultsStyles.statusContent}>
-            <Text style={resultsStyles.statusTitle}>Not a Tomato Plant</Text>
-            <Text style={resultsStyles.statusText}>{rejectionReason}</Text>
+      <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent}>
+        <View style={[s.alertBanner, { backgroundColor: '#fef2f2', borderColor: '#fecaca' }]}>
+          <Text style={s.alertIcon}>🚫</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={[s.alertTitle, { color: '#b91c1c' }]}>Not a Tomato Plant</Text>
+            <Text style={[s.alertSub, { color: '#991b1b' }]}>{reason}</Text>
           </View>
         </View>
 
-        {/* Suggestions Card */}
-        {suggestions.length > 0 && (
-          <View style={cardStyles.card}>
-            <Text style={cardStyles.cardTitle}>How to Get a Good Analysis</Text>
-            <View style={resultsStyles.bulletList}>
-              {suggestions.map((tip: string, idx: number) => (
-                <View key={idx} style={resultsStyles.bulletItem}>
-                  <View style={resultsStyles.bulletDot} />
-                  <Text style={resultsStyles.bulletText}>{tip}</Text>
-                </View>
-              ))}
-            </View>
+        {Object.keys(scores).length > 0 && (
+          <View style={s.card}>
+            <Text style={s.cardTitle}>Validation Scores</Text>
+            {scores.plant_color_ratio !== undefined && (
+              <InfoRow label="Plant Color Match" value={`${(scores.plant_color_ratio * 100).toFixed(1)}%`} />
+            )}
+            {scores.part_confidence !== undefined && (
+              <InfoRow label="Part Confidence" value={`${(scores.part_confidence * 100).toFixed(1)}%`} />
+            )}
+            {scores.texture_score !== undefined && (
+              <InfoRow label="Texture Score" value={`${(scores.texture_score * 100).toFixed(1)}%`} last />
+            )}
           </View>
         )}
 
-        {/* Validation Scores (Debug Info) */}
-        <View style={cardStyles.card}>
-          <Text style={cardStyles.cardTitle}>Validation Details</Text>
-          {validationScores.plant_color_ratio !== undefined && (
-            <View style={resultsStyles.infoRow}>
-              <Text style={resultsStyles.infoLabel}>Plant Color Match</Text>
-              <Text style={resultsStyles.infoValue}>
-                {(validationScores.plant_color_ratio * 100).toFixed(1)}%
-              </Text>
-            </View>
-          )}
-          {validationScores.part_confidence !== undefined && (
-            <View style={resultsStyles.infoRow}>
-              <Text style={resultsStyles.infoLabel}>Part Classifier Confidence</Text>
-              <Text style={resultsStyles.infoValue}>
-                {(validationScores.part_confidence * 100).toFixed(1)}%
-              </Text>
-            </View>
-          )}
-          {validationScores.texture_score !== undefined && (
-            <View style={[resultsStyles.infoRow, { borderBottomWidth: 0 }]}>
-              <Text style={resultsStyles.infoLabel}>Texture Score</Text>
-              <Text style={resultsStyles.infoValue}>
-                {(validationScores.texture_score * 100).toFixed(1)}%
-              </Text>
-            </View>
-          )}
-        </View>
+        {(analysis?.recommendations?.suggestions?.length ?? 0) > 0 && (
+          <View style={s.card}>
+            <SectionLabel emoji="💡" title="Tips for Better Results" />
+            <BulletList items={analysis.recommendations.suggestions} />
+          </View>
+        )}
       </ScrollView>
     );
   }
-  // ── End rejection check ────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────────────
 
-  // Safe extraction with defaults
-  const part = analysis?.part_detection?.part || 'Unknown';
-  const disease = analysis?.disease_detection?.disease || 'No disease detected';
-  const confidence = parseFloat(((analysis?.disease_detection?.confidence || 0) * 100).toFixed(1));
-  const partConfidence = parseFloat(((analysis?.part_detection?.confidence || 0) * 100).toFixed(1));
-
-  // DEBUG: Log extracted values
-  console.log('📊 Final extracted values:');
-  console.log('   Part:', part);
-  console.log('   Disease:', disease);
-  console.log('   Confidence:', confidence + '%');
-  console.log('   Recommendations type:', typeof recommendations);
-  console.log('   Recommendations keys:', recommendations ? Object.keys(recommendations) : 'none');
-
-  // Get severity color (THIS IS THE ORIGINAL CODE THAT SHOULD STAY)
-  const getSeverityColor = () => {
-    if (disease === 'Healthy' || disease.includes('Healthy')) return '#10b981';
-    if (confidence > 80) return '#ef4444';
-    if (confidence > 60) return '#f59e0b';
-    return '#3b82f6';
-  };
-
-  const getSeverityBg = () => {
-    if (disease === 'Healthy' || disease.includes('Healthy')) return '#d1fae5';
-    if (confidence > 80) return '#fee2e2';
-    if (confidence > 60) return '#fed7aa';
-    return '#dbeafe';
-  };
-
-  const getPartIcon = () => {
-    switch (part?.toLowerCase()) {
-      case 'leaf': return '🍃';
-      case 'fruit': return '🍅';
-      case 'stem': return '🌿';
-      default: return '🌱';
-    }
-  };
-
-  // Image Viewer Modal
-  const ImageViewer = () => (
-    <Modal
-      visible={imageViewerVisible}
-      transparent={true}
-      animationType="fade"
-      onRequestClose={() => setImageViewerVisible(false)}
-    >
-      <SafeAreaView style={resultsStyles.modalContainer}>
-        <TouchableOpacity 
-          style={resultsStyles.closeButton}
-          onPress={() => setImageViewerVisible(false)}
-        >
-          <Text style={resultsStyles.closeButtonText}>✕</Text>
-        </TouchableOpacity>
-        {selectedImage && (
-          <Image 
-            source={{ uri: selectedImage }} 
-            style={resultsStyles.fullScreenImage}
-            resizeMode="contain"
-          />
-        )}
-        <Text style={resultsStyles.imageCaption}>
-          {selectedImage === spotDetection?.original_image ? 'Original Image' : 'Disease Spots Detection'}
-        </Text>
-      </SafeAreaView>
-    </Modal>
-  );
+  const part = analysis?.part_detection?.part ?? 'Unknown';
+  const disease = analysis?.disease_detection?.disease ?? 'Unknown';
+  const confidence = parseFloat(((analysis?.disease_detection?.confidence ?? 0) * 100).toFixed(1));
+  const partConfidence = parseFloat(((analysis?.part_detection?.confidence ?? 0) * 100).toFixed(1));
+  const severity = getSeverity(disease, confidence);
+  const theme = SEVERITY_THEME[severity];
+  const isHealthy = severity === 'healthy';
+  const partIcon = PART_ICON[part?.toLowerCase()] ?? '🌱';
 
   return (
-    <ScrollView style={resultsStyles.container}>
-      {/* Status Alert */}
-      <View style={[resultsStyles.statusBadge, { backgroundColor: getSeverityBg() }]}>
-        <Text style={resultsStyles.statusIcon}>
-          {disease.includes('Healthy') ? '✅' : '⚠️'}
-        </Text>
-        <View style={resultsStyles.statusContent}>
-          <Text style={resultsStyles.statusTitle}>
-            {disease.includes('Healthy') ? 'Plant Health Status: Healthy' : `Disease Detected: ${disease}`}
+    <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent}>
+      {/* ── Status Banner ── */}
+      <View style={[s.alertBanner, { backgroundColor: theme.bg, borderColor: theme.border }]}>
+        <Text style={s.alertIcon}>{isHealthy ? '✅' : '⚠️'}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={[s.alertTitle, { color: theme.text }]}>
+            {isHealthy ? 'Plant is Healthy' : disease}
           </Text>
-          <Text style={resultsStyles.statusText}>
-            Analysis Confidence: <Text style={{ fontWeight: '600' }}>{confidence}%</Text>
+          <Text style={[s.alertSub, { color: theme.color }]}>
+            {isHealthy ? 'No disease detected in this image.' : `Detected with ${confidence}% confidence`}
           </Text>
+        </View>
+        <Chip label={`${confidence}%`} color={theme.color} />
+      </View>
+
+      {/* ── Detection Summary ── */}
+      <View style={s.card}>
+        <Text style={s.cardTitle}>Detection Summary</Text>
+        <InfoRow label="Plant Part" value={`${partIcon}  ${part}`} />
+        <InfoRow label="Part Confidence" value={`${partConfidence}%`} />
+        <InfoRow label="Disease" value={disease} />
+        <InfoRow label="Disease Confidence" value={`${confidence}%`} last />
+
+        {/* Confidence bar */}
+        <View style={s.barTrack}>
+          <View style={[s.barFill, { width: `${confidence}%` as any, backgroundColor: theme.color }]} />
         </View>
       </View>
 
-      {/* IMAGE COMPARISON SECTION */}
+      {/* ── Spot Detection ── */}
       {spotDetection && !spotDetection.error && (
-        <View style={cardStyles.card}>
-          <Text style={cardStyles.cardTitle}>Disease Spot Detection</Text>
-          <Text style={resultsStyles.sectionDescription}>
-            Exact diseased spots identified with bounding boxes
-          </Text>
-          
-          <View style={resultsStyles.imageComparisonContainer}>
-            {/* Original Image */}
-            <TouchableOpacity 
-              style={resultsStyles.imageCard}
-              onPress={() => {
-                setSelectedImage(spotDetection.original_image);
-                setImageViewerVisible(true);
-              }}
-            >
-              <Text style={resultsStyles.imageLabel}>Original Image</Text>
-              <Image 
-                source={{ uri: spotDetection.original_image }} 
-                style={resultsStyles.previewImage}
-                resizeMode="cover"
-              />
-              <Text style={resultsStyles.imageSubLabel}>Tap to view full size</Text>
+        <View style={s.card}>
+          <Text style={s.cardTitle}>Disease Spot Detection</Text>
+
+          {/* Image pair */}
+          <View style={s.imagePair}>
+            <TouchableOpacity style={s.imageBox} onPress={() => setViewerUri(spotDetection.original_image)}>
+              <Image source={{ uri: spotDetection.original_image }} style={s.thumbImage} resizeMode="cover" />
+              <Text style={s.thumbLabel}>Original</Text>
             </TouchableOpacity>
-            
-            {/* Annotated Image */}
-            <TouchableOpacity 
-              style={resultsStyles.imageCard}
-              onPress={() => {
-                setSelectedImage(spotDetection.annotated_image);
-                setImageViewerVisible(true);
-              }}
-            >
-              <Text style={resultsStyles.imageLabel}>Disease Spots Detected</Text>
-              <Image 
-                source={{ uri: spotDetection.annotated_image }} 
-                style={resultsStyles.previewImage}
-                resizeMode="cover"
-              />
-              <Text style={resultsStyles.imageSubLabel}>
-                {spotDetection.total_spots} spots detected
-              </Text>
+
+            <View style={s.imagePairDivider}>
+              <Text style={s.imagePairArrow}>→</Text>
+            </View>
+
+            <TouchableOpacity style={s.imageBox} onPress={() => setViewerUri(spotDetection.annotated_image)}>
+              <Image source={{ uri: spotDetection.annotated_image }} style={s.thumbImage} resizeMode="cover" />
+              <Text style={s.thumbLabel}>Annotated</Text>
             </TouchableOpacity>
           </View>
-          
-          {/* Spot Statistics */}
-          <View style={resultsStyles.spotStatsContainer}>
-            <View style={resultsStyles.statItem}>
-              <Text style={resultsStyles.statValue}>{spotDetection.total_spots}</Text>
-              <Text style={resultsStyles.statLabel}>Total Spots</Text>
-            </View>
-            <View style={resultsStyles.statDivider} />
-            <View style={resultsStyles.statItem}>
-              <Text style={resultsStyles.statValue}>
-                {Math.round(spotDetection.total_area)} px²
-              </Text>
-              <Text style={resultsStyles.statLabel}>Affected Area</Text>
-            </View>
-            <View style={resultsStyles.statDivider} />
-            <View style={resultsStyles.statItem}>
-              <Text style={resultsStyles.statValue}>
-                {spotDetection.bounding_boxes?.length > 0 ? 
-                 (spotDetection.bounding_boxes[0]?.confidence * 100).toFixed(0) + '%' : 'N/A'}
-              </Text>
-              <Text style={resultsStyles.statLabel}>Highest Confidence</Text>
-            </View>
-          </View>
-          
-          {/* Bounding Box Details */}
-          {spotDetection.bounding_boxes && spotDetection.bounding_boxes.length > 0 && (
-            <View style={resultsStyles.boundingBoxList}>
-              <Text style={resultsStyles.boundingBoxTitle}>Detected Spots Details:</Text>
-              {spotDetection.bounding_boxes.slice(0, 5).map((box: any, index: number) => (
-                <View key={index} style={resultsStyles.boundingBoxItem}>
-                  <Text style={resultsStyles.boundingBoxNumber}>Spot {index + 1}</Text>
-                  <View style={resultsStyles.boundingBoxDetails}>
-                    <Text style={resultsStyles.boundingBoxText}>
-                      Position: ({box.x}, {box.y})
-                    </Text>
-                    <Text style={resultsStyles.boundingBoxText}>
-                      Size: {box.width} × {box.height} px
-                    </Text>
-                    <Text style={resultsStyles.boundingBoxText}>
-                      Area: {Math.round(box.area)} px²
-                    </Text>
-                    <Text style={resultsStyles.boundingBoxText}>
-                      Confidence: {(box.confidence * 100).toFixed(1)}%
-                    </Text>
-                  </View>
-                </View>
-              ))}
-              {spotDetection.bounding_boxes.length > 5 && (
-                <Text style={resultsStyles.moreSpotsText}>
-                  ...and {spotDetection.bounding_boxes.length - 5} more spots
-                </Text>
-              )}
-            </View>
-          )}
+
+          {/* Compact stats — no iteration */}
+          <SpotSummary spotDetection={spotDetection} />
+
+          <Text style={s.tapHint}>Tap an image to view full screen</Text>
         </View>
       )}
 
-      {/* Detection Summary Card */}
-      <View style={cardStyles.card}>
-        <Text style={cardStyles.cardTitle}>Detection Summary</Text>
-        
-        <View style={resultsStyles.infoRow}>
-          <Text style={resultsStyles.infoLabel}>Plant Part Identified</Text>
-          <Text style={resultsStyles.infoValue}>{getPartIcon()} {part}</Text>
-        </View>
-        
-        <View style={resultsStyles.infoRow}>
-          <Text style={resultsStyles.infoLabel}>Part Detection Confidence</Text>
-          <Text style={resultsStyles.infoValue}>{partConfidence}%</Text>
-        </View>
-        
-        <View style={resultsStyles.infoRow}>
-          <Text style={resultsStyles.infoLabel}>Disease Status</Text>
-          <Text style={resultsStyles.infoValue}>{disease}</Text>
-        </View>
-        
-        <View style={[resultsStyles.infoRow, { borderBottomWidth: 0 }]}>
-          <Text style={resultsStyles.infoLabel}>Disease Confidence</Text>
-          <Text style={resultsStyles.infoValue}>{confidence}%</Text>
-        </View>
-
-        <View style={resultsStyles.progressBar}>
-          <View
-            style={[
-              resultsStyles.progressFill,
-              {
-                width: `${confidence}%`,
-                backgroundColor: getSeverityColor()
-              }
-            ]}
-          />
-        </View>
-      </View>
-
-      {/* Recommendations Card */}
+      {/* ── Recommendations ── */}
       {recommendations && (
-        <View style={cardStyles.card}>
-          <Text style={cardStyles.cardTitle}>Treatment Recommendations</Text>
-          
+        <View style={s.card}>
+          <Text style={s.cardTitle}>Treatment Recommendations</Text>
+
           {recommendations.description && (
-            <Text style={cardStyles.cardDescription}>
-              {recommendations.description}
-            </Text>
+            <Text style={s.descriptionText}>{recommendations.description}</Text>
           )}
 
-          {recommendations.immediate_actions && recommendations.immediate_actions.length > 0 && (
-            <>
-              <Text style={[cardStyles.cardTitle, { fontSize: 16, marginTop: 16, marginBottom: 8 }]}>
-                🚨 Immediate Actions Required
-              </Text>
-              <View style={resultsStyles.bulletList}>
-                {recommendations.immediate_actions.map((action: string, idx: number) => (
-                  <View key={idx} style={resultsStyles.bulletItem}>
-                    <View style={resultsStyles.bulletDot} />
-                    <Text style={resultsStyles.bulletText}>{action}</Text>
-                  </View>
-                ))}
-              </View>
-            </>
+          {(recommendations.immediate_actions?.length ?? 0) > 0 && (
+            <View style={s.recoSection}>
+              <SectionLabel emoji="🚨" title="Immediate Actions" />
+              <BulletList items={recommendations.immediate_actions} />
+            </View>
           )}
 
-          {recommendations.organic_options && recommendations.organic_options.length > 0 && (
-            <>
-              <Text style={[cardStyles.cardTitle, { fontSize: 16, marginTop: 16, marginBottom: 8 }]}>
-                🌿 Organic Treatment Options
-              </Text>
-              <View style={resultsStyles.bulletList}>
-                {recommendations.organic_options.map((treatment: string, idx: number) => (
-                  <View key={idx} style={resultsStyles.bulletItem}>
-                    <View style={resultsStyles.bulletDot} />
-                    <Text style={resultsStyles.bulletText}>{treatment}</Text>
-                  </View>
-                ))}
-              </View>
-            </>
+          {(recommendations.organic_options?.length ?? 0) > 0 && (
+            <View style={s.recoSection}>
+              <SectionLabel emoji="🌿" title="Organic Options" />
+              <BulletList items={recommendations.organic_options} />
+            </View>
           )}
 
-          {recommendations.preventive_measures && recommendations.preventive_measures.length > 0 && (
-            <>
-              <Text style={[cardStyles.cardTitle, { fontSize: 16, marginTop: 16, marginBottom: 8 }]}>
-                🛡️ Preventive Measures
-              </Text>
-              <View style={resultsStyles.bulletList}>
-                {recommendations.preventive_measures.map((prevention: string, idx: number) => (
-                  <View key={idx} style={resultsStyles.bulletItem}>
-                    <View style={resultsStyles.bulletDot} />
-                    <Text style={resultsStyles.bulletText}>{prevention}</Text>
-                  </View>
-                ))}
-              </View>
-            </>
+          {(recommendations.preventive_measures?.length ?? 0) > 0 && (
+            <View style={s.recoSection}>
+              <SectionLabel emoji="🛡️" title="Prevention" />
+              <BulletList items={recommendations.preventive_measures} />
+            </View>
           )}
 
           {recommendations.confidence?.note && (
-            <View style={{ marginTop: 16, padding: 12, backgroundColor: '#f8fafc', borderRadius: 8 }}>
-              <Text style={[cardStyles.cardDescription, { marginBottom: 0, fontStyle: 'italic' }]}>
-                📝 Note: {recommendations.confidence.note}
-              </Text>
+            <View style={s.noteBox}>
+              <Text style={s.noteText}>📝 {recommendations.confidence.note}</Text>
             </View>
           )}
         </View>
       )}
 
-      {/* Professional Disclaimer */}
-      <View style={[cardStyles.card, { backgroundColor: '#fef3c7' }]}>
-        <Text style={[cardStyles.cardTitle, { color: '#92400e' }]}>⚠️ Professional Consultation</Text>
-        <Text style={[cardStyles.cardDescription, { color: '#78350f', marginBottom: 0 }]}>
-          This analysis is provided for informational purposes only. For severe infections or commercial operations, please consult with a certified agricultural specialist or plant pathologist.
+      {/* ── Disclaimer ── */}
+      <View style={[s.card, s.disclaimerCard]}>
+        <Text style={s.disclaimerTitle}>⚠️ Professional Consultation</Text>
+        <Text style={s.disclaimerText}>
+          For severe infections or commercial operations, consult a certified agricultural specialist or plant pathologist.
         </Text>
       </View>
 
-      {/* Image Viewer Modal */}
-      <ImageViewer />
+      {/* ── Full-Screen Image Viewer ── */}
+      <Modal
+        visible={!!viewerUri}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setViewerUri(null)}
+      >
+        <SafeAreaView style={s.viewer}>
+          <TouchableOpacity style={s.viewerClose} onPress={() => setViewerUri(null)}>
+            <Text style={s.viewerCloseText}>✕</Text>
+          </TouchableOpacity>
+          {viewerUri && (
+            <Image source={{ uri: viewerUri }} style={s.viewerImage} resizeMode="contain" />
+          )}
+        </SafeAreaView>
+      </Modal>
     </ScrollView>
   );
 };
 
 export default ResultsDisplay;
+
+// ─── Styles ──────────────────────────────────────────────────────────────────
+
+const s = StyleSheet.create({
+  scroll: { flex: 1, backgroundColor: '#f8fafc' },
+  scrollContent: { padding: 16, gap: 12, paddingBottom: 32 },
+
+  // Empty state
+  emptyCard: {
+    margin: 24, padding: 32, borderRadius: 16, backgroundColor: '#fff',
+    alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 2 }, shadowRadius: 8, elevation: 3,
+  },
+  emptyIcon: { fontSize: 48, marginBottom: 12 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#1e293b', marginBottom: 6 },
+  emptyDesc: { fontSize: 14, color: '#64748b', textAlign: 'center', lineHeight: 20 },
+
+  // Card
+  card: {
+    backgroundColor: '#fff', borderRadius: 16, padding: 16,
+    shadowColor: '#000', shadowOpacity: 0.05, shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8, elevation: 2,
+  },
+  cardTitle: { fontSize: 15, fontWeight: '700', color: '#1e293b', marginBottom: 12 },
+
+  // Alert banner
+  alertBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+      padding: 8, borderRadius: 10, borderWidth: 1,
+  },
+  alertIcon: { fontSize: 26 },
+  alertTitle: { fontSize: 15, fontWeight: '700', marginBottom: 2 },
+  alertSub: { fontSize: 13, lineHeight: 18 },
+
+  // Chip
+    chip: {
+      paddingHorizontal: 5, paddingVertical: 2, borderRadius: 10, borderWidth: 1,
+  },
+  chipText: { fontSize: 12, fontWeight: '700' },
+
+  // Info rows
+  infoRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f1f5f9',
+  },
+  infoLabel: { fontSize: 13, color: '#64748b' },
+  infoValue: { fontSize: 13, fontWeight: '600', color: '#1e293b', maxWidth: '55%', textAlign: 'right' },
+
+  // Progress bar
+  barTrack: {
+    height: 6, backgroundColor: '#f1f5f9', borderRadius: 99, marginTop: 14, overflow: 'hidden',
+  },
+  barFill: { height: '100%', borderRadius: 99 },
+
+  // Image pair
+  imagePair: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  imageBox: { flex: 1, borderRadius: 12, overflow: 'hidden', backgroundColor: '#f1f5f9' },
+  thumbImage: { width: '100%', height: 120 },
+  thumbLabel: {
+    textAlign: 'center', fontSize: 11, fontWeight: '600', color: '#475569',
+    paddingVertical: 6, backgroundColor: '#f8fafc',
+  },
+  imagePairDivider: { width: 28, alignItems: 'center' },
+  imagePairArrow: { fontSize: 18, color: '#94a3b8' },
+  tapHint: { fontSize: 11, color: '#94a3b8', textAlign: 'center', marginTop: 4 },
+
+  // Spot summary stats
+  spotSummaryRow: {
+    flexDirection: 'row', justifyContent: 'space-around',
+    backgroundColor: '#f8fafc', borderRadius: 12, paddingVertical: 14, marginTop: 4,
+  },
+  spotStat: { alignItems: 'center', flex: 1 },
+  spotStatVal: { fontSize: 16, fontWeight: '800', color: '#1e293b' },
+  spotStatLbl: { fontSize: 10, color: '#94a3b8', marginTop: 2, textAlign: 'center' },
+  spotDivider: { width: 1, backgroundColor: '#e2e8f0' },
+
+  // Recommendations
+  recoSection: { marginTop: 14 },
+  sectionLabel: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  sectionEmoji: { fontSize: 14 },
+  sectionTitle: { fontSize: 13, fontWeight: '700', color: '#1e293b' },
+  descriptionText: { fontSize: 13, color: '#475569', lineHeight: 20, marginBottom: 4 },
+  bulletItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  bulletDot: {
+    width: 6, height: 6, borderRadius: 3, backgroundColor: '#94a3b8',
+    marginTop: 7, flexShrink: 0,
+  },
+  bulletText: { fontSize: 13, color: '#475569', lineHeight: 20, flex: 1 },
+  noteBox: { marginTop: 14, padding: 12, backgroundColor: '#f8fafc', borderRadius: 10 },
+  noteText: { fontSize: 12, color: '#64748b', lineHeight: 18, fontStyle: 'italic' },
+
+  // Disclaimer
+  disclaimerCard: { backgroundColor: '#fffbeb' },
+  disclaimerTitle: { fontSize: 13, fontWeight: '700', color: '#92400e', marginBottom: 6 },
+  disclaimerText: { fontSize: 12, color: '#78350f', lineHeight: 18 },
+
+  // Full-screen viewer
+  viewer: { flex: 1, backgroundColor: '#000', justifyContent: 'center' },
+  viewerClose: {
+    position: 'absolute', top: 16, right: 16, zIndex: 10,
+    backgroundColor: 'rgba(255,255,255,0.15)', width: 36, height: 36,
+    borderRadius: 18, justifyContent: 'center', alignItems: 'center',
+  },
+  viewerCloseText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  viewerImage: { width: '100%', height: '80%' },
+});

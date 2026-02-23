@@ -31,7 +31,7 @@ const COLORS = {
   textLight: '#ffffff',
   textDark: '#0d1f14',
   textMuted: '#5a7a65',
-  cardBg: '#1e3d2a',
+  cardBg: 'rgb(30, 61, 42)',
   navBg: '#0d2018',
   limeglow: '#CEF17B',
   errorRed: '#e9523a',
@@ -66,6 +66,9 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
   const [showPostDetail, setShowPostDetail] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
 
+  const [likedPosts, setLikedPosts] = useState<ForumPost[]>([]);
+  const [showLikes, setShowLikes] = useState(false);
+  const [likesLoading, setLikesLoading] = useState(false);
   const categories = [
     { id: 'all', label: 'All' },
     { id: 'diseases', label: 'Diseases' },
@@ -91,6 +94,27 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
       setLoading(false);
     }
   };
+
+    const fetchLikedPosts = async () => {
+    if (!authState.accessToken) return;
+    try {
+      setLikesLoading(true);
+      const posts = await forumService.getMyLikes(authState.accessToken);
+      setLikedPosts(Array.isArray(posts) ? posts : []);
+    } catch (error) {
+      console.error('Error fetching liked posts:', error);
+    } finally {
+      setLikesLoading(false);
+    }
+  };
+
+  const handleShowLikes = () => {
+  setShowMyPosts(false);
+  setShowLikes(prev => {
+    if (!prev) fetchLikedPosts();
+    return !prev;
+  });
+};
 
   const fetchMyPosts = async () => {
     if (!authState.accessToken || !authState.user?.id) return;
@@ -142,8 +166,8 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
     setShowPostDetail(true);
   };
 
-  const displayedPosts = showMyPosts ? myPosts : posts;
-  const isLoadingDisplayed = showMyPosts ? loadingMyPosts : loading;
+  const displayedPosts = showLikes ? likedPosts : showMyPosts ? myPosts : posts;
+const isLoadingDisplayed = showLikes ? likesLoading : showMyPosts ? loadingMyPosts : loading;
 
   const getCategoryColor = (category: string) => {
     const colors: { [key: string]: any } = {
@@ -363,6 +387,22 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
                 </View>
               )}
             </TouchableOpacity>
+            
+            {/* My Likes chip — NEW */}
+          <TouchableOpacity
+            style={[mobileStyles.categoryChip, showLikes && mobileStyles.categoryChipActive]}
+            onPress={handleShowLikes}
+          >
+            <FontAwesome5 name="heart" size={10} color={showLikes ? COLORS.textLight : COLORS.textMuted} />
+            <Text style={[mobileStyles.categoryChipText, showLikes && mobileStyles.categoryChipTextActive]}>
+              MY LIKES
+            </Text>
+            {likedPosts.length > 0 && (
+              <View style={mobileStyles.chipBadge}>
+                <Text style={mobileStyles.chipBadgeText}>{likedPosts.length}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
 
             {/* Category chips */}
             {categories.map(category => (
@@ -491,7 +531,7 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
           <View style={webStyles.sectionTitleRow}>
             <View style={webStyles.sectionTitleAccent} />
             <Text style={webStyles.sectionTitle}>
-              {showMyPosts ? 'My Posts' : 'Recent Discussions'}
+              {showLikes ? 'My Liked Posts' : showMyPosts ? 'My Posts' : 'Recent Discussions'}
             </Text>
           </View>
 
@@ -571,6 +611,32 @@ const ForumScreen: React.FC<ForumScreenProps> = ({ setActiveTab, navigateToPostD
               </View>
             )}
           </TouchableOpacity>
+
+          <TouchableOpacity
+  style={[
+    webStyles.sidebarActionBtn,
+    webStyles.sidebarActionBtnSecondary,
+    showLikes && webStyles.sidebarActionBtnSecondaryActive,
+  ]}
+  onPress={handleShowLikes}
+>
+  <FontAwesome5
+    name="heart"
+    size={14}
+    color={showLikes ? COLORS.textLight : COLORS.textMuted}
+  />
+  <Text style={[
+    webStyles.sidebarActionBtnText,
+    !showLikes && webStyles.sidebarActionBtnTextMuted,
+  ]}>
+    MY LIKES
+  </Text>
+  {likedPosts.length > 0 && (
+    <View style={webStyles.myPostsBadge}>
+      <Text style={webStyles.myPostsBadgeText}>{likedPosts.length}</Text>
+    </View>
+  )}
+</TouchableOpacity>
           <View style={webStyles.userDivider} />
           <Image
             source={{ uri: 'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771421723/tom_1_s5mxkw.gif' }}
@@ -956,7 +1022,7 @@ const webStyles = StyleSheet.create({
     fontWeight: '500',
   },
   categoryItemTextActive: {
-    color: COLORS.limeGlow,
+    color: COLORS.limeglow,
     fontWeight: '700',
   },
 

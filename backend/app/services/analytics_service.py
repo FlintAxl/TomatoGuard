@@ -544,6 +544,185 @@ class AnalyticsService:
             return []
 
     # ------------------------------------------------------------------
+    # Featured Disease Spotlight – top-1 per part + overall for Trends
+    # ------------------------------------------------------------------
+    async def get_featured_disease_spotlight(self, days: int = 30) -> Dict[str, Any]:
+        """
+        Return the #1 most-detected disease **overall** and for each
+        plant part (leaf, fruit, stem) in the given period.
+        """
+        from app.services.recommendations import RECOMMENDATIONS_DB
+
+        now = datetime.utcnow()
+        period_start = now - timedelta(days=days)
+        prev_start = period_start - timedelta(days=days)
+        norm = self._normalize_stage()
+
+        # ── 1. Get top disease per (part, disease) in period ─────
+        top_pipeline = [
+            norm,
+            {"$match": {
+                "created_at": {"$gte": period_start},
+                "_disease": {"$nin": [None, "Healthy"]},
+            }},
+            {"$group": {
+                "_id": {"disease": "$_disease", "part": "$_part"},
+                "count": {"$sum": 1},
+                "avg_confidence": {"$avg": "$_confidence"},
+            }},
+            {"$sort": {"count": -1}},
+        ]
+        all_groups = await self.analyses.aggregate(top_pipeline).to_list(length=None)
+
+        if not all_groups:
+            return {"has_data": False}
+
+        # ── Helper: pick the top hit for a given part (or overall) ──
+        def _pick_top(groups, part_filter=None):
+            for g in groups:
+                p = (g["_id"].get("part") or "unknown").lower()
+                if part_filter is None or p == part_filter:
+                    return g
+            return None
+
+        # ── Helper: build one spotlight dict ────────────────────
+        async def _build_spotlight(group) -> Dict[str, Any]:
+            disease_name = group["_id"]["disease"]
+            plant_part = (group["_id"]["part"] or "unknown").lower()
+            current_count = group["count"]
+            avg_conf = round(group["avg_confidence"], 4) if group["avg_confidence"] else 0
+
+            # Previous period comparison
+            prev_pipeline = [
+                norm,
+                {"$match": {
+                    "created_at": {"$gte": prev_start, "$lt": period_start},
+                    "_disease": disease_name,
+                    "_part": {"$regex": f"^{plant_part}$", "$options": "i"},
+                }},
+                {"$count": "count"},
+            ]
+            prev_result = await self.analyses.aggregate(prev_pipeline).to_list(1)
+            prev_count = prev_result[0]["count"] if prev_result else 0
+            if prev_count > 0:
+                trend_pct = round((current_count - prev_count) / prev_count * 100, 1)
+            else:
+                trend_pct = 100.0 if current_count > 0 else 0.0
+            trend_dir = "up" if trend_pct >= 0 else "down"
+
+            # Peak week
+            weekly_pipeline = [
+                norm,
+                {"$match": {
+                    "created_at": {"$gte": period_start},
+                    "_disease": disease_name,
+                    "_part": {"$regex": f"^{plant_part}$", "$options": "i"},
+                }},
+                {"$group": {
+                    "_id": {"$isoWeek": "$created_at"},
+                    "count": {"$sum": 1},
+                    "min_date": {"$min": "$created_at"},
+                    "max_date": {"$max": "$created_at"},
+                }},
+                {"$sort": {"count": -1}},
+                {"$limit": 1},
+            ]
+            week_result = await self.analyses.aggregate(weekly_pipeline).to_list(1)
+            if week_result:
+                wd = week_result[0]
+                peak_week = f"{wd['min_date'].strftime('%b %d')} – {wd['max_date'].strftime('%b %d, %Y')}"
+            else:
+                peak_week = "N/A"
+
+            # Enrich from RECOMMENDATIONS_DB
+            recs = RECOMMENDATIONS_DB.get(plant_part, {}).get(disease_name, {})
+            cause = recs.get("causal_agent", "Unknown pathogen")
+            description = recs.get("description", "No description available.")
+
+            env_triggers: List[str] = []
+            monitoring = recs.get("monitoring", "")
+            if isinstance(monitoring, str) and monitoring:
+                env_triggers.append(monitoring)
+            elif isinstance(monitoring, list):
+                env_triggers.extend(monitoring)
+            for key in ("prevention", "organic"):
+                for tip in recs.get(key, []):
+                    lower = tip.lower()
+                    if any(w in lower for w in [
+                        "humidity", "moisture", "wet", "rain",
+                        "warm", "cool", "temperature", "water",
+                        "overhead", "splash", "drainage",
+                    ]):
+                        if tip not in env_triggers:
+                            env_triggers.append(tip)
+            env_triggers = env_triggers[:5]
+
+            prevention_tips = recs.get("prevention", recs.get("immediate", []))[:3]
+
+            # Daily trend – day-by-day detection count for this disease
+            daily_pipeline = [
+                norm,
+                {"$match": {
+                    "created_at": {"$gte": period_start},
+                    "_disease": disease_name,
+                    "_part": {"$regex": f"^{plant_part}$", "$options": "i"},
+                }},
+                {"$group": {
+                    "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_at"}},
+                    "count": {"$sum": 1},
+                }},
+                {"$sort": {"_id": 1}},
+            ]
+            daily_raw = await self.analyses.aggregate(daily_pipeline).to_list(length=None)
+            daily_map = {r["_id"]: r["count"] for r in daily_raw}
+
+            # Fill every date in the period so the chart has no gaps
+            all_dates = [
+                (period_start + timedelta(days=i)).strftime("%Y-%m-%d")
+                for i in range(days + 1)
+            ]
+            daily_trend = [
+                {"date": d, "count": daily_map.get(d, 0)}
+                for d in all_dates
+            ]
+
+            return {
+                "has_data": True,
+                "disease_name": disease_name,
+                "plant_part": plant_part,
+                "cause": cause,
+                "description": description,
+                "environmental_triggers": env_triggers,
+                "prevention_tips": prevention_tips,
+                "stats": {
+                    "total_detections": current_count,
+                    "avg_confidence": avg_conf,
+                    "vs_last_period_pct": abs(trend_pct),
+                    "trend": trend_dir,
+                    "peak_week": peak_week,
+                },
+                "daily_trend": daily_trend,
+            }
+
+        # ── 2. Build overall + per-part spotlights ───────────────
+        overall_group = all_groups[0]  # already sorted desc
+        overall = await _build_spotlight(overall_group)
+
+        per_part: Dict[str, Any] = {}
+        for part in ("leaf", "fruit", "stem"):
+            grp = _pick_top(all_groups, part)
+            if grp:
+                per_part[part] = await _build_spotlight(grp)
+            else:
+                per_part[part] = {"has_data": False, "plant_part": part}
+
+        return {
+            "has_data": True,
+            "overall": overall,
+            "per_part": per_part,
+        }
+
+    # ------------------------------------------------------------------
     # Combined endpoint – returns everything in one call
     # ------------------------------------------------------------------
     async def get_full_ml_analytics(self, trend_days: int = 30) -> Dict[str, Any]:

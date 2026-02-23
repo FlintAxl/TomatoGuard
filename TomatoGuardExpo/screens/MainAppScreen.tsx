@@ -34,7 +34,11 @@ import BlogsList from './BlogsListScreen';
 import BlogOne from './blogs/BlogOne';
 import BlogTwo from './blogs/BlogTwo';
 import BlogThree from './blogs/BlogThree';
+import BlogFour from './blogs/BlogFour';
+import BlogFive from './blogs/BlogFive';
+import BlogSix from './blogs/BlogSix';
 import AboutPageScreen from './AboutPageScreen';
+import TrendScreen from './TrendScreen';
 
 // Screens that manage their own scrolling and must NOT be inside the outer ScrollView
 const SELF_SCROLLING_TABS = ['forum'];
@@ -115,6 +119,11 @@ const MainAppScreen = () => {
       });
       return;
     }
+    if (itemId === 'trends') {
+      setActiveTab('trends');
+      closeDrawer();
+      return;
+    }
     if (itemId === 'forums') {
       setActiveTab('forum');
       closeDrawer();
@@ -144,10 +153,14 @@ const MainAppScreen = () => {
       case 'postdetail': return 'View post details and comments';
       case 'profile': return 'View and manage your account information';
       case 'about': return 'System information and technical specifications';
+      case 'trends': return 'Featured disease spotlight and detection trends';
       case 'blogs': return 'Expert insights on tomato cultivation and health';
       case 'blogone': return 'Disease identification and prevention guide';
       case 'blogtwo': return 'Nutritional information and health benefits';
       case 'blogthree': return 'Complete guide to tomato health benefits';
+      case 'blogfour': return 'The history of tomato in the kitchen';
+      case 'blogfive': return 'Different species of tomato';
+      case 'blogsix': return 'Stages and timelines of growing a tomato';
       default: return '';
     }
   };
@@ -162,6 +175,7 @@ const MainAppScreen = () => {
       case 'forum': return 'Forums';
       case 'createpost': return 'Create Post';
       case 'postdetail': return 'Post Details';
+      case 'trends': return 'Trends';
       case 'about': return 'About System';
       default: return 'TomatoGuard';
     }
@@ -236,6 +250,12 @@ const MainAppScreen = () => {
             <AboutPageScreen />
           </View>
         );
+      case 'trends':
+        return (
+          <View style={styles.contentPadding}>
+            <TrendScreen />
+          </View>
+        );
       case 'blogs':
         return (
           <View style={styles.contentPadding}>
@@ -245,21 +265,39 @@ const MainAppScreen = () => {
       case 'blogone':
         return (
           <View style={styles.contentPadding}>
-            <BlogOne setActiveTab={setActiveTab} />
+            <BlogOne />
           </View>
         );
       case 'blogtwo':
         return (
           <View style={styles.contentPadding}>
-            <BlogTwo setActiveTab={setActiveTab} />
+            <BlogTwo />
           </View>
         );
       case 'blogthree':
         return (
           <View style={styles.contentPadding}>
-            <BlogThree setActiveTab={setActiveTab} />
+            <BlogThree />
           </View>
         );
+        case 'blogfour':
+          return (
+            <View style={styles.contentPadding}>
+              <BlogFour />
+            </View>
+          );
+        case 'blogfive':
+          return (
+            <View style={styles.contentPadding}>
+              <BlogFive />
+            </View>
+          );
+        case 'blogsix':
+          return (
+            <View style={styles.contentPadding}>
+              <BlogSix />
+            </View>
+          );
       default:
         return null;
     }
@@ -313,8 +351,6 @@ const localStyles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  // Fills all space below the MainLayout header so ForumScreen
-  // can manage its own three-column fixed layout
   selfScrollingContainer: {
     flex: 1,
     overflow: 'hidden' as any,

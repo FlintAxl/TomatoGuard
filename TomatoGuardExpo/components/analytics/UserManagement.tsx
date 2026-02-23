@@ -9,6 +9,7 @@ import {
   Alert,
   Platform,
   Modal,
+  TextInput,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import {

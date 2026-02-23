@@ -15,7 +15,6 @@ import {
   Animated,
   ImageBackground,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { useAuth } from '../contexts/AuthContext';
 import MainLayout from '../components/Layout/MainLayout';
 import Drawer from '../components/Layout/Drawer';
@@ -108,9 +107,13 @@ const LoginScreen = ({ navigation }: any) => {
     }
   };
 
+  React.useLayoutEffect(() => {
+    navigation.setOptions({ headerShown: false });
+  }, [navigation]);
+
   return (
     <ImageBackground
-      source={{ uri: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1771333800/Screen_Shot_2026-02-17_at_9.09.39_PM_o8nvq8.png' }}
+      source={{ uri: 'https://res.cloudinary.com/dxnb2ozgw/image/upload/v1771763660/Screen_Shot_2026-02-22_at_8.34.04_PM_tjcbkh.png' }}
       style={{ flex: 1 }}
       resizeMode="cover"
     >

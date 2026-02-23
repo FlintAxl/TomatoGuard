@@ -1,6 +1,6 @@
 // src/components/common/Layout/FloatingButton.tsx
 import React, { useState } from 'react';
-import { StyleSheet, View, Text } from 'react-native';
+import { StyleSheet, View, Dimensions, Text } from 'react-native';
 import { FAB } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { RootStackNavigationProp } from '../../navigation/types';
@@ -11,6 +11,9 @@ import UserAnalysisHistory from '../UserAnalysisHistory';
 interface FloatingActionButtonProps {
   onItemPress: (itemId: string) => void;
 }
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const isSmallDevice = SCREEN_WIDTH < 768;
 
 const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({ onItemPress }) => {
   const [open, setOpen] = useState(false);
@@ -60,7 +63,7 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({ onItemPress
       <FAB.Group
         open={open}
         visible
-        backdropColor='transparent'
+        backdropColor='rgba(0, 0, 0, 0.5)'
         icon={getFabIcon()}
         actions={[
           {
@@ -128,10 +131,9 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({ onItemPress
 const styles = StyleSheet.create({
   fabGroup: {
     position: 'absolute',
-    bottom: 16,
-    right: 16,
+    bottom: isSmallDevice ? 2 : 16,
+    right: isSmallDevice ? 2 : 16,
     zIndex: 1001,
-    backgroundColor: 'transparent',
   },
   fab: {
     backgroundColor: '#2d7736',
