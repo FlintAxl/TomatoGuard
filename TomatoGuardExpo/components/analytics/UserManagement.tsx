@@ -26,6 +26,8 @@ const UserManagement: React.FC = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [roleModalVisible, setRoleModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [deactivateModalVisible, setDeactivateModalVisible] = useState(false);
+  const [deactivateReason, setDeactivateReason] = useState('');
 
   const loadUsers = useCallback(async () => {
     try {
@@ -45,12 +47,20 @@ const UserManagement: React.FC = () => {
 
   const handleToggleStatus = async (user: User) => {
     const newStatus = !user.is_active;
-    const action = newStatus ? 'activate' : 'deactivate';
-    
-    const doToggle = async () => {
+
+    // If deactivating, open the reason modal instead of a simple confirm
+    if (!newStatus) {
+      setSelectedUser(user);
+      setDeactivateReason('');
+      setDeactivateModalVisible(true);
+      return;
+    }
+
+    // Activating — simple confirmation
+    const doActivate = async () => {
       try {
         setActionLoading(user.id);
-        const updated = await updateUserStatus(user.id, newStatus, authState.accessToken || undefined);
+        const updated = await updateUserStatus(user.id, true, authState.accessToken || undefined);
         setUsers(prev => prev.map(u => u.id === user.id ? updated : u));
       } catch (err: any) {
         console.error('Failed to update user status:', err);
@@ -66,17 +76,53 @@ const UserManagement: React.FC = () => {
     };
 
     if (Platform.OS === 'web') {
-      const confirmed = window.confirm(`Are you sure you want to ${action} ${user.full_name || user.email}?`);
-      if (confirmed) doToggle();
+      const confirmed = window.confirm(`Are you sure you want to activate ${user.full_name || user.email}?`);
+      if (confirmed) doActivate();
     } else {
       Alert.alert(
-        `${action.charAt(0).toUpperCase() + action.slice(1)} User`,
-        `Are you sure you want to ${action} ${user.full_name || user.email}?`,
+        'Activate User',
+        `Are you sure you want to activate ${user.full_name || user.email}?`,
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: action.charAt(0).toUpperCase() + action.slice(1), onPress: doToggle },
+          { text: 'Activate', onPress: doActivate },
         ]
       );
+    }
+  };
+
+  const handleDeactivateConfirm = async () => {
+    if (!selectedUser) return;
+    if (!deactivateReason.trim()) {
+      if (Platform.OS === 'web') {
+        window.alert('Please enter a reason for deactivation.');
+      } else {
+        Alert.alert('Required', 'Please enter a reason for deactivation.');
+      }
+      return;
+    }
+
+    try {
+      setActionLoading(selectedUser.id);
+      const updated = await updateUserStatus(
+        selectedUser.id,
+        false,
+        authState.accessToken || undefined,
+        deactivateReason.trim()
+      );
+      setUsers(prev => prev.map(u => u.id === selectedUser.id ? updated : u));
+      setDeactivateModalVisible(false);
+      setSelectedUser(null);
+      setDeactivateReason('');
+    } catch (err: any) {
+      console.error('Failed to deactivate user:', err);
+      const message = err?.response?.data?.detail || 'Failed to deactivate user';
+      if (Platform.OS === 'web') {
+        window.alert(message);
+      } else {
+        Alert.alert('Error', message);
+      }
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -165,6 +211,12 @@ const UserManagement: React.FC = () => {
                     <Text style={s.avatarText}>
                       {(user.full_name || user.email).charAt(0).toUpperCase()}
                     </Text>
+                  </View>
+                )}
+              {!user.is_active && user.deactivation_reason && (
+                  <View style={s.reasonContainer}>
+                    <Text style={s.reasonLabel}>Deactivation Reason:</Text>
+                    <Text style={s.reasonText}>{user.deactivation_reason}</Text>
                   </View>
                 )}
                 {!user.is_active && (
@@ -274,6 +326,64 @@ const UserManagement: React.FC = () => {
               onPress={() => {
                 setRoleModalVisible(false);
                 setSelectedUser(null);
+              }}
+            >
+              <Text style={s.cancelBtnText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Deactivation Reason Modal */}
+      <Modal
+        visible={deactivateModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setDeactivateModalVisible(false);
+          setSelectedUser(null);
+          setDeactivateReason('');
+        }}
+      >
+        <View style={s.modalOverlay}>
+          <View style={s.modalContent}>
+            <Text style={s.modalTitle}>Deactivate User</Text>
+            <Text style={s.modalSubtitle}>
+              Please provide a reason for deactivating{' '}
+              {selectedUser?.full_name || selectedUser?.email}
+            </Text>
+
+            <TextInput
+              style={s.reasonInput}
+              placeholder="Enter reason for deactivation..."
+              placeholderTextColor="#64748b"
+              value={deactivateReason}
+              onChangeText={setDeactivateReason}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+
+            <TouchableOpacity
+              style={[s.actionBtn, s.deactivateBtn, { marginBottom: 10 }]}
+              onPress={handleDeactivateConfirm}
+              disabled={actionLoading !== null || !deactivateReason.trim()}
+            >
+              {actionLoading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={[s.actionBtnText, !deactivateReason.trim() && { opacity: 0.5 }]}>
+                  Confirm Deactivation
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={s.cancelBtn}
+              onPress={() => {
+                setDeactivateModalVisible(false);
+                setSelectedUser(null);
+                setDeactivateReason('');
               }}
             >
               <Text style={s.cancelBtnText}>Cancel</Text>
@@ -537,6 +647,35 @@ const s = StyleSheet.create({
     color: '#f8fafc',
     fontSize: 14,
     fontWeight: '600',
+  },
+  reasonContainer: {
+    backgroundColor: '#2d1215',
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#ef4444',
+  },
+  reasonLabel: {
+    color: '#f87171',
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 3,
+  },
+  reasonText: {
+    color: '#fca5a5',
+    fontSize: 12,
+  },
+  reasonInput: {
+    backgroundColor: '#0f172a',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
+    padding: 14,
+    color: '#f8fafc',
+    fontSize: 14,
+    minHeight: 100,
+    marginBottom: 16,
   },
 });
 

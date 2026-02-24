@@ -9,6 +9,7 @@ class UserBase(BaseModel):
     profile_picture: Optional[str] = None
     role: UserRole = UserRole.USER
     is_active: bool = True
+    deactivation_reason: Optional[str] = None
 
 
 class UserCreate(UserBase):

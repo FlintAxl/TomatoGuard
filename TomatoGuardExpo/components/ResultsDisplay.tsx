@@ -126,16 +126,6 @@ const SpotSummary = ({ spotDetection }: { spotDetection: any }) => {
         <Text style={s.spotStatVal}>{topConf}</Text>
         <Text style={s.spotStatLbl}>Top Confidence</Text>
       </View>
-      <View style={s.spotDivider} />
-      <View style={s.spotStat}>
-        <Text style={s.spotStatVal}>{avgArea}px²</Text>
-        <Text style={s.spotStatLbl}>Avg Area</Text>
-      </View>
-      <View style={s.spotDivider} />
-      <View style={s.spotStat}>
-        <Text style={s.spotStatVal}>{maxArea}px²</Text>
-        <Text style={s.spotStatLbl}>Largest</Text>
-      </View>
     </View>
   );
 };

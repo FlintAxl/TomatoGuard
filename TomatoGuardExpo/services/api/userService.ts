@@ -8,6 +8,7 @@ export interface User {
   role: 'user' | 'admin';
   is_active: boolean;
   created_at: string | null;
+  deactivation_reason: string | null;
 }
 
 /**
@@ -42,13 +43,13 @@ export const updateUserRole = async (
 export const updateUserStatus = async (
   userId: string,
   isActive: boolean,
-  token?: string
+  token?: string,
+  reason?: string
 ): Promise<User> => {
   const client = getApiClient(token);
   const response = await client.put<User>(
     `/api/v1/auth/users/${userId}/status`,
-    null,
-    { params: { is_active: isActive } }
+    { is_active: isActive, reason: reason || null }
   );
   return response.data;
 };

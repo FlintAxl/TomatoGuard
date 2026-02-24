@@ -91,7 +91,8 @@ class UserService:
             full_name=user_doc.get("full_name"),
             profile_picture=user_doc.get("profile_picture"),
             role=user_doc.get("role", UserRole.USER),
-            is_active=user_doc.get("is_active", True)
+            is_active=user_doc.get("is_active", True),
+            deactivation_reason=user_doc.get("deactivation_reason")
         )
     
     async def get_user_by_id(self, user_id: str) -> Optional[UserRead]:
@@ -121,7 +122,8 @@ class UserService:
             profile_picture=user_doc.get("profile_picture"),
             role=user_doc.get("role", UserRole.USER),
             is_active=user_doc.get("is_active", True),
-            created_at=user_doc.get("created_at")
+            created_at=user_doc.get("created_at"),
+            deactivation_reason=user_doc.get("deactivation_reason")
         )
     
     async def get_user_by_email(self, email: str) -> Optional[UserRead]:
@@ -146,7 +148,8 @@ class UserService:
             profile_picture=user_doc.get("profile_picture"),
             role=user_doc.get("role", UserRole.USER),
             is_active=user_doc.get("is_active", True),
-            created_at=user_doc.get("created_at")
+            created_at=user_doc.get("created_at"),
+            deactivation_reason=user_doc.get("deactivation_reason")
         )
     
     async def update_user(
@@ -225,7 +228,8 @@ class UserService:
                 profile_picture=user_doc.get("profile_picture"),
                 role=user_doc.get("role", UserRole.USER),
                 is_active=user_doc.get("is_active", True),
-                created_at=user_doc.get("created_at")
+                created_at=user_doc.get("created_at"),
+                deactivation_reason=user_doc.get("deactivation_reason")
             ))
         return users
 
@@ -250,20 +254,27 @@ class UserService:
         
         return await self.get_user_by_id(user_id)
 
-    async def update_user_status(self, user_id: str, is_active: bool) -> Optional[UserRead]:
+    async def update_user_status(self, user_id: str, is_active: bool, reason: Optional[str] = None) -> Optional[UserRead]:
         """
         Activate or deactivate a user (admin only)
         
         Args:
             user_id: User's MongoDB ID
             is_active: New active status
+            reason: Reason for deactivation (required when deactivating)
             
         Returns:
             Updated user if successful, None otherwise
         """
+        update_fields: dict = {"is_active": is_active}
+        if not is_active and reason:
+            update_fields["deactivation_reason"] = reason
+        elif is_active:
+            update_fields["deactivation_reason"] = None  # Clear reason on reactivation
+        
         result = await self.users_collection.update_one(
             {"_id": ObjectId(user_id)},
-            {"$set": {"is_active": is_active}}
+            {"$set": update_fields}
         )
         
         if result.modified_count == 0:
@@ -305,7 +316,8 @@ class UserService:
                 profile_picture=user_doc.get("profile_picture"),
                 role=user_doc.get("role", UserRole.USER),
                 is_active=user_doc.get("is_active", True),
-                created_at=user_doc.get("created_at")
+                created_at=user_doc.get("created_at"),
+                deactivation_reason=user_doc.get("deactivation_reason")
             )
         
         # Try to find existing user by email (to link existing accounts)
@@ -325,7 +337,8 @@ class UserService:
                 profile_picture=user_doc.get("profile_picture"),
                 role=user_doc.get("role", UserRole.USER),
                 is_active=user_doc.get("is_active", True),
-                created_at=user_doc.get("created_at")
+                created_at=user_doc.get("created_at"),
+                deactivation_reason=user_doc.get("deactivation_reason")
             )
         
         # Create new user (no password since Firebase handles auth)
@@ -349,7 +362,8 @@ class UserService:
             profile_picture=profile_picture,
             role=UserRole.USER,
             is_active=True,
-            created_at=new_user["created_at"]
+            created_at=new_user["created_at"],
+            deactivation_reason=None
         )
 
     async def get_user_by_firebase_uid(self, firebase_uid: str) -> Optional[UserRead]:
@@ -374,7 +388,8 @@ class UserService:
             profile_picture=user_doc.get("profile_picture"),
             role=user_doc.get("role", UserRole.USER),
             is_active=user_doc.get("is_active", True),
-            created_at=user_doc.get("created_at")
+            created_at=user_doc.get("created_at"),
+            deactivation_reason=user_doc.get("deactivation_reason")
         )
 
 

@@ -57,9 +57,12 @@ async def login(login_data: UserLogin):
     
     # Check if user is active
     if not user.is_active:
+        detail_msg = "Your account has been deactivated."
+        if user.deactivation_reason:
+            detail_msg += f" Reason: {user.deactivation_reason}"
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Inactive user account",
+            detail=detail_msg,
         )
     
     # Create tokens
@@ -84,6 +87,7 @@ async def login(login_data: UserLogin):
             "role": user.role,
             "is_active": user.is_active,
             "created_at": user.created_at.isoformat() if user.created_at else None,
+            "deactivation_reason": user.deactivation_reason,
         }
     }
 
@@ -92,6 +96,11 @@ async def login(login_data: UserLogin):
 class FirebaseLoginRequest(BaseModel):
     firebase_token: str
     full_name: Optional[str] = None
+
+
+class UpdateStatusRequest(BaseModel):
+    is_active: bool
+    reason: Optional[str] = None
 
 
 @router.post("/firebase-login")
@@ -140,9 +149,12 @@ async def firebase_login(request: FirebaseLoginRequest):
         
         # Check if user is active
         if not user.is_active:
+            detail_msg = "Your account has been deactivated."
+            if user.deactivation_reason:
+                detail_msg += f" Reason: {user.deactivation_reason}"
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Inactive user account",
+                detail=detail_msg,
             )
         
         # Create our own JWT tokens (same as regular login)
@@ -165,6 +177,7 @@ async def firebase_login(request: FirebaseLoginRequest):
                 "role": user.role,
                 "is_active": user.is_active,
                 "created_at": user.created_at.isoformat() if user.created_at else None,
+                "deactivation_reason": user.deactivation_reason,
             }
         }
         
@@ -248,6 +261,7 @@ async def update_profile(
         "role": updated_user.role,
         "is_active": updated_user.is_active,
         "created_at": updated_user.created_at.isoformat() if updated_user.created_at else None,
+        "deactivation_reason": updated_user.deactivation_reason,
     }
 
 
@@ -393,6 +407,7 @@ async def get_all_users(current_user: Dict = Depends(get_current_active_user)):
             "role": user.role,
             "is_active": user.is_active,
             "created_at": user.created_at.isoformat() if user.created_at else None,
+            "deactivation_reason": user.deactivation_reason,
         }
         for user in users
     ]
@@ -453,13 +468,14 @@ async def update_user_role(
         "role": updated_user.role,
         "is_active": updated_user.is_active,
         "created_at": updated_user.created_at.isoformat() if updated_user.created_at else None,
+        "deactivation_reason": updated_user.deactivation_reason,
     }
 
 
 @router.put("/users/{user_id}/status")
 async def update_user_status(
     user_id: str,
-    is_active: bool,
+    request: UpdateStatusRequest,
     current_user: Dict = Depends(get_current_active_user)
 ):
     """
@@ -467,7 +483,7 @@ async def update_user_status(
     
     Args:
         user_id: Target user's ID
-        is_active: New active status
+        request: Contains is_active and optional reason
     
     Returns:
         Updated user information
@@ -486,7 +502,16 @@ async def update_user_status(
             detail="Cannot change your own status"
         )
     
-    updated_user = await user_service.update_user_status(user_id, is_active)
+    # Require reason when deactivating
+    if not request.is_active and not request.reason:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Reason is required when deactivating a user"
+        )
+    
+    updated_user = await user_service.update_user_status(
+        user_id, request.is_active, reason=request.reason
+    )
     if not updated_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -501,4 +526,5 @@ async def update_user_status(
         "role": updated_user.role,
         "is_active": updated_user.is_active,
         "created_at": updated_user.created_at.isoformat() if updated_user.created_at else None,
+        "deactivation_reason": updated_user.deactivation_reason,
     }

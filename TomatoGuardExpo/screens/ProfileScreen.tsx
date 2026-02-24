@@ -384,7 +384,7 @@ const ProfileScreen = ({ navigation }: any) => {
           {/* Profile Info */}
           <View style={styles.profileInfo}>
             <Text style={styles.userName}>{userData?.full_name || 'User Name'}</Text>
-            <Text style={styles.userUsername}>@{userData?.username || 'username'}</Text>
+        
             <Text style={styles.userEmail}>{userData?.email}</Text>
             
             {userData?.role === 'admin' && (
