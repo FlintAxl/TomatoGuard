@@ -7,6 +7,7 @@ from app.dependencies.auth import get_current_user, get_current_admin_user
 from app.models.forum_model import PostCreate
 from app.services.forum_service import ForumService
 from app.services.cloudinary_service import CloudinaryService
+from app.services.notification_service import NotificationService
 
 router = APIRouter(prefix="/api/v1/forum", tags=["forum"])
 
@@ -109,6 +110,19 @@ async def create_post(
     # Create post
     post = await forum_service.create_post(post_data, current_user["id"])
     enriched = await forum_service.enrich_post(post, current_user["id"])
+
+    # Broadcast notification to all other users
+    try:
+        notification_service = NotificationService()
+        await notification_service.create_forum_post_notification(
+            author_id=current_user["id"],
+            author_name=current_user.get("full_name", current_user.get("email", "Someone")),
+            post_id=str(post.id),
+            post_title=title,
+        )
+    except Exception as e:
+        print(f"⚠️ Failed to create notifications: {e}")
+
     return enriched
 
 @router.put("/posts/{post_id}")

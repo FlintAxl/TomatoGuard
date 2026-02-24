@@ -25,8 +25,25 @@ import {
   SpotlightDailyPoint,
 } from '../services/api/analyticsService';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const IS_WIDE = SCREEN_WIDTH > 900;
+const isSmallDevice = SCREEN_WIDTH < 768;
+
+// ── Magazine palette (matching BlogsListScreen) ──────────────────
+const COLORS = {
+  bgCream: '#f0ede6',
+  bgLight: '#e8e4db',
+  darkGreen: '#1a3a2a',
+  medGreen: '#2d5a3d',
+  accentGreen: '#3d7a52',
+  textLight: '#ffffff',
+  textDark: '#0d1f14',
+  textMuted: '#5a7a65',
+  cardBg: '#1e3d2a',
+  navBg: '#0d2018',
+  limeglow: '#CEF17B',
+  errorRed: '#e9523a',
+};
 
 // ── Period filter options ────────────────────────────────────────
 const PERIOD_OPTIONS: { label: string; days: number }[] = [
@@ -50,7 +67,7 @@ const DISEASE_COLORS: Record<string, string> = {
   'Blight': '#c0392b',
   'Wilt': '#27ae60',
 };
-const DEFAULT_ACCENT = '#16a34a';
+const DEFAULT_ACCENT = '#3d7a52';
 
 // ── Plant-part badges ───────────────────────────────────────────
 const PART_EMOJI: Record<string, string> = {
@@ -75,9 +92,9 @@ const DISEASE_IMAGES: Record<string, string[]> = {
     'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771427784/tomato_guard/adpmtillmw3eezrqsv9d.jpg',
   ],
   'Botrytis Gray Mold': [
-    'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771847742/81d23d29-e092-4412-b02b-bade6ea73bc1.png',
-    'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771847780/cc49cc01-86f5-4db0-a41c-18c1ce3e1768.png',
-    'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771427784/tomato_guard/adpmtillmw3eezrqsv9d.jpg',
+    'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771481223/tomato_guard/wb6hf61ub0uess4yqqky.jpg',
+    'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771935086/images_z1w0k4.jpg',
+    'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771935132/nb4VqQyqLnadrMumrqfCJb_g43ziw.jpg',
   ],
   'Blossom End Rot': [
     'https://res.cloudinary.com/dphf7kz4i/image/upload/v1771847742/81d23d29-e092-4412-b02b-bade6ea73bc1.png',
@@ -138,10 +155,10 @@ const getDiseaseSampleImages = (
   diseaseName?: string,
 ): { url: string; stage: string; confidence: number }[] => {
   const urls = DISEASE_IMAGES[diseaseName ?? ''] ?? [];
-  const stages = ['Early stage', 'Advanced stage', 'Severe infection'];
+  
   return urls.map((url, i) => ({
     url,
-    stage: stages[i] ?? `Sample ${i + 1}`,
+    stage:  `Detected image ${i + 1}`,
     confidence: 0,
   }));
 };
@@ -193,7 +210,7 @@ const TrendScreen: React.FC = () => {
   if (loading) {
     return (
       <View style={s.center}>
-        <ActivityIndicator size="large" color="#16a34a" />
+        <ActivityIndicator size="large" color={COLORS.accentGreen} />
         <Text style={s.loadingText}>Loading disease trends…</Text>
       </View>
     );
@@ -202,7 +219,7 @@ const TrendScreen: React.FC = () => {
   if (error) {
     return (
       <View style={s.center}>
-        <FontAwesome5 name="exclamation-triangle" size={36} color="#ef4444" />
+        <FontAwesome5 name="exclamation-triangle" size={36} color={COLORS.errorRed} />
         <Text style={s.errorText}>{error}</Text>
         <TouchableOpacity style={s.retryBtn} onPress={() => load()}>
           <Text style={s.retryBtnText}>Retry</Text>
@@ -214,7 +231,7 @@ const TrendScreen: React.FC = () => {
   if (!data || !data.has_data) {
     return (
       <View style={s.center}>
-        <FontAwesome5 name="chart-line" size={48} color="#94a3b8" />
+        <FontAwesome5 name="chart-line" size={48} color={COLORS.textMuted} />
         <Text style={s.emptyTitle}>No detections yet</Text>
         <Text style={s.emptySubtitle}>
           Start scanning your tomato plants to see trends here.
@@ -235,6 +252,15 @@ const TrendScreen: React.FC = () => {
         <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} />
       }
     >
+      {/* ─── Editorial Masthead ──────────────────────────────────── */}
+      <View style={s.masthead}>
+        <View style={s.mastheadAccent} />
+        <View>
+          <Text style={s.mastheadTitle}>Disease Trends</Text>
+          <Text style={s.mastheadSub}>Analytics & insights for your tomato farm</Text>
+        </View>
+      </View>
+
       {/* ─── Global Date Filter ─────────────────────────────────── */}
       <View style={s.filterBar}>
         <Text style={s.filterLabel}>Report Period</Text>
@@ -284,7 +310,8 @@ const TrendScreen: React.FC = () => {
          ═══════════════════════════════════════════════════════════ */}
       {perPart && (
         <>
-          <View style={[s.sectionHeader, { marginTop: 32 }]}>
+          <View style={s.editorialDivider} />
+          <View style={[s.sectionHeader, { marginTop: 8 }]}>
             <Text style={s.sectionTag}>BY PLANT PART</Text>
             <Text style={s.sectionHeadline}>Top Disease Per Part</Text>
           </View>
@@ -320,8 +347,16 @@ const TrendScreen: React.FC = () => {
         </>
       )}
 
-      {/* Bottom spacer for floating button */}
-      <View style={{ height: 100 }} />
+      {/* ─── Editorial Footer ────────────────────────────────────── */}
+      <View style={s.editorialFooter}>
+        <View style={s.footerLine} />
+        <View style={s.footerBadge}>
+          <FontAwesome5 name="seedling" size={12} color={COLORS.accentGreen} />
+          <Text style={s.footerText}>TomatoGuard Analytics Report</Text>
+        </View>
+        <View style={s.footerLine} />
+      </View>
+      <View style={{ height: 40 }} />
     </ScrollView>
   );
 };
@@ -703,7 +738,7 @@ const DailyTrendLineChart: React.FC<{
         <FontAwesome5
           name="long-arrow-alt-right"
           size={14}
-          color="#475569"
+          color="rgba(255,255,255,0.45)"
           style={{ marginHorizontal: 8 }}
         />
 
@@ -735,13 +770,13 @@ const DailyTrendLineChart: React.FC<{
                 y1={t.y}
                 x2={chartWidth - CHART_PADDING_RIGHT}
                 y2={t.y}
-                stroke="rgba(255,255,255,0.06)"
+                stroke="rgba(255,255,255,0.1)"
                 strokeWidth={1}
               />
               <SvgText
                 x={CHART_PADDING_LEFT - 6}
                 y={t.y + 4}
-                fill="#64748b"
+                fill="rgba(255,255,255,0.45)"
                 fontSize={10}
                 textAnchor="end"
               >
@@ -769,8 +804,8 @@ const DailyTrendLineChart: React.FC<{
               cx={p.x}
               cy={p.y}
               r={p.count > 0 ? 3.5 : 2}
-              fill={p.count > 0 ? accent : '#475569'}
-              stroke={p.count > 0 ? '#0f172a' : 'none'}
+              fill={p.count > 0 ? accent : 'rgba(255,255,255,0.3)'}
+              stroke={p.count > 0 ? COLORS.darkGreen : 'none'}
               strokeWidth={1.5}
             />
           ))}
@@ -780,7 +815,7 @@ const DailyTrendLineChart: React.FC<{
               key={lbl.i}
               x={points[lbl.i].x}
               y={CHART_HEIGHT - 4}
-              fill="#64748b"
+              fill="rgba(255,255,255,0.45)"
               fontSize={9}
               textAnchor="middle"
             >
@@ -808,7 +843,7 @@ const DailyTrendLineChart: React.FC<{
                 onPress={() => setPickerTarget(null)}
                 hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               >
-                <FontAwesome5 name="times" size={18} color="#94a3b8" />
+                <FontAwesome5 name="times" size={18} color="rgba(255,255,255,0.6)" />
               </TouchableOpacity>
             </View>
 
@@ -1037,12 +1072,12 @@ const BulletRow: React.FC<{ text: string; accent: string }> = ({
 );
 
 // ═══════════════════════════════════════════════════════════════════
-// STYLES
+// STYLES  —  Editorial magazine spread
 // ═══════════════════════════════════════════════════════════════════
 const s = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: COLORS.bgCream,
   },
   rootContent: {
     padding: 20,
@@ -1055,16 +1090,16 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 40,
-    backgroundColor: '#0f172a',
+    backgroundColor: COLORS.bgCream,
   },
   loadingText: {
     marginTop: 12,
-    color: '#94a3b8',
+    color: COLORS.textMuted,
     fontSize: 15,
   },
   errorText: {
     marginTop: 12,
-    color: '#f87171',
+    color: COLORS.errorRed,
     fontSize: 15,
     textAlign: 'center',
   },
@@ -1072,34 +1107,98 @@ const s = StyleSheet.create({
     marginTop: 16,
     paddingHorizontal: 24,
     paddingVertical: 10,
-    backgroundColor: '#16a34a',
+    backgroundColor: COLORS.accentGreen,
     borderRadius: 8,
   },
-  retryBtnText: { color: '#fff', fontWeight: '600' },
+  retryBtnText: { color: COLORS.textLight, fontWeight: '600' },
   emptyTitle: {
     marginTop: 16,
-    color: '#e2e8f0',
+    color: COLORS.textDark,
     fontSize: 20,
     fontWeight: '700',
   },
   emptySubtitle: {
     marginTop: 6,
-    color: '#94a3b8',
+    color: COLORS.textMuted,
     fontSize: 14,
     textAlign: 'center',
     maxWidth: 280,
+  },
+
+  // ── Editorial masthead ─────────────────────────────────────────
+  masthead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 24,
+    paddingBottom: 20,
+    borderBottomWidth: 1.5,
+    borderBottomColor: COLORS.bgLight,
+  },
+  mastheadAccent: {
+    width: 4,
+    height: 40,
+    borderRadius: 2,
+    backgroundColor: COLORS.accentGreen,
+  },
+  mastheadTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: COLORS.textDark,
+    fontStyle: 'italic',
+    letterSpacing: 0.4,
+  },
+  mastheadSub: {
+    fontSize: 13,
+    color: COLORS.textMuted,
+    marginTop: 2,
+    fontWeight: '500',
+    fontStyle: 'italic',
+  },
+
+  // ── Editorial divider ──────────────────────────────────────────
+  editorialDivider: {
+    height: 1.5,
+    backgroundColor: COLORS.bgLight,
+    marginVertical: 20,
+  },
+
+  // ── Editorial footer ───────────────────────────────────────────
+  editorialFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 24,
+    gap: 12,
+  },
+  footerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: COLORS.bgLight,
+  },
+  footerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  footerText: {
+    fontSize: 11,
+    color: COLORS.textMuted,
+    fontWeight: '600',
+    fontStyle: 'italic',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
 
   // ── Filter bar ─────────────────────────────────────────────────
   filterBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 28,
     flexWrap: 'wrap',
     gap: 10,
   },
   filterLabel: {
-    color: '#94a3b8',
+    color: COLORS.textMuted,
     fontSize: 13,
     fontWeight: '600',
     letterSpacing: 0.6,
@@ -1111,15 +1210,17 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 7,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: COLORS.textLight,
+    borderWidth: 1.5,
+    borderColor: COLORS.bgLight,
   },
-  pillText: { color: '#94a3b8', fontSize: 13, fontWeight: '600' },
-  pillTextActive: { color: '#fff' },
+  pillText: { color: COLORS.textMuted, fontSize: 13, fontWeight: '600' },
+  pillTextActive: { color: COLORS.textLight },
 
   // ── Section header ─────────────────────────────────────────────
-  sectionHeader: { marginBottom: 12 },
+  sectionHeader: { marginBottom: 16 },
   sectionTag: {
-    color: '#16a34a',
+    color: COLORS.accentGreen,
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.8,
@@ -1127,9 +1228,9 @@ const s = StyleSheet.create({
     marginBottom: 4,
   },
   sectionHeadline: {
-    color: '#e2e8f0',
-    fontSize: 22,
-    fontWeight: '300',
+    color: COLORS.textDark,
+    fontSize: 26,
+    fontWeight: '800',
     fontStyle: 'italic',
     letterSpacing: 0.3,
   },
@@ -1143,7 +1244,7 @@ const s = StyleSheet.create({
   },
   partBadge: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: COLORS.textMuted,
     fontWeight: '700',
     letterSpacing: 1.2,
     marginBottom: 4,
@@ -1165,12 +1266,17 @@ const s = StyleSheet.create({
 
   // ── Cards ──────────────────────────────────────────────────────
   card: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: COLORS.darkGreen,
     borderRadius: 14,
     padding: 18,
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1.5,
+    borderColor: COLORS.medGreen,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
   },
   cardLabelRow: {
     flexDirection: 'row',
@@ -1178,14 +1284,14 @@ const s = StyleSheet.create({
     marginBottom: 10,
   },
   cardLabel: {
-    color: '#94a3b8',
+    color: COLORS.limeglow,
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.5,
     textTransform: 'uppercase',
   },
   cardBody: {
-    color: '#cbd5e1',
+    color: 'rgba(255,255,255,0.85)',
     fontSize: 15,
     lineHeight: 24,
   },
@@ -1204,7 +1310,7 @@ const s = StyleSheet.create({
   },
   bulletText: {
     flex: 1,
-    color: '#cbd5e1',
+    color: 'rgba(255,255,255,0.85)',
     fontSize: 14,
     lineHeight: 22,
   },
@@ -1216,7 +1322,7 @@ const s = StyleSheet.create({
       : {}),
   } as any,
   statsTitle: {
-    color: '#e2e8f0',
+    color: COLORS.textLight,
     fontSize: 16,
     fontWeight: '700',
     marginBottom: 14,
@@ -1228,7 +1334,7 @@ const s = StyleSheet.create({
     paddingVertical: 6,
   },
   statLabel: {
-    color: '#94a3b8',
+    color: 'rgba(255,255,255,0.6)',
     fontSize: 13,
   },
   statValue: {
@@ -1236,7 +1342,7 @@ const s = StyleSheet.create({
     fontWeight: '900',
   },
   statValueSmall: {
-    color: '#e2e8f0',
+    color: COLORS.textLight,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -1244,7 +1350,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 6,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   trendText: {
     fontSize: 15,
@@ -1252,18 +1358,23 @@ const s = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     marginVertical: 4,
   },
 
   // ── Line chart card ────────────────────────────────────────────
   chartCard: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: COLORS.darkGreen,
     borderRadius: 14,
     padding: 16,
     marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1.5,
+    borderColor: COLORS.medGreen,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
   },
   chartHeader: {
     flexDirection: 'row',
@@ -1276,7 +1387,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   chartTitle: {
-    color: '#94a3b8',
+    color: COLORS.limeglow,
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.5,
@@ -1297,10 +1408,10 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   presetText: {
-    color: '#94a3b8',
+    color: 'rgba(255,255,255,0.6)',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -1320,10 +1431,10 @@ const s = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 8,
     borderWidth: 1,
-    backgroundColor: 'rgba(0,0,0,0.2)',
+    backgroundColor: 'rgba(0,0,0,0.25)',
   },
   dateBtnLabel: {
-    color: '#64748b',
+    color: 'rgba(255,255,255,0.5)',
     fontSize: 11,
     fontWeight: '600',
     marginRight: 4,
@@ -1337,10 +1448,10 @@ const s = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   daySpanText: {
-    color: '#64748b',
+    color: 'rgba(255,255,255,0.5)',
     fontSize: 11,
     fontWeight: '600',
   },
@@ -1352,7 +1463,7 @@ const s = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   pickerSheet: {
-    backgroundColor: '#1e293b',
+    backgroundColor: COLORS.darkGreen,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '65%',
@@ -1367,12 +1478,12 @@ const s = StyleSheet.create({
     paddingHorizontal: 4,
   },
   pickerTitle: {
-    color: '#e2e8f0',
+    color: COLORS.textLight,
     fontSize: 17,
     fontWeight: '700',
   },
   pickerMonthLabel: {
-    color: '#94a3b8',
+    color: COLORS.limeglow,
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1.2,
@@ -1396,12 +1507,12 @@ const s = StyleSheet.create({
     flex: 1,
   },
   pickerDateDay: {
-    color: '#e2e8f0',
+    color: COLORS.textLight,
     fontSize: 14,
     fontWeight: '600',
   },
   pickerDateWeekday: {
-    color: '#64748b',
+    color: 'rgba(255,255,255,0.45)',
     fontSize: 11,
     marginTop: 1,
   },
@@ -1417,12 +1528,17 @@ const s = StyleSheet.create({
 
   // ── Auto-slideshow card ────────────────────────────────────────
   slideshowCard: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: COLORS.darkGreen,
     borderRadius: 14,
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1.5,
+    borderColor: COLORS.medGreen,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
   },
   slideshowImageContainer: {
     position: 'relative',
@@ -1433,7 +1549,7 @@ const s = StyleSheet.create({
   },
   slideshowGradient: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(10,26,18,0.52)',
   },
   slideshowTopLabel: {
     position: 'absolute',
@@ -1449,7 +1565,7 @@ const s = StyleSheet.create({
     borderRadius: 2,
   },
   topLabelText: {
-    color: '#fff',
+    color: COLORS.textLight,
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.5,
@@ -1474,6 +1590,7 @@ const s = StyleSheet.create({
   stageBadgeText: {
     fontSize: 12,
     fontWeight: '700',
+    color: COLORS.textLight,
   },
   dotsRow: {
     flexDirection: 'row',
@@ -1492,14 +1609,19 @@ const s = StyleSheet.create({
     flexWrap: 'wrap',
   },
   partCard: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: COLORS.darkGreen,
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1.5,
+    borderColor: COLORS.medGreen,
     borderTopWidth: 3,
     borderTopColor: DEFAULT_ACCENT,
     padding: 16,
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
   },
   partCardWide: {
     flex: 1,
@@ -1515,17 +1637,17 @@ const s = StyleSheet.create({
     fontSize: 28,
   },
   partCardTitle: {
-    color: '#e2e8f0',
+    color: COLORS.textLight,
     fontSize: 16,
     fontWeight: '700',
   },
   partCardSub: {
-    color: '#64748b',
+    color: 'rgba(255,255,255,0.45)',
     fontSize: 13,
     marginTop: 4,
   },
   partCardPartLabel: {
-    color: '#94a3b8',
+    color: COLORS.limeglow,
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1.4,
@@ -1536,13 +1658,14 @@ const s = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: -0.3,
     marginTop: 2,
+    color: COLORS.textLight,
   },
 
   // ── Mini stats row (per-part card) ─────────────────────────────
   miniStatsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(0,0,0,0.2)',
+    backgroundColor: 'rgba(0,0,0,0.25)',
     borderRadius: 10,
     padding: 12,
     marginBottom: 12,
@@ -1552,12 +1675,12 @@ const s = StyleSheet.create({
     flex: 1,
   },
   miniStatValue: {
-    color: '#e2e8f0',
+    color: COLORS.textLight,
     fontSize: 16,
     fontWeight: '800',
   },
   miniStatLabel: {
-    color: '#64748b',
+    color: 'rgba(255,255,255,0.5)',
     fontSize: 10,
     fontWeight: '600',
     marginTop: 2,
@@ -1574,7 +1697,7 @@ const s = StyleSheet.create({
   },
   partInfoText: {
     flex: 1,
-    color: '#94a3b8',
+    color: 'rgba(255,255,255,0.7)',
     fontSize: 13,
     lineHeight: 18,
   },

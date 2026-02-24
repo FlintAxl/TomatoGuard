@@ -12,6 +12,7 @@ from app.routes.forum import router as forum_router
 from .services.database import connect_to_mongo, close_mongo_connection
 from .routes.chatbot_router import router as chatbot_router
 from .routes.analytics import router as analytics_router
+from .routes.notifications import router as notifications_router
 
 load_dotenv()
 settings = get_settings()
@@ -75,6 +76,7 @@ app.include_router(auth_router)
 app.include_router(forum_router)
 app.include_router(chatbot_router)
 app.include_router(analytics_router)
+app.include_router(notifications_router)
 
 if __name__ == "__main__":
     import uvicorn

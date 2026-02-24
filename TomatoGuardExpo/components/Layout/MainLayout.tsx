@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { BlurView } from 'expo-blur';
+import { useNotification } from '../../contexts/NotificationContext';
+import NotificationPanel from '../NotificationPanel';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const isSmallDevice = SCREEN_WIDTH < 768;
@@ -50,6 +52,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   onCloseDrawer,
   children,
 }) => {
+  const [notificationPanelVisible, setNotificationPanelVisible] = useState(false);
+  const { forumUnreadCount, hasForumNotifications } = useNotification();
 
   return (
     <SafeAreaView style={{ flex: 1}}>
@@ -90,24 +94,47 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 </View>
               </View>
 
-              {/* Right Section: User Email */}
-              {userEmail && (
-                <View style={styles.headerRight}>
-                  {/* User Avatar */}
-                  <View style={styles.userAvatar}>
-                    <Text style={styles.userAvatarPlaceholder}>👤</Text>
-                  </View>
-                  {/* Email - Hidden on mobile */}
-                  {SCREEN_WIDTH >= 768 && (
-                    <Text style={styles.userEmail}>
-                      {userEmail}
-                    </Text>
+              {/* Right Section: Bell + User Email */}
+              <View style={styles.headerRight}>
+                {/* Bell Icon */}
+                <TouchableOpacity
+                  onPress={() => setNotificationPanelVisible(true)}
+                  style={styles.bellButton}
+                >
+                  <Text style={styles.bellIcon}>🔔</Text>
+                  {hasForumNotifications && (
+                    <View style={styles.bellBadge}>
+                      <Text style={styles.bellBadgeText}>
+                        {forumUnreadCount > 99 ? '99+' : forumUnreadCount}
+                      </Text>
+                    </View>
                   )}
-                </View>
-              )}
+                </TouchableOpacity>
+
+                {userEmail && (
+                  <>
+                    {/* User Avatar */}
+                    <View style={styles.userAvatar}>
+                      <Text style={styles.userAvatarPlaceholder}>👤</Text>
+                    </View>
+                    {/* Email - Hidden on mobile */}
+                    {SCREEN_WIDTH >= 768 && (
+                      <Text style={styles.userEmail}>
+                        {userEmail}
+                      </Text>
+                    )}
+                  </>
+                )}
+              </View>
             </View>
         </View>
         {children}
+
+      {/* Notification Panel Modal */}
+      <NotificationPanel
+        visible={notificationPanelVisible}
+        onClose={() => setNotificationPanelVisible(false)}
+      />
     </SafeAreaView>
   );
 };
@@ -189,7 +216,37 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SCREEN_WIDTH < 768 ? 0 : 8,
+    gap: SCREEN_WIDTH < 768 ? 6 : 10,
+  },
+  bellButton: {
+    width: SCREEN_WIDTH < 768 ? 36 : 40,
+    height: SCREEN_WIDTH < 768 ? 36 : 40,
+    borderRadius: SCREEN_WIDTH < 768 ? 12 : 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bellIcon: {
+    fontSize: SCREEN_WIDTH < 768 ? 16 : 18,
+  },
+  bellBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    backgroundColor: '#dc2626',
+    borderRadius: 9,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#1a3a2a',
+  },
+  bellBadgeText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: '800',
   },
   userAvatar: {
     width: SCREEN_WIDTH < 768 ? 36 : 40,
