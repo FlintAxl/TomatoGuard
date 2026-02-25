@@ -166,6 +166,20 @@ export interface AnalysisDetail {
   }>;
   alternative_predictions: Array<{ disease: string; confidence: number }>;
   alternative_parts: Array<{ part: string; confidence: number }>;
+  recommendations?: {
+    disease?: string;
+    plant_part?: string;
+    description?: string;
+    causal_agent?: string;
+    immediate_actions?: string[];
+    preventive_measures?: string[];
+    organic_options?: string[];
+    chemical_options?: string[];
+    monitoring_tips?: string | string[];
+    general_care?: string[];
+    when_to_seek_help?: string[];
+    confidence?: { score?: number; level?: string; note?: string };
+  } | null;
 }
 
 export const fetchAnalysisHistory = async (
@@ -240,6 +254,20 @@ export interface UserAnalysisDetail {
         bounding_boxes?: Array<{ x: number; y: number; w: number; h: number; area: number }>;
         annotated_image?: string;
       };
+      recommendations?: {
+        disease?: string;
+        plant_part?: string;
+        description?: string;
+        causal_agent?: string;
+        immediate_actions?: string[];
+        preventive_measures?: string[];
+        organic_options?: string[];
+        chemical_options?: string[];
+        monitoring_tips?: string | string[];
+        general_care?: string[];
+        when_to_seek_help?: string[];
+        confidence?: { score?: number; level?: string; note?: string };
+      };
     };
     disease_detection?: {
       disease: string;
@@ -255,6 +283,20 @@ export interface UserAnalysisDetail {
       total_spots: number;
       bounding_boxes?: Array<{ x: number; y: number; w: number; h: number; area: number }>;
       annotated_image?: string;
+    };
+    recommendations?: {
+      disease?: string;
+      plant_part?: string;
+      description?: string;
+      causal_agent?: string;
+      immediate_actions?: string[];
+      preventive_measures?: string[];
+      organic_options?: string[];
+      chemical_options?: string[];
+      monitoring_tips?: string | string[];
+      general_care?: string[];
+      when_to_seek_help?: string[];
+      confidence?: { score?: number; level?: string; note?: string };
     };
   };
 }

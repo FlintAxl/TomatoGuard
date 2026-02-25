@@ -244,6 +244,59 @@ const AnalysisDetailModal: React.FC<Props> = ({ analysisId, visible, onClose }) 
           </View>
         </View>
 
+        {/* Treatment Recommendations */}
+        {detail.recommendations && !isHealthy && (
+          <View style={s.recoCard}>
+            <Text style={s.cardLabel}>💊 Treatment Recommendations</Text>
+
+            {detail.recommendations.description && (
+              <Text style={s.recoDescription}>{detail.recommendations.description}</Text>
+            )}
+
+            {(detail.recommendations.immediate_actions?.length ?? 0) > 0 && (
+              <View style={s.recoBlock}>
+                <Text style={s.recoBlockTitle}>🚨 Immediate Actions</Text>
+                {detail.recommendations.immediate_actions!.map((item: string, i: number) => (
+                  <View key={i} style={s.recoBulletRow}>
+                    <Text style={s.recoBullet}>•</Text>
+                    <Text style={s.recoBulletText}>{item}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {(detail.recommendations.preventive_measures?.length ?? 0) > 0 && (
+              <View style={s.recoBlock}>
+                <Text style={s.recoBlockTitle}>🛡️ Prevention</Text>
+                {detail.recommendations.preventive_measures!.map((item: string, i: number) => (
+                  <View key={i} style={s.recoBulletRow}>
+                    <Text style={s.recoBullet}>•</Text>
+                    <Text style={s.recoBulletText}>{item}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {(detail.recommendations.organic_options?.length ?? 0) > 0 && (
+              <View style={s.recoBlock}>
+                <Text style={s.recoBlockTitle}>🌿 Organic Options</Text>
+                {detail.recommendations.organic_options!.map((item: string, i: number) => (
+                  <View key={i} style={s.recoBulletRow}>
+                    <Text style={s.recoBullet}>•</Text>
+                    <Text style={s.recoBulletText}>{item}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {detail.recommendations.confidence?.note && (
+              <View style={s.recoNoteBox}>
+                <Text style={s.recoNoteText}>📝 {detail.recommendations.confidence.note}</Text>
+              </View>
+            )}
+          </View>
+        )}
+
         <View style={{ height: 20 }} />
       </ScrollView>
     );
@@ -627,6 +680,61 @@ const s = StyleSheet.create({
     fontSize: 11,
     color: '#475569',
     fontFamily: 'monospace',
+  },
+  // Recommendation styles
+  recoCard: {
+    backgroundColor: '#1e293b',
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 8,
+  },
+  recoDescription: {
+    color: '#cbd5e1',
+    fontSize: 13,
+    lineHeight: 19,
+    marginBottom: 10,
+  },
+  recoBlock: {
+    marginBottom: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#334155',
+  },
+  recoBlockTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#94a3b8',
+    marginBottom: 6,
+  },
+  recoBulletRow: {
+    flexDirection: 'row',
+    paddingVertical: 3,
+    paddingRight: 8,
+  },
+  recoBullet: {
+    color: '#6366f1',
+    fontSize: 13,
+    marginRight: 8,
+    marginTop: 1,
+  },
+  recoBulletText: {
+    color: '#cbd5e1',
+    fontSize: 12,
+    lineHeight: 18,
+    flex: 1,
+  },
+  recoNoteBox: {
+    backgroundColor: '#0f172a',
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#6366f1',
+  },
+  recoNoteText: {
+    color: '#94a3b8',
+    fontSize: 12,
+    lineHeight: 17,
   },
 });
 

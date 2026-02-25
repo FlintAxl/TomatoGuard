@@ -204,6 +204,7 @@ const UserAnalysisHistory: React.FC<Props> = ({ visible, onClose }) => {
       totalSpots: nested?.spot_detection?.total_spots || analysisResult?.spot_detection?.total_spots || 0,
       boundingBoxes: nested?.spot_detection?.bounding_boxes || analysisResult?.spot_detection?.bounding_boxes || [],
       annotatedImage: nested?.spot_detection?.annotated_image || analysisResult?.spot_detection?.annotated_image || null,
+      recommendations: (nested as any)?.recommendations || (analysisResult as any)?.recommendations || null,
     };
   };
 
@@ -360,6 +361,60 @@ const UserAnalysisHistory: React.FC<Props> = ({ visible, onClose }) => {
                               <Text style={s.detailLabel}>Bounding Boxes</Text>
                               <Text style={s.detailValue}>{data.boundingBoxes.length}</Text>
                             </View>
+                          </View>
+                        </View>
+                      )}
+
+                      {/* Treatment Recommendations */}
+                      {data.recommendations && !isHealthy && (
+                        <View style={s.detailSection}>
+                          <Text style={s.detailSectionTitle}>💊 Treatment Recommendations</Text>
+                          <View style={s.detailCard}>
+                            {data.recommendations.description && (
+                              <Text style={s.recoDescription}>{data.recommendations.description}</Text>
+                            )}
+
+                            {(data.recommendations.immediate_actions?.length ?? 0) > 0 && (
+                              <View style={s.recoBlock}>
+                                <Text style={s.recoBlockTitle}>🚨 Immediate Actions</Text>
+                                {data.recommendations.immediate_actions!.map((item: string, i: number) => (
+                                  <View key={i} style={s.recoBulletRow}>
+                                    <Text style={s.recoBullet}>•</Text>
+                                    <Text style={s.recoBulletText}>{item}</Text>
+                                  </View>
+                                ))}
+                              </View>
+                            )}
+
+                            {(data.recommendations.preventive_measures?.length ?? 0) > 0 && (
+                              <View style={s.recoBlock}>
+                                <Text style={s.recoBlockTitle}>🛡️ Prevention</Text>
+                                {data.recommendations.preventive_measures!.map((item: string, i: number) => (
+                                  <View key={i} style={s.recoBulletRow}>
+                                    <Text style={s.recoBullet}>•</Text>
+                                    <Text style={s.recoBulletText}>{item}</Text>
+                                  </View>
+                                ))}
+                              </View>
+                            )}
+
+                            {(data.recommendations.organic_options?.length ?? 0) > 0 && (
+                              <View style={s.recoBlock}>
+                                <Text style={s.recoBlockTitle}>🌿 Organic Options</Text>
+                                {data.recommendations.organic_options!.map((item: string, i: number) => (
+                                  <View key={i} style={s.recoBulletRow}>
+                                    <Text style={s.recoBullet}>•</Text>
+                                    <Text style={s.recoBulletText}>{item}</Text>
+                                  </View>
+                                ))}
+                              </View>
+                            )}
+
+                            {data.recommendations.confidence?.note && (
+                              <View style={s.recoNoteBox}>
+                                <Text style={s.recoNoteText}>📝 {data.recommendations.confidence.note}</Text>
+                              </View>
+                            )}
                           </View>
                         </View>
                       )}
@@ -872,6 +927,55 @@ const s = StyleSheet.create({
   altConf: {
     color: '#64748b',
     fontSize: 12,
+  },
+  // Recommendation styles
+  recoDescription: {
+    color: '#cbd5e1',
+    fontSize: 13,
+    lineHeight: 19,
+    marginBottom: 12,
+  },
+  recoBlock: {
+    marginBottom: 12,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#334155',
+  },
+  recoBlockTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#94a3b8',
+    marginBottom: 6,
+  },
+  recoBulletRow: {
+    flexDirection: 'row',
+    paddingVertical: 3,
+    paddingRight: 8,
+  },
+  recoBullet: {
+    color: '#6366f1',
+    fontSize: 13,
+    marginRight: 8,
+    marginTop: 1,
+  },
+  recoBulletText: {
+    color: '#cbd5e1',
+    fontSize: 12,
+    lineHeight: 18,
+    flex: 1,
+  },
+  recoNoteBox: {
+    backgroundColor: '#1e293b',
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#6366f1',
+  },
+  recoNoteText: {
+    color: '#94a3b8',
+    fontSize: 12,
+    lineHeight: 17,
   },
 });
 

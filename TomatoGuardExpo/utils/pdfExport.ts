@@ -303,6 +303,7 @@ const generateHTML = (data: ExportData): string => {
               `).join('')}
             </tbody>
           </table>
+          <p style="margin-top: 12px; font-size: 13px; color: #94a3b8; font-style: italic;">This table shows the distribution of analyses across different tomato plant parts (fruit, leaf, and stem).</p>
         </div>
       </div>
 
@@ -334,6 +335,10 @@ const generateHTML = (data: ExportData): string => {
                 ${generateDiseaseTable(part, diseases)}
               </tbody>
             </table>
+            <p style="margin-top: 12px; font-size: 13px; color: #94a3b8; font-style: italic;">
+             The table below displays all diseases identified on this plant part, 
+             showing how many times each was detected, its proportion relative to total detections, 
+             and the model's average confidence level for each diagnosis.</p>
           </div>
         `).join('')}
       </div>
@@ -374,6 +379,9 @@ const generateHTML = (data: ExportData): string => {
               }).join('')}
             </tbody>
           </table>
+          <p style="margin-top: 12px; font-size: 13px; color: #94a3b8; font-style: italic;">
+          This table presents the distribution of model confidence scores across predefined range buckets, 
+          giving you insight into how confident our system was when making these identifications.</p>
         </div>
       </div>
 
@@ -413,6 +421,9 @@ const generateHTML = (data: ExportData): string => {
               `).join('')}
             </tbody>
           </table>
+          <p style="margin-top: 12px; font-size: 13px; color: #94a3b8; font-style: italic;">This table summarizes the 
+          average confidence level of the model for each detected disease category, giving you insight into which
+           diseases the system identifies with the greatest certainty</p>
         </div>
       </div>
 
@@ -466,6 +477,7 @@ const generateHTML = (data: ExportData): string => {
               }).join('')}
             </tbody>
           </table>
+          <p style="margin-top: 12px; font-size: 13px; color: #94a3b8; font-style: italic;">This table contains the complete list of all individual analyses performed, including disease detected, plant part, confidence score, and date.</p>
         </div>
       </div>
 

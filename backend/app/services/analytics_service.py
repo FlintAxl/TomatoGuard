@@ -472,6 +472,7 @@ class AnalyticsService:
             disease_detection = analysis.get("disease_detection", {})
             part_detection = analysis.get("part_detection", {})
             spot_detection = analysis.get("spot_detection", {}) or {}
+            recommendations = analysis.get("recommendations", None) or result.get("recommendations", None)
 
             annotated_image = spot_detection.get("annotated_image")
             original_image = spot_detection.get("original_image")
@@ -499,6 +500,7 @@ class AnalyticsService:
                 "bounding_boxes": spot_detection.get("bounding_boxes", []),
                 "alternative_predictions": disease_detection.get("alternative_predictions", []),
                 "alternative_parts": part_detection.get("alternative_parts", []),
+                "recommendations": recommendations,
             }
         except Exception as e:
             logger.error(f"❌ analysis detail failed: {e}")
