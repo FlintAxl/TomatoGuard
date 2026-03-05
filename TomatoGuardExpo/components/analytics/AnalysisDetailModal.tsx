@@ -237,7 +237,7 @@ const AnalysisDetailModal: React.FC<Props> = ({ analysisId, visible, onClose }) 
           {/* Analysis ID */}
           <View style={s.halfCard}>
             <Text style={s.cardLabel}>Analysis ID</Text>
-            <Text style={s.idValueCompact}>{detail.id.slice(-8)}</Text>
+            <Text style={s.idValueCompact}>{detail.id.slice(0, 4)}...</Text>
             <Text style={s.dateValueCompact}>
               {detail.created_at ? formatDate(detail.created_at) : 'N/A'}
             </Text>

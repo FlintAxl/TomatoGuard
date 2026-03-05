@@ -66,6 +66,24 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ visible, onClose 
     await markAllForumNotificationsRead();
   };
 
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'forum_like': return '❤️';
+      case 'forum_comment': return '💬';
+      case 'forum_post':
+      default: return '📝';
+    }
+  };
+
+  const getNotificationAction = (type: string) => {
+    switch (type) {
+      case 'forum_like': return ' liked your post';
+      case 'forum_comment': return ' commented on your post';
+      case 'forum_post':
+      default: return ' posted in the forum';
+    }
+  };
+
   const renderNotification = ({ item }: { item: NotificationItem }) => (
     <TouchableOpacity
       style={[styles.notificationItem, !item.is_read && styles.unreadItem]}
@@ -77,12 +95,12 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ visible, onClose 
 
       <View style={styles.notificationContent}>
         <View style={styles.iconContainer}>
-          <Text style={styles.notificationIcon}>📝</Text>
+          <Text style={styles.notificationIcon}>{getNotificationIcon(item.type)}</Text>
         </View>
         <View style={styles.textContainer}>
           <Text style={styles.notificationMessage} numberOfLines={2}>
             <Text style={styles.authorName}>{item.author_name}</Text>
-            {' posted in the forum'}
+            {getNotificationAction(item.type)}
           </Text>
           {item.post_title && (
             <Text style={styles.postTitle} numberOfLines={1}>
@@ -100,7 +118,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ visible, onClose 
       <Text style={styles.emptyIcon}>🔔</Text>
       <Text style={styles.emptyText}>No notifications yet</Text>
       <Text style={styles.emptySubtext}>
-        You'll be notified when someone posts in the forum
+        You'll be notified when someone posts, likes, or comments
       </Text>
     </View>
   );

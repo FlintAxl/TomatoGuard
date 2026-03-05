@@ -429,7 +429,7 @@ const UserAnalysisHistory: React.FC<Props> = ({ visible, onClose }) => {
                           </View>
                           <View style={s.detailRow}>
                             <Text style={s.detailLabel}>Analysis ID</Text>
-                            <Text style={s.detailValueSmall}>{detail.id}</Text>
+                            <Text style={s.detailValueSmall}>{detail.id.slice(0, 5)}...</Text>
                           </View>
                         </View>
                       </View>

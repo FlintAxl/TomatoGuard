@@ -104,6 +104,9 @@ const generateHTML = (data: ExportData): string => {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>TomatoGuard Analytics Report</title>
       <style>
+        @page {
+          margin: 20px;
+        }
         * {
           margin: 0;
           padding: 0;
