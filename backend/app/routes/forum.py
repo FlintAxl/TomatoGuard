@@ -181,6 +181,14 @@ async def add_comment(
     """
     Add a comment to a post
     """
+    # Get post before commenting to access author info
+    original_post = await forum_service.get_post(post_id)
+    if not original_post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post not found"
+        )
+
     updated_post = await forum_service.add_comment(post_id, current_user["id"], comment)
     
     if not updated_post:
@@ -189,6 +197,19 @@ async def add_comment(
             detail="Post not found"
         )
     
+    # Send notification to post author
+    try:
+        notification_service = NotificationService()
+        await notification_service.create_comment_notification(
+            commenter_id=current_user["id"],
+            commenter_name=current_user.get("full_name", "Someone"),
+            post_id=post_id,
+            post_title=original_post.title,
+            post_author_id=original_post.author_id,
+        )
+    except Exception as e:
+        print(f"⚠️ Failed to send comment notification: {e}")
+
     enriched = await forum_service.enrich_post(updated_post, current_user["id"])
     return enriched
 
@@ -223,6 +244,15 @@ async def toggle_like(
     """
     Like or unlike a post
     """
+    # Check if user already liked BEFORE toggling (to detect like vs unlike)
+    pre_post = await forum_service.get_post(post_id)
+    if not pre_post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post not found"
+        )
+    was_liked = current_user["id"] in pre_post.likes
+
     updated_post = await forum_service.toggle_like(post_id, current_user["id"])
     
     if not updated_post:
@@ -231,6 +261,20 @@ async def toggle_like(
             detail="Post not found"
         )
     
+    # Only send notification on LIKE (not unlike)
+    if not was_liked:
+        try:
+            notification_service = NotificationService()
+            await notification_service.create_like_notification(
+                liker_id=current_user["id"],
+                liker_name=current_user.get("full_name", "Someone"),
+                post_id=post_id,
+                post_title=pre_post.title,
+                post_author_id=pre_post.author_id,
+            )
+        except Exception as e:
+            print(f"⚠️ Failed to send like notification: {e}")
+
     enriched = await forum_service.enrich_post(updated_post, current_user["id"])
     return enriched
 

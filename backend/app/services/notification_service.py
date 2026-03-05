@@ -51,6 +51,74 @@ class NotificationService:
         print(f"🔔 Created {len(result.inserted_ids)} notifications for post '{post_title}'")
         return len(result.inserted_ids)
 
+    async def create_like_notification(
+        self,
+        liker_id: str,
+        liker_name: str,
+        post_id: str,
+        post_title: str,
+        post_author_id: str,
+    ) -> bool:
+        """
+        Create a notification for the post author when someone likes their post.
+        Skips if the user likes their own post.
+        Returns True if a notification was created.
+        """
+        # Don't notify if user likes their own post
+        if liker_id == post_author_id:
+            return False
+
+        now = datetime.utcnow()
+        notification = {
+            "recipient_id": post_author_id,
+            "type": "forum_like",
+            "message": f"{liker_name} liked your post",
+            "author_id": liker_id,
+            "author_name": liker_name,
+            "post_id": post_id,
+            "post_title": post_title,
+            "is_read": False,
+            "created_at": now,
+        }
+
+        await self.notifications.insert_one(notification)
+        print(f"❤️ Like notification sent to {post_author_id} for post '{post_title}'")
+        return True
+
+    async def create_comment_notification(
+        self,
+        commenter_id: str,
+        commenter_name: str,
+        post_id: str,
+        post_title: str,
+        post_author_id: str,
+    ) -> bool:
+        """
+        Create a notification for the post author when someone comments on their post.
+        Skips if the user comments on their own post.
+        Returns True if a notification was created.
+        """
+        # Don't notify if user comments on their own post
+        if commenter_id == post_author_id:
+            return False
+
+        now = datetime.utcnow()
+        notification = {
+            "recipient_id": post_author_id,
+            "type": "forum_comment",
+            "message": f"{commenter_name} commented on your post",
+            "author_id": commenter_id,
+            "author_name": commenter_name,
+            "post_id": post_id,
+            "post_title": post_title,
+            "is_read": False,
+            "created_at": now,
+        }
+
+        await self.notifications.insert_one(notification)
+        print(f"💬 Comment notification sent to {post_author_id} for post '{post_title}'")
+        return True
+
     async def get_notifications(
         self,
         user_id: str,
