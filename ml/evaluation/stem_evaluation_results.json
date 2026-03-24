@@ -1,0 +1,12 @@
+{
+  "evaluation_metrics": {
+    "loss": 0.029970785602927208,
+    "compile_metrics": 0.9901960492134094
+  },
+  "class_names": [
+    "blight",
+    "healthy",
+    "wilt"
+  ],
+  "accuracy": 0.9901960492134094
+}

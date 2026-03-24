@@ -1,0 +1,16 @@
+{
+  "evaluation_metrics": {
+    "loss": 0.07198330014944077,
+    "compile_metrics": 0.9739862084388733
+  },
+  "class_names": [
+    "anthracnose",
+    "blossom_end_rot",
+    "bortrytis_gray_mold",
+    "buckeye_rot",
+    "healthy",
+    "sunscald"
+  ],
+  "accuracy": 0.9739862084388733,
+  "avg_confidence": 0.9777548313140869
+}

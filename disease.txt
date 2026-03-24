@@ -1,0 +1,20 @@
+FRUIT
+1. Anthracnose - --ACCURATE
+5. Botrytis Gray Mold-  results as blossom end rot
+7. Blossom End Rot -- results as gray mold
+8. Buckeye Rot -- ACCURATE
+12. Sunscald -- ACCURATE
+1 Healthy -- ACCURATE
+
+LEAF
+4. Septora Leaf Spot - results as bacterial spot
+13. Bacterial Spot - results as leaf spot
+14. Early Blight --- ACCURATE  00c5c908-fc25-4710-a109-db143da23112___RS_Erly.B 7778.JPG
+15. Late Blight ---ACCURATE   0b6caac4-cc62-4c46-9de4-1815a0aa6dbe___GHLB2 Leaf 8799.JPG
+2.Yellow leaf curl -- results as Healthy
+1 Healthy -- not ACCURATE
+
+STEM
+1 Blight -- ACCURATE IMG_20260120_164041_rot90.jpg
+2 Healthy -- ACCURATE IMG_20260123_082952_original.jpg
+3 wilt -- ACCURATE Wilt_1021_050.jpg
